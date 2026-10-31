@@ -9,3 +9,15 @@ test('Unsafe origins and attacker-controlled hosts are rejected',()=>{process.en
 test('JSON reader enforces actual byte limit without Content-Length',async()=>{const req=new Request('https://test.local',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({s:'é'.repeat(20)})});await assert.rejects(readJson(req,30),(e:unknown)=>e instanceof HttpError&&e.status===413);});
 test('Invalid JSON and content types have controlled errors',async()=>{await assert.rejects(readJson(new Request('https://test.local',{method:'POST',body:'hello'})),(e:unknown)=>e instanceof HttpError&&e.status===415);await assert.rejects(readJson(new Request('https://test.local',{method:'POST',headers:{'content-type':'application/json'},body:'{'})),(e:unknown)=>e instanceof HttpError&&e.status===400);});
 test('Owner setup requires a long password and normalizes email',()=>{const valid={email:' OWNER@EXAMPLE.TEST ',name:'Owner',password:'test-pass-long-123',token:'x'.repeat(64)};assert.equal(ownerInput.parse(valid).email,'owner@example.test');assert.throws(()=>ownerInput.parse({...valid,password:'short'}));assert.throws(()=>ownerInput.parse({...valid,token:'short'}));});
+
+test('Public catalogue uses an explicit allowlist and excludes private commerce data',async()=>{
+ const {publicCatalog,isOpen}=await import('../modules/platform/public');
+ const {initialState}=await import('../modules/commerce/seed');
+ const state=initialState();const publicData=publicCatalog(state);
+ assert.deepEqual(Object.keys(publicData).sort(),['demo','name','phone','products','shipping','zones']);
+ assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','id','name','price','variant']);
+ assert.equal(JSON.stringify(publicData).includes('customerSnapshot'),false);
+ const shop={published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date('2030-01-01')};
+ assert.equal(isOpen(shop,new Date('2026-01-01')),true);
+ for(const override of [{published:false},{subscriptionStatus:'SUSPENDED'},{subscriptionEndsAt:null},{subscriptionEndsAt:new Date('2020-01-01')}])assert.equal(isOpen({...shop,...override},new Date('2026-01-01')),false);
+});

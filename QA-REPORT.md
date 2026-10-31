@@ -15,3 +15,7 @@
 
 ## Restant à vérifier
 Création du dépôt, exécution CI, validation Render CLI/API, migrations sur Render, déploiement, setup propriétaire et parcours métier avec la session réelle. Aucun test de charge, audit de sécurité externe, sauvegarde/restauration réelle ou validation fiscale. Aucun test navigateur visuel de la nouvelle page de connexion.
+
+## 0.5 — vérifications ajoutées
+
+Tests HTTP PostgreSQL : droits du superadministrateur, refus d’un marchand sur l’API admin, séparation des données, création d’une boutique vide, absence de coordonnées privées dans le HTML public, commande anonyme et double envoi concurrent, recalcul du prix, stock décrémenté une seule fois, produits d’une autre boutique refusés, suspension/expiration/dépublication vérifiées côté serveur, origine externe refusée et journal d’administration.

@@ -1,3 +1,4 @@
+# Test environment only. Check free-tier availability in the selected workspace.
 services:
   - type: web
     name: tunicommerce-test

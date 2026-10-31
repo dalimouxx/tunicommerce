@@ -9,6 +9,7 @@ model User {
   id           String @id @default(uuid())
   email        String @unique
   name         String
+  role         String @default("MERCHANT")
   passwordHash String
   createdAt    DateTime @default(now())
   sessions     Session[]
@@ -25,6 +26,12 @@ model Session {
 }
 model Workspace {
   id        String @id @default(uuid())
+  slug      String? @unique
+  published Boolean @default(false)
+  plan      String @default("STARTER")
+  subscriptionStatus String @default("TRIAL")
+  subscriptionEndsAt DateTime?
+  receipts PublicReceipt[]
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -39,4 +46,22 @@ model AuthThrottle {
   key       String @id
   count     Int
   expiresAt DateTime
+}
+
+model PublicReceipt {
+ id String @id @default(uuid())
+ workspaceId String
+ workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+ requestId String
+ reference String
+ total Int
+ createdAt DateTime @default(now())
+ @@unique([workspaceId, requestId])
+}
+model PlatformAudit {
+ id String @id @default(uuid())
+ actorId String
+ workspaceId String
+ detail String
+ createdAt DateTime @default(now())
 }

@@ -53,3 +53,15 @@ Les données métier restent un agrégat JSON versionné dans PostgreSQL. Les co
 Les données de l’ancien site ne sont pas copiées automatiquement : cette nouvelle instance commence avec les données fictives signalées. Aucun contenu réel du site privé n’a été extrait. Préparer un export/import contrôlé si des données réelles doivent être transférées.
 
 La limitation des connexions est globale à cette instance de test (20 tentatives/10 minutes), ce qui peut temporairement bloquer un utilisateur légitime ; une stratégie multi-utilisateurs plus fine sera nécessaire pour le SaaS.
+
+## Version 0.5 — boutiques publiques et administration
+
+- `/` : espace marchand protégé, lié exclusivement à son propre workspace.
+- `/boutiques` : annuaire public ; `/boutiques/{slug}` : catalogue, panier, commande sans compte et paiement à la livraison.
+- `/admin` : superadministrateur ; création des marchands et boutiques, lien public, publication, offre, statut et échéance d’abonnement, historique des changements.
+
+Le compte de première installation devient superadministrateur lors de la migration. Les nouveaux comptes créés par l’administration restent marchands. Les boutiques existantes restent non publiées jusqu’à la configuration de leur lien et de leur échéance par l’administrateur. Une boutique publiée nécessite un abonnement `TRIAL` ou `ACTIVE` avec une date future pour recevoir des commandes. Une suspension, une résiliation ou une expiration bloque immédiatement la page publique et les commandes côté serveur.
+
+Les offres STARTER / PRO / BUSINESS sont des catégories administratives sans quotas distincts. La facturation, les prélèvements automatiques, les comptes clients, la récupération de mot de passe par e-mail et le suivi public de livraison ne sont pas implémentés. Le client commande sans créer de compte. Les nouvelles boutiques sont vides ; le marchand ajoute son catalogue.
+
+La réponse publique est construite par liste blanche : aucun coût d’achat, client existant, commande ou historique interne n’est envoyé. Le serveur recalcule les montants, réserve le stock sous verrou PostgreSQL et déduplique les tentatives avec une clé de requête. Le catalogue de démonstration est explicitement signalé.
