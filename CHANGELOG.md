@@ -6,3 +6,7 @@ Les documents docs/SITES-* sont des archives historiques de l’ancienne platefo
 ## 0.5.0 — 2026-10-31
 
 Boutiques publiques avec panier et commande COD, annuaire, rôle de superadministrateur, création de comptes marchands, gestion manuelle des abonnements et journal administratif. Migration additive sans effacement des données existantes. Nouvelles boutiques privées par défaut.
+
+## 0.6.0 — 2026-10-31
+
+Descriptions, médias HTTPS et identité de boutique ; sélection de variantes par SKU et catégories ; panier persistant par navigateur ; historique local des liens de suivi ; suivi privé des nouvelles commandes ; demandes d’annulation/retour et réponse du marchand. Aucun changement du schéma PostgreSQL.

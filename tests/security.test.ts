@@ -14,8 +14,8 @@ test('Public catalogue uses an explicit allowlist and excludes private commerce 
  const {publicCatalog,isOpen}=await import('../modules/platform/public');
  const {initialState}=await import('../modules/commerce/seed');
  const state=initialState();const publicData=publicCatalog(state);
- assert.deepEqual(Object.keys(publicData).sort(),['demo','name','phone','products','shipping','zones']);
- assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','id','name','price','variant']);
+ assert.deepEqual(Object.keys(publicData).sort(),['bannerUrl','demo','description','logoUrl','name','phone','products','shipping','zones']);
+ assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','description','id','imageUrl','name','price','variant']);
  assert.equal(JSON.stringify(publicData).includes('customerSnapshot'),false);
  const shop={published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date('2030-01-01')};
  assert.equal(isOpen(shop,new Date('2026-01-01')),true);

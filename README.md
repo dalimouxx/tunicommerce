@@ -65,3 +65,11 @@ Le compte de première installation devient superadministrateur lors de la migra
 Les offres STARTER / PRO / BUSINESS sont des catégories administratives sans quotas distincts. La facturation, les prélèvements automatiques, les comptes clients, la récupération de mot de passe par e-mail et le suivi public de livraison ne sont pas implémentés. Le client commande sans créer de compte. Les nouvelles boutiques sont vides ; le marchand ajoute son catalogue.
 
 La réponse publique est construite par liste blanche : aucun coût d’achat, client existant, commande ou historique interne n’est envoyé. Le serveur recalcule les montants, réserve le stock sous verrou PostgreSQL et déduplique les tentatives avec une clé de requête. Le catalogue de démonstration est explicitement signalé.
+
+## Version 0.6 — catalogue et suivi client
+
+Les produits acceptent une description et une photo par lien HTTPS. Les réglages de boutique proposent présentation, logo et bannière (liens HTTPS). Les articles de même nom et catégorie sont regroupés en variantes dans le catalogue ; chaque SKU conserve son prix et son stock. Le panier est mémorisé par boutique dans le navigateur, sans enregistrer les coordonnées du client. Les liens des dix dernières commandes sont conservés sur cet appareil et peuvent être effacés.
+
+Les nouvelles commandes publiques disposent d’un lien privé `/suivi/{jeton}` avec un jeton aléatoire de 256 bits. Ce lien expose uniquement les articles, montants, statut, transporteur et échanges client prévus ; jamais les coordonnées du client ni les notes internes. Il permet de demander une annulation avant expédition ou un retour après livraison. Les marchands voient les demandes en attente et peuvent répondre. Accepter une annulation annule la commande et restitue le stock une seule fois. Accepter un retour n’effectue aucun remboursement ou mouvement de stock ; les modules Retours existants gèrent la réception et le remboursement.
+
+Limites : pas encore de téléversement de photos, de compte client synchronisé entre appareils ou de notifications e-mail/SMS. Les liens privés doivent être conservés et ne pas être partagés. Les anciennes commandes ne reçoivent pas rétroactivement de lien de suivi.

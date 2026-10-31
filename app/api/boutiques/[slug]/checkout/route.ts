@@ -1,3 +1,4 @@
+import {randomBytes} from 'node:crypto';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../../../../../modules/storage/client';
@@ -15,9 +16,10 @@ export async function POST(req:Request,{params}:{params:Promise<{slug:string}>})
  const receipt=await prisma.$transaction(async tx=>{
  await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${shop.id} FOR UPDATE`;
  const row=await tx.workspace.findUniqueOrThrow({where:{id:shop.id}});if(!isOpen(row))throw new HttpError(403,'Cette boutique ne prend pas de commandes actuellement.');
- const previous=await tx.publicReceipt.findUnique({where:{workspaceId_requestId:{workspaceId:row.id,requestId:input.requestId}},select:{reference:true,total:true}});if(previous)return previous;
+ const previous=await tx.publicReceipt.findUnique({where:{workspaceId_requestId:{workspaceId:row.id,requestId:input.requestId}},select:{id:true,reference:true,total:true}});if(previous)return previous;
  let next:State;try{next=applyAction(normalizeState(row.data as unknown as State),'createOrder',{...input.customer,items:input.items,source:'Boutique'});}catch(e){throw new HttpError(400,e instanceof Error?e.message:'Commande invalide');}
+ const receiptId=randomBytes(32).toString('hex');next.orders[0].publicReceiptId=receiptId;
  await tx.workspace.update({where:{id:row.id},data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}});
- return tx.publicReceipt.create({data:{workspaceId:row.id,requestId:input.requestId,reference:next.orders[0].reference,total:next.orders[0].total},select:{reference:true,total:true}});
- });return respond(receipt,201);
+ return tx.publicReceipt.create({data:{id:receiptId,workspaceId:row.id,requestId:input.requestId,reference:next.orders[0].reference,total:next.orders[0].total},select:{id:true,reference:true,total:true}});
+ });return respond({reference:receipt.reference,total:receipt.total,trackingUrl:/^[a-f0-9]{64}$/.test(receipt.id)?'/suivi/'+receipt.id:null},201);
  }catch(e){if(e instanceof HttpError)return respond({error:e.message},e.status);if(e instanceof z.ZodError)return respond({error:'Vérifiez les informations de la commande.'},400);return respond({error:'Service indisponible. Réessayez avec le même panier.'},503);}}

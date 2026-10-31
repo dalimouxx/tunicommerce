@@ -1,3 +1,4 @@
+import {imageUrl} from '../platform/media';
 import {z} from 'zod';
 import {quoteDelivery} from '../delivery/pricing';
 import {applyDelivery} from '../delivery/service';
@@ -12,18 +13,24 @@ const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0)
 const schemas={
  createOrder:z.object({name:str,phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/, 'Numéro tunisien invalide'),city:z.enum(governors as [string,...string[]]),address:str,source:z.enum(['Boutique','Facebook','Instagram','WhatsApp','TikTok','Manuel']),items:z.array(z.object({productId:str,quantity:qty})).min(1).max(100),coupon:z.string().trim().max(50).optional(),notes:z.string().max(2000).optional()}),
  transition:z.object({id:str,status:z.string(),carrier:z.string().max(160).optional(),carrierId:z.string().optional(),tracking:z.string().max(160).optional(),callbackAt:z.string().optional(),restock:z.boolean().optional()}),
- product:z.object({id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
+ product:z.object({description:z.string().max(4000).optional(),imageUrl,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
  stock:z.object({id:str,quantity:z.number().int().min(-100000).max(100000),reason:str}),
  expense:z.object({label:str,category:str,amount:amount.refine(n=>n>0),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/)}),
  settlement:z.object({id:str,amount:amount.refine(n=>n>0),reference:str}),
  coupon:z.object({code:z.string().trim().min(2).max(30),percent:z.number().int().min(1).max(100),limit:qty}),
- settings:z.object({name:str,phone:z.string().max(30),address:z.string().max(200),shipping:amount}),
+ settings:z.object({description:z.string().max(1000).optional(),logoUrl:imageUrl,bannerUrl:imageUrl,name:str,phone:z.string().max(30),address:z.string().max(200),shipping:amount}),
  note:z.object({id:str,note:str}),
 };
 export function applyAction(input:State,action:string,payload:unknown):State{
  const s=normalizeState(structuredClone(input)),now=new Date().toISOString();const id=()=>crypto.randomUUID();
  const log=(label:string)=>s.audit.unshift({id:id(),at:now,label});
  const move=(productId:string,quantity:number,label:string,orderId?:string)=>{const p=s.products.find(p=>p.id===productId);if(!p)throw Error('Produit introuvable');if(p.stock+quantity<0)throw Error('Stock insuffisant : '+p.name);p.stock+=quantity;s.movements.unshift({id:id(),productId,quantity,label,at:now,orderId});};
+ if(action==='resolveCustomerRequest'){
+ const p=z.object({orderId:str,requestId:z.string().uuid(),status:z.enum(['ACCEPTED','REJECTED']),reply:z.string().trim().min(3).max(500)}).parse(payload);
+ const order=s.orders.find(o=>o.id===p.orderId);const request=order?.customerRequests?.find(r=>r.id===p.requestId);if(!order||!request||request.status!=='PENDING')throw Error('Demande introuvable ou déjà traitée');
+ let result=s;if(p.status==='ACCEPTED'&&request.type==='CANCEL')result=applyAction(s,'transition',{id:order.id,status:'CANCELLED'});
+ const target=result.orders.find(o=>o.id===p.orderId)!.customerRequests!.find(r=>r.id===p.requestId)!;target.status=p.status;target.reply=p.reply;result.audit.unshift({id:id(),at:now,label:'Demande client '+p.status+' · '+order.reference});return result;
+ }
  if(action==='reset'){if((payload as {confirm?:string})?.confirm!=='EFFACER')throw Error('Confirmation requise');return initialState(false);}
  if(['receiveReturn','refundReturn'].includes(action))return applyReturn(s,action,payload);
  if(['createInvoice','issueInvoice','cancelInvoice'].includes(action))return applyInvoice(s,action,payload);

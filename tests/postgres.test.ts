@@ -45,8 +45,18 @@ test('PostgreSQL and HTTP integration',async t=>{
     const own=await (await fetch(base+'/api/commerce',{headers:{cookie:merchantCookie}})).json();assert.equal(own.state.shop.name,'New Store');assert.equal(own.state.orders.length,0);
     const body={requestId:crypto.randomUUID(),customer:{name:'Public Buyer',phone:'22999888',city:'Tunis',address:'Public Street'},items:[{productId:'p1',quantity:1}],ownerId:merchant.id,total:1};
     const before=await readWorkspace(owner.id);
-    const results=await Promise.all([post('/api/boutiques/test-store/checkout',body,''),post('/api/boutiques/test-store/checkout',body,'')]);assert.deepEqual(results.map(r=>r.status),[201,201]);const receipts=await Promise.all(results.map(r=>r.json()));assert.deepEqual(receipts[0],receipts[1]);assert.deepEqual(Object.keys(receipts[0]).sort(),['reference','total']);assert.equal(receipts[0].total,98000);
+    const results=await Promise.all([post('/api/boutiques/test-store/checkout',body,''),post('/api/boutiques/test-store/checkout',body,'')]);assert.deepEqual(results.map(r=>r.status),[201,201]);const receipts=await Promise.all(results.map(r=>r.json()));assert.deepEqual(receipts[0],receipts[1]);assert.deepEqual(Object.keys(receipts[0]).sort(),['reference','total','trackingUrl']);assert.equal(receipts[0].total,98000);
     const after=await readWorkspace(owner.id);assert.equal(after.state.orders.length,before.state.orders.length+1);assert.equal(after.state.products[0].stock,before.state.products[0].stock-1);
+    const trackingUrl=receipts[0].trackingUrl;assert.match(trackingUrl,/^\/suivi\/[a-f0-9]{64}$/);
+    const trackingPage=await fetch(base+trackingUrl);assert.equal(trackingPage.status,200);const trackingHtml=await trackingPage.text();assert.ok(trackingHtml.includes(receipts[0].reference));assert.ok(!trackingHtml.includes('22999888'));assert.ok(!trackingHtml.includes('Public Street'));
+    assert.equal((await fetch(base+'/suivi/'+'0'.repeat(64))).status,404);
+    const request={id:crypto.randomUUID(),type:'CANCEL',reason:'Je souhaite annuler cette commande'};
+    assert.equal((await post('/api'+trackingUrl,request,'','https://evil.test')).status,403);
+    const customerRequests=await Promise.all([post('/api'+trackingUrl,request,''),post('/api'+trackingUrl,request,'')]);assert.deepEqual(customerRequests.map(r=>r.status),[200,200]);
+    const requested=await readWorkspace(owner.id);assert.equal(requested.state.orders[0].customerRequests?.length,1);
+    const resolution={action:'resolveCustomerRequest',requestId:crypto.randomUUID(),payload:{orderId:requested.state.orders[0].id,requestId:request.id,status:'ACCEPTED',reply:'Annulation confirmée'}};
+    assert.equal((await post('/api/commerce',resolution,merchantCookie)).status,400);
+    assert.equal((await post('/api/commerce',resolution)).status,200);const cancelled=await readWorkspace(owner.id);assert.equal(cancelled.state.orders[0].status,'CANCELLED');assert.equal(cancelled.state.products[0].stock,before.state.products[0].stock);
     assert.equal((await post('/api/boutiques/second-store/checkout',{...body,requestId:crypto.randomUUID()},'')).status,400);
     for(const change of [{subscriptionStatus:'SUSPENDED'},{subscriptionEndsAt:new Date(0).toISOString()},{published:false}]){
       assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config,...change})).status,200);
