@@ -1,44 +1,33 @@
-# Déploiement de test sur Render
+# Déploiement de test sur Render et Neon
 
-## État de cette livraison
-Sources adaptées et compilées localement. Le dépôt GitHub et les ressources Render ne sont pas créés par ce dossier. La connexion au navigateur GitHub a expiré pendant la préparation ; le connecteur disponible peut éditer un dépôt existant mais ne propose pas sa création.
+## Ressources existantes
 
-## 1. Dépôt GitHub
-Créer un dépôt **privé** `tunicommerce` dans le compte `dalimouxx`, avec un README initial afin qu’une branche `main` existe. Autoriser ce dépôt dans le connecteur GitHub s’il est limité à une sélection de dépôts. Fournir ensuite son URL : les sources de ce dossier pourront y être transférées dans un commit cohérent.
+- GitHub : https://github.com/dalimouxx/tunicommerce (dépôt public, branche `main`). Aucun secret ne doit être ajouté au dépôt.
+- Application : https://tunicommerce-test.onrender.com
+- Render : service `tunicommerce-test`, Frankfurt, formule Free, espace « Dali Moussa's Workspace ».
+- PostgreSQL : projet Neon `tunicommerce-test`, base `tunicommerce`, PostgreSQL 18, Frankfurt, offre Free. La base est externe ; aucune base Render n’est requise.
 
-Ne jamais écraser un dépôt existant d’un autre projet. Le site Sites actuel reste séparé.
+`DATABASE_URL` et `SETUP_TOKEN` sont configurés dans les variables privées du service Render. Le Blueprint utilise `sync: false` pour la connexion externe. La construction exécute `npm ci --include=dev && npm run build`. Le démarrage exécute `npm run db:migrate && npm start` et écoute sur `0.0.0.0:$PORT`.
 
-## 2. Vérification GitHub Actions
-Le workflow lance TypeScript, 39 tests locaux, les migrations, le build et 8 scénarios d’intégration avec PostgreSQL 18. Les scénarios d’intégration testent notamment l’initialisation concurrente, la connexion, les sessions, les en-têtes ChatGPT forgés, l’isolation et les mises à jour concurrentes.
+Les déploiements automatiques suivent les commits de `main`. Avant d’y publier des modifications de schéma ou de comportement, exécuter les vérifications sur une branche de travail. Le workflow inclut `platform-spaces` et les pull requests. Le contrôle GitHub de la version 0.5 a réussi : TypeScript, 40 tests métier/sécurité, migrations, build et 9 scénarios HTTP avec PostgreSQL 18.
 
-Le workflow n’a pas encore été exécuté à distance. Attendre son résultat avant de considérer la base testée de bout en bout.
+## Accès
 
-## 3. Blueprint Render
-Depuis Render, créer un Blueprint à partir du dépôt et de `render.yaml`. L’espace identifié précédemment est « Dali Moussa's Workspace » ; confirmer cet espace au moment de créer les ressources. Le Blueprint prépare :
+- `/login` : connexion des marchands et du superadministrateur.
+- `/admin` : gestion des marchands, publication et abonnements. Le compte initial a le rôle ADMIN ; les comptes créés ensuite ont le rôle MERCHANT.
+- `/` : espace marchand privé.
+- `/boutiques` et `/boutiques/{slug}` : annuaire et boutique publique.
 
-- `tunicommerce-test`, service Node.js, région Frankfurt, formule Free.
-- `tunicommerce-test-db`, PostgreSQL 18, même région, formule Free, connexions publiques désactivées.
-- `DATABASE_URL` lié à la connexion interne de la base.
-- `SETUP_TOKEN` aléatoire généré par Render.
-- Déploiement automatique après réussite des vérifications GitHub.
+Sur une installation neuve uniquement, `/setup` permet de créer le premier compte à l’aide de SETUP_TOKEN. L’installation existante est déjà initialisée. Ne pas partager ce jeton ni les mots de passe dans le chat ou GitHub.
 
-La construction exécute `npm ci --include=dev && npm run build`. Le démarrage applique `prisma migrate deploy` puis lance Next.js sur `0.0.0.0:$PORT`. Les migrations au démarrage évitent de dépendre d’une commande de pré-déploiement payante ; Prisma utilise son verrou de migration. Une migration échouée empêche le service de démarrer. Ne jamais remplacer cette commande par `db push --accept-data-loss` ou `migrate reset`.
+Une boutique publique doit avoir un slug, être publiée et posséder un abonnement TRIAL ou ACTIVE dont l’échéance est future. L’administration configure ces champs. Les abonnements sont manuels, sans paiement récurrent ni quotas par offre. Les nouveaux marchands commencent avec un catalogue vide.
 
-Le Blueprint est validé contre le schéma JSON officiel Render récupéré le 30 octobre 2026. La validation Render CLI/API et la création réelle restent à effectuer. La CLI Render n’est pas disponible dans l’environnement de préparation.
+## Migrations et vérifications
 
-## 4. Initialisation privée
-Une fois le déploiement actif, ouvrir `/setup` sur l’URL du service. Récupérer SETUP_TOKEN dans les variables Render et le saisir directement dans le formulaire avec le nom, l’e-mail et le mot de passe du propriétaire. Ne pas envoyer ces valeurs dans le chat. Après création, se connecter sur `/login`.
+La migration 0.5 ajoute les rôles, paramètres de publication/abonnement, reçus d’idempotence et journal administratif sans supprimer de données. Elle a été essayée sur la branche Neon `platform-migration-check` avant déploiement. Cette branche est une copie de vérification, jamais la base utilisée par Render.
 
-`RENDER_EXTERNAL_URL` définit l’origine autorisée. Si un domaine personnalisé est ajouté, définir `APP_URL` sur son origine HTTPS exacte puis redéployer. Aucun en-tête de proxy fourni par le client n’est utilisé pour accorder l’accès.
+Ne pas utiliser `db push --accept-data-loss` ou `migrate reset` sur la base de l’application. Les tests d’intégration destructifs sont réservés à une base isolée explicitement suffixée `_test`, créée dans le conteneur PostgreSQL éphémère de GitHub Actions.
 
-## 5. Contrôle après déploiement
-- `/api/health` répond 200 avec database=ok.
-- Sans session, `/api/commerce` répond 401 et `/` redirige vers `/login`.
-- Créer une commande, vérifier le stock, recharger la page et contrôler sa persistance.
-- Tester une déconnexion, puis vérifier que l’ancienne session est refusée.
-- Contrôler les logs sans y copier de mots de passe ou de chaînes de connexion.
+Après déploiement, vérifier `/api/health` (database=ok), l’accès anonyme refusé à `/api/commerce`, la redirection de `/admin` sans session et l’affichage de la boutique publique. Les tests de commandes réelles dans cette instance peuvent modifier les stocks ; utiliser des données de démonstration.
 
-## Limites de la formule Free
-Documentation Render vérifiée le 30 octobre 2026 : le service web se met en veille après 15 minutes sans trafic ; la base PostgreSQL gratuite expire 30 jours après sa création. Cette configuration est destinée aux essais. Ne pas y conserver les seules copies de données commerciales. Si le compte a déjà consommé son quota gratuit, ne pas créer automatiquement une ressource payante : choisir ensemble une autre configuration.
-
-Références : https://render.com/docs/blueprint-spec ; https://render.com/docs/free ; https://render.com/docs/environment-variables
+`RENDER_EXTERNAL_URL` définit l’origine autorisée. Pour un domaine personnalisé, définir `APP_URL` sur son origine HTTPS exacte puis redéployer. Les ressources gratuites peuvent se mettre en veille ; cette instance reste un environnement de test.
