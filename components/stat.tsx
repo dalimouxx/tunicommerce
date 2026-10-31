@@ -1,0 +1,2 @@
+import type {ReactNode} from 'react';
+export function Stat({title,value,suffix,foot,icon,color}:{title:string;value:string;suffix?:string;foot:string;icon:ReactNode;color:string}){return <article className="stat-card card"><div className="stat-top"><span>{title}</span><span className={'mini-icon '+color}>{icon}</span></div><div className="stat-value">{value}<small>{suffix}</small></div><div className="stat-foot"><span className={'stat-tick '+color}/>{foot}</div></article>}

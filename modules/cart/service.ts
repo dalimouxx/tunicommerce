@@ -1,0 +1,4 @@
+import {z} from 'zod';
+import type {State} from '../commerce/types';
+export function updateCart(s:State,payload:unknown){const p=z.object({id:z.string().uuid(),items:z.array(z.object({productId:z.string(),quantity:z.number().int().min(1).max(10000)})).max(100)}).parse(payload);const now=new Date().toISOString();const merged=new Map<string,number>();for(const i of p.items)merged.set(i.productId,(merged.get(i.productId)||0)+i.quantity);const items=[...merged].map(([productId,quantity])=>{const product=s.products.find(x=>x.id===productId&&x.active);if(!product||product.stock<quantity)throw Error('Produit indisponible ou stock insuffisant');return {productId,quantity};});
+ const cart=s.carts.find(c=>c.id===p.id);if(cart){if(cart.status==='CONVERTED')throw Error('Ce panier est déjà converti en commande');cart.items=items;cart.updatedAt=now;}else s.carts.unshift({id:p.id,items,status:'ACTIVE',createdAt:now,updatedAt:now});return s;}

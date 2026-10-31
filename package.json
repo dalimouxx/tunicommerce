@@ -1,0 +1,38 @@
+{
+  "name": "tunicommerce",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "prisma generate && next build --webpack",
+    "start": "node scripts/start.mjs",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/commerce.test.mjs && node --import tsx --test tests/security.test.ts",
+    "test:integration": "node --import tsx --test tests/postgres.test.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^1.31.0",
+    "next": "16.3.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "recharts": "^3.8.0",
+    "zod": "^3.25.76",
+    "@prisma/client": "6.19.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "prisma": "6.19.0",
+    "tsx": "4.20.6"
+  }
+}

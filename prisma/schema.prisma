@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  sessions     Session[]
+  workspace    Workspace?
+}
+model Session {
+  tokenHash String @id
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([expiresAt])
+}
+model Workspace {
+  id        String @id @default(uuid())
+  ownerId   String @unique
+  owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  data      Json
+  version   Int @default(0)
+  updatedAt DateTime @updatedAt
+}
+model SetupLock {
+  id        Int @id
+  createdAt DateTime @default(now())
+}
+model AuthThrottle {
+  key       String @id
+  count     Int
+  expiresAt DateTime
+}
