@@ -31,3 +31,5 @@ Ne pas utiliser `db push --accept-data-loss` ou `migrate reset` sur la base de l
 Après déploiement, vérifier `/api/health` (database=ok), l’accès anonyme refusé à `/api/commerce`, la redirection de `/admin` sans session et l’affichage de la boutique publique. Les tests de commandes réelles dans cette instance peuvent modifier les stocks ; utiliser des données de démonstration.
 
 `RENDER_EXTERNAL_URL` définit l’origine autorisée. Pour un domaine personnalisé, définir `APP_URL` sur son origine HTTPS exacte puis redéployer. Les ressources gratuites peuvent se mettre en veille ; cette instance reste un environnement de test.
+
+Le lanceur `scripts/migrate.mjs` utilise une connexion Neon directe pour les migrations (suppression du suffixe `-pooler` du nom d’hôte), tout en conservant la connexion partagée pour l’application. `DIRECT_DATABASE_URL` permet de fournir explicitement une connexion de migration différente. Les verrous Prisma restent activés.
