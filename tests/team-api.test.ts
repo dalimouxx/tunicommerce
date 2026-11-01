@@ -95,7 +95,7 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
    const malicious=await post(invitations,ownerCookie,{email:'member@example.test',role:'OWNER'});
    assert.equal(malicious.status,400);
    assert.equal((await post(invitations,otherCookie,{email:'member@example.test',role:'VIEWER'})).status,403);
-   assert.equal((await post(invitations,ownerCookie,{email:'member@example.test',role:'MANAGER'},'https://evil.test')).status,403);
+   assert.equal((await request('POST',invitations,ownerCookie,{email:'member@example.test',role:'MANAGER'},'https://evil.test')).status,403);
    const result=await post(invitations,ownerCookie,{email:' MEMBER@EXAMPLE.TEST ',role:'MANAGER'});
    assert.equal(result.status,201);
    assert.equal((await result.json()).delivery,'IN_APP_ONLY');
