@@ -24,10 +24,10 @@ export default async function GlobalAdministration(){
  const [merchantCount,workspaces,relationalShops,organizationCount]=await Promise.all([
   prisma.user.count({where:{role:'MERCHANT'}}),
   prisma.workspace.findMany({
-   where:{owner:{role:'MERCHANT'}},
+   
    select:{
     id:true,slug:true,data:true,published:true,subscriptionStatus:true,
-    subscriptionEndsAt:true,plan:true,owner:{select:{name:true,email:true}},
+    subscriptionEndsAt:true,plan:true,owner:{select:{name:true,email:true,role:true}},
     updatedAt:true
    },
    orderBy:{updatedAt:'desc'},take:200
@@ -72,7 +72,7 @@ export default async function GlobalAdministration(){
 
     <div className={styles.stats}>
      <div className={styles.stat}><span><Users size={17}/> Marchands inscrits</span><strong>{merchantCount}</strong><small>Comptes marchands</small></div>
-     <div className={styles.stat}><span><Store size={17}/> Boutiques</span><strong>{total}</strong><small>{workspaces.length} historiques · {newShops.length} nouvelles</small></div>
+     <div className={styles.stat}><span><Store size={17}/> Boutiques</span><strong>{total}</strong><small>{workspaces.length} historiques (dont {workspaces.filter(s=>s.owner.role==='ADMIN').length} plateforme) · {newShops.length} nouvelles</small></div>
      <div className={styles.stat}><span><Globe size={17}/> Boutiques accessibles</span><strong>{live}</strong><small>Publiées avec abonnement valide</small></div>
      <div className={styles.stat}><span><Layers size={17}/> Organisations</span><strong>{organizationCount}</strong><small>Structure multi-boutique</small></div>
     </div>
@@ -85,7 +85,7 @@ export default async function GlobalAdministration(){
        {workspaces.map(s=><tr key={'w-'+s.id}>
         <td><strong>{legacyName(s.data)}</strong><small>{s.slug?'/boutiques/'+s.slug:'Lien non configuré'}</small></td>
         <td>{s.owner.name}<small>{s.owner.email}</small></td>
-        <td><span className={styles.tag}>Boutique existante{linked.has(s.id)?' · Équipe reliée':''}</span></td>
+        <td><span className={styles.tag}>{s.owner.role==='ADMIN'?'Boutique historique du compte plateforme':'Boutique marchande'}{linked.has(s.id)?' · Équipe reliée':''}</span></td>
         <td><span className={isOpen(s)?styles.success:styles.waiting}>{isOpen(s)?'Publiée':'Non publiée'}</span><small>{s.plan} · {s.subscriptionStatus}</small></td>
         <td><Link href="/admin/gestion-boutiques" className={styles.action}>Gérer <ArrowUpRight size={14}/></Link>
          {s.slug&&isOpen(s)&&<Link href={'/boutiques/'+s.slug} className={styles.action}>Voir <ExternalLink size={14}/></Link>}</td>
@@ -99,7 +99,7 @@ export default async function GlobalAdministration(){
        </tr>)}
       </tbody>
      </table></div>
-     {total===0&&<div className={styles.empty}><Store size={31}/><strong>Aucune boutique marchande pour le moment</strong><p>Le compte super-administrateur ne compte pas comme une boutique. Ajoutez un marchand pour démarrer la plateforme.</p><Link className={styles.primary} href="/admin/gestion-boutiques"><Plus size={17}/> Créer une boutique</Link></div>}
+     {total===0&&<div className={styles.empty}><Store size={31}/><strong>Aucune boutique marchande pour le moment</strong><p>Aucune boutique existante ou nouvelle. Ajoutez un marchand pour démarrer la plateforme.</p><Link className={styles.primary} href="/admin/gestion-boutiques"><Plus size={17}/> Créer une boutique</Link></div>}
     </section>
 
     <div className={styles.infoGrid}>

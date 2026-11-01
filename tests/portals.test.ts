@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
+import {Prisma} from '@prisma/client';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const url=process.env.TEST_DATABASE_URL;
@@ -10,6 +11,7 @@ process.env.DATABASE_URL=url;
 
 const {prisma}=await import('../modules/storage/client');
 const {hashPassword}=await import('../modules/auth/crypto');
+const {initialState}=await import('../modules/commerce/seed');
 const base='http://127.0.0.1:3147';
 const origin='https://test.local';
 const password='Portal-test-password-2026';
@@ -144,6 +146,27 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(await prisma.workspace.count(),1);
    assert.equal((await get('/equipe',memberCookie)).status,200);
    assert.equal((await get('/admin',memberCookie)).status,307);
+  });
+  await t.test('Existing platform-owned public demo store is clearly identified, not hidden',async()=>{
+   const adminUser=await prisma.user.findUniqueOrThrow({where:{email:'admin@example.test'}});
+   const state=initialState(false);
+   state.shop.name='Demo Store';
+   await prisma.workspace.create({data:{
+    ownerId:adminUser.id,data:state as unknown as Prisma.InputJsonValue,
+    slug:'platform-demo',published:true,plan:'STARTER',subscriptionStatus:'TRIAL',
+    subscriptionEndsAt:new Date(Date.now()+30*86400000)
+   }});
+   const response=await get('/admin',adminCookie);
+   assert.equal(response.status,200);
+   const html=await response.text();
+   assert.ok(html.includes('Demo Store'));
+   assert.ok(html.includes('Boutique historique du compte plateforme'));
+   assert.ok(html.includes('platform-demo'));
+   const managed=await get('/admin/gestion-boutiques',adminCookie);
+   assert.equal(managed.status,200);
+   assert.ok((await managed.text()).includes('Demo Store'));
+   assert.equal((await get('/boutiques/platform-demo')).status,200);
+   assert.equal(await prisma.user.count({where:{role:'MERCHANT'}}),2);
   });
  }finally{
   child?.kill('SIGTERM');
