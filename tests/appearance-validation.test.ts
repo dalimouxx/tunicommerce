@@ -30,7 +30,7 @@ test('Only four supported themes and curated accessible accent colors are permit
 test('Existing shops without presentation preserve the classic default',()=>{
  assert.deepEqual(readPresentation({shop:{name:'Boutique héritée'}}),defaultPresentation);
  assert.deepEqual(readPresentation({appearance:{theme:'bogus',accent:'#fff'}}),defaultPresentation);
- assert.deepEqual(readPresentation({appearance:appearanceSchema.parse(valid)}),{
+ assert.deepEqual(readPresentation({appearance:{theme:valid.theme,accent:valid.accent,eyebrow:valid.eyebrow,tagline:valid.tagline}}),{
   theme:'prestige',accent:'#244A77',
   eyebrow:'SÉLECTION EXCLUSIVE',tagline:'Livraison rapide partout en Tunisie'
  });
