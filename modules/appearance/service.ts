@@ -17,6 +17,9 @@ export async function getStoreAppearance(ownerId:string){
   bannerUrl:state.shop.bannerUrl||'',
   description:state.shop.description||'',
   shopName:state.shop.name,
+  sampleProducts:state.products.filter(p=>p.active).slice(0,3).map(p=>({
+   name:p.name,price:p.price,imageUrl:p.imageUrl||''
+  })),
   slug:workspace.slug,
   published:workspace.published
  };
