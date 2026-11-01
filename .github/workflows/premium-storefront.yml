@@ -1,0 +1,46 @@
+name: TuniCommerce premium storefront
+on:
+  push:
+    branches: ['audit/**']
+  pull_request:
+    paths:
+      - 'app/personnalisation/**'
+      - 'app/api/v1/appearance/**'
+      - 'app/boutiques/**'
+      - 'modules/appearance/**'
+      - 'components/storefront-theme*'
+      - 'tests/appearance-*.test.ts'
+      - '.github/workflows/premium-storefront.yml'
+permissions:
+  contents: read
+jobs:
+  premium-storefront:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tunicommerce_appearance_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_appearance_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_appearance_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: node --import tsx --test tests/appearance-validation.test.ts
+      - run: npm run db:migrate
+      - run: npm run build
+      - run: node --import tsx --test tests/appearance-api.test.ts
