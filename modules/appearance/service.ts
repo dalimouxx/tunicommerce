@@ -3,6 +3,7 @@ import {prisma} from '../storage/client';
 import {normalizeState} from '../commerce/normalize';
 import type {State} from '../commerce/types';
 import {HttpError} from '../auth/http';
+import {verifyAppearanceMediaOwnership} from '../media/service';
 import {readPresentation,type AppearanceInput} from './validation';
 
 export async function getStoreAppearance(ownerId:string){
@@ -33,6 +34,7 @@ export async function saveStoreAppearance(ownerId:string,input:AppearanceInput){
  return prisma.$transaction(async tx=>{
   const workspace=await tx.workspace.findUnique({where:{ownerId}});
   if(!workspace)throw new HttpError(404,'Boutique introuvable');
+  await verifyAppearanceMediaOwnership(tx,workspace.id,[input.logoUrl,input.bannerUrl]);
   const state=normalizeState(workspace.data as unknown as State);
   const next={
    ...state,
