@@ -12,7 +12,7 @@ CREATE TABLE "ShopMedia" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "ShopMedia_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "ShopMedia_workspace_slot_key" UNIQUE ("workspaceId", "slot"),
+    CONSTRAINT "ShopMedia_workspaceId_slot_key" UNIQUE ("workspaceId", "slot"),
     CONSTRAINT "ShopMedia_valid_slot" CHECK ("slot" IN ('logo','banner')),
     CONSTRAINT "ShopMedia_max_size" CHECK ("size" > 0 AND "size" <= 2097152),
     CONSTRAINT "ShopMedia_dimensions" CHECK ("width" BETWEEN 1 AND 6000 AND "height" BETWEEN 1 AND 6000)
