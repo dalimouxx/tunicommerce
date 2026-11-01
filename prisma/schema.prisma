@@ -35,6 +35,7 @@ model Workspace {
   subscriptionEndsAt DateTime?
   receipts PublicReceipt[]
   shop Shop?
+  media ShopMedia[]
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -127,4 +128,21 @@ model ShopInvitation {
 
   @@unique([shopId, email])
   @@index([email, acceptedAt, revokedAt, expiresAt])
+}
+
+/** Tiny, bounded brand assets. Do not store product photos or unrestricted media here. */
+model ShopMedia {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  slot        String
+  mimeType    String
+  content     Bytes
+  size        Int
+  width       Int
+  height      Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, slot])
 }
