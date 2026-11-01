@@ -36,6 +36,7 @@ model Workspace {
   receipts PublicReceipt[]
   shop Shop?
   media ShopMedia[]
+  productMedia ProductMedia[]
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -145,4 +146,23 @@ model ShopMedia {
   updatedAt   DateTime  @updatedAt
 
   @@unique([workspaceId, slot])
+}
+
+/**
+ * Limited merchant product-photo library. 30 images of <= 400 KiB each.
+ * Stored separately from products, orders and the existing ShopMedia logo/banner.
+ * Move blobs to Neon object storage when Render storage credentials are provisioned.
+ */
+model ProductMedia {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  mimeType    String
+  content     Bytes
+  size        Int
+  width       Int
+  height      Int
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
 }
