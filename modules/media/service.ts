@@ -14,6 +14,7 @@ export async function saveMerchantMedia(
  ownerId:string,slot:MediaSlot,
  bytes:Uint8Array,details:{mimeType:string,size:number,width:number,height:number}
 ){
+ const storedBytes=new Uint8Array(bytes);
  return prisma.$transaction(async tx=>{
   const row=await tx.workspace.findUnique({
    where:{ownerId},select:{id:true,data:true,version:true}
@@ -23,11 +24,11 @@ export async function saveMerchantMedia(
   const media=await tx.shopMedia.upsert({
    where:{workspaceId_slot:{workspaceId:row.id,slot}},
    create:{
-    workspaceId:row.id,slot,content:bytes,
+    workspaceId:row.id,slot,content:storedBytes,
     mimeType:details.mimeType,size:details.size,width:details.width,height:details.height
    },
    update:{
-    content:bytes,mimeType:details.mimeType,size:details.size,
+    content:storedBytes,mimeType:details.mimeType,size:details.size,
     width:details.width,height:details.height
    },
    select:{id:true}
