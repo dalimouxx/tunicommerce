@@ -1,2 +1,17 @@
 import {z} from 'zod';
-export const imageUrl=z.string().trim().max(2000).refine(value=>{if(!value)return true;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;}},'Utilisez un lien HTTPS vers une image').optional();
+import {productPhotoPattern} from '../product-media/validation';
+
+function safeHttps(value:string){
+ if(!value)return true;
+ try{
+  const url=new URL(value);
+  return url.protocol==='https:'&&!url.username&&!url.password;
+ }catch{return false;}
+}
+
+export const imageUrl=z.string().trim().max(2000)
+ .refine(safeHttps,'Utilisez un lien HTTPS vers une image').optional();
+
+export const productImageUrl=z.string().trim().max(2000)
+ .refine(value=>safeHttps(value)||productPhotoPattern.test(value),
+  'Utilisez une photo importée dans votre bibliothèque ou une URL HTTPS').optional();
