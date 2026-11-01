@@ -30,6 +30,7 @@ export default function StoreBrandEditor(){
  const [form,setForm]=useState<AppearanceInput>(empty);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
+ const [uploading,setUploading]=useState<'logo'|'banner'|null>(null);
  const [error,setError]=useState('');
  const [success,setSuccess]=useState('');
  const [mobile,setMobile]=useState(false);
@@ -55,6 +56,33 @@ export default function StoreBrandEditor(){
   setForm(old=>({...old,[field]:value}));
   setError('');setSuccess('');
  };
+
+ async function upload(slot:'logo'|'banner',file:File){
+  if(uploading||busy)return;
+  const max=slot==='logo'?700*1024:2*1024*1024;
+  if(file.size===0||file.size>max){
+   setError('Image trop volumineuse. Logo : 700 Ko maximum ; bannière : 2 Mo maximum.');
+   return;
+  }
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type)){
+   setError('Utilisez une image PNG, JPEG ou WebP.');
+   return;
+  }
+  setUploading(slot);setError('');setSuccess('');
+  try{
+   const response=await fetch('/api/v1/media/'+slot,{
+    method:'PUT',headers:{'content-type':file.type},body:file
+   });
+   const result=await response.json() as {url?:string,error?:string};
+   if(!response.ok||!result.url)throw new Error(result.error||'Importation impossible');
+   setForm(previous=>({
+    ...previous,[slot==='logo'?'logoUrl':'bannerUrl']:result.url!
+   }));
+   setSuccess(slot==='logo'?'Logo importé et enregistré.':'Bannière importée et enregistrée.');
+  }catch(e){
+   setError(e instanceof Error?e.message:'Importation indisponible');
+  }finally{setUploading(null);}
+ }
 
  async function save(event:FormEvent<HTMLFormElement>){
   event.preventDefault();if(busy)return;
@@ -118,14 +146,24 @@ export default function StoreBrandEditor(){
        <p className={styles.helper}>Couleur actuelle : {paletteLabels[form.accent]}</p>
       </section>
       <section className={styles.panel}>
-       <div className={styles.sectionHead}><span className={styles.sectionIcon}><ImageIcon size={18}/></span><div><h2>3. Logo et bannière</h2><p>Ajoutez des visuels hébergés sur une adresse HTTPS.</p></div></div>
+       <div className={styles.sectionHead}><span className={styles.sectionIcon}><ImageIcon size={18}/></span><div><h2>3. Logo et bannière</h2><p>Importez vos fichiers directement, ou indiquez une adresse HTTPS.</p></div></div>
        <div className={styles.fields}>
-        <label htmlFor="logo-url">URL du logo <small>HTTPS · PNG, JPG ou WebP recommandé</small></label>
+        <label htmlFor="logo-file">Importer un logo <small>PNG, JPG, WebP · maximum 700 Ko</small></label>
+        <input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"
+         disabled={busy||uploading!==null}
+         onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(file)void upload('logo',file);}}/>
+        {uploading==='logo'&&<p className={styles.helper} role="status">Importation du logo…</p>}
+        <label htmlFor="logo-url">Lien du logo <small>HTTPS · PNG, JPG ou WebP recommandé</small></label>
         <input id="logo-url" type="url" maxLength={2000} value={form.logoUrl} onChange={e=>change('logoUrl',e.target.value)} placeholder="https://exemple.tn/logo.png"/>
-        <label htmlFor="banner-url">URL de la bannière <small>Image panoramique, idéalement 1600 × 600</small></label>
+        <label htmlFor="banner-file">Importer une bannière <small>PNG, JPG, WebP · maximum 2 Mo</small></label>
+        <input id="banner-file" type="file" accept="image/png,image/jpeg,image/webp"
+         disabled={busy||uploading!==null}
+         onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(file)void upload('banner',file);}}/>
+        {uploading==='banner'&&<p className={styles.helper} role="status">Importation de la bannière…</p>}
+        <label htmlFor="banner-url">Lien de la bannière <small>Image panoramique, idéalement 1600 × 600</small></label>
         <input id="banner-url" type="url" maxLength={2000} value={form.bannerUrl} onChange={e=>change('bannerUrl',e.target.value)} placeholder="https://exemple.tn/banniere.webp"/>
        </div>
-       <p className={styles.helper}>Les fichiers ne sont pas encore hébergés par TuniCommerce : utilisez des liens HTTPS vers des images que vous contrôlez.</p>
+       <p className={styles.helper}>Les fichiers importés sont enregistrés directement pour cette boutique. Les liens HTTPS externes restent acceptés. Cette première version limite le stockage aux petits visuels de marque.</p>
       </section>
       <section className={styles.panel}>
        <div className={styles.sectionHead}><span className={styles.sectionIcon}><ShoppingBag size={18}/></span><div><h2>4. Texte de votre vitrine</h2><p>Votre nom de boutique reste celui configuré dans l’espace marchand.</p></div></div>
@@ -140,7 +178,7 @@ export default function StoreBrandEditor(){
       </section>
       {error&&<p className={styles.error} role="alert">{error}</p>}
       {success&&<p className={styles.success} role="status"><CheckCircle2 size={17}/>{success}</p>}
-      <button type="submit" className={styles.save} disabled={busy||!data}><Save size={17}/>{busy?'Enregistrement…':'Enregistrer le design'}</button>
+      <button type="submit" className={styles.save} disabled={busy||uploading!==null||!data}><Save size={17}/>{busy?'Enregistrement…':'Enregistrer le design'}</button>
       <p className={styles.footnote}><ShieldCheck size={15}/> Chaque boutique conserve sa propre identité. Le checkout COD et le suivi des commandes restent inchangés.</p>
      </form>
 
