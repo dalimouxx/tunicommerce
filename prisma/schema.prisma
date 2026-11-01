@@ -14,6 +14,8 @@ model User {
   createdAt    DateTime @default(now())
   sessions     Session[]
   workspace    Workspace?
+  memberships  Membership[]
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
 }
 model Session {
   tokenHash String @id
@@ -32,6 +34,7 @@ model Workspace {
   subscriptionStatus String @default("TRIAL")
   subscriptionEndsAt DateTime?
   receipts PublicReceipt[]
+  shop Shop?
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -64,4 +67,64 @@ model PlatformAudit {
  workspaceId String
  detail String
  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id        String @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  shops     Shop[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([ownerId])
+}
+
+model Shop {
+  id             String @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  legacyWorkspaceId String? @unique
+  legacyWorkspace Workspace? @relation(fields: [legacyWorkspaceId], references: [id], onDelete: SetNull)
+  name           String
+  slug           String @unique
+  status         String @default("DRAFT")
+  currency       String @default("TND")
+  language       String @default("fr")
+  timezone       String @default("Africa/Tunis")
+  memberships    Membership[]
+  invitations    ShopInvitation[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@index([organizationId])
+}
+
+model Membership {
+  id        String @id @default(uuid())
+  shopId    String
+  shop      Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String @default("VIEWER")
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@unique([shopId,userId])
+  @@index([userId,active])
+}
+
+model ShopInvitation {
+  id          String @id @default(uuid())
+  shopId      String
+  shop        Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  email       String
+  role        String
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shopId, email])
+  @@index([email, acceptedAt, revokedAt, expiresAt])
 }
