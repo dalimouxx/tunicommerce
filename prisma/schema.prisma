@@ -93,6 +93,7 @@ model Shop {
   language       String @default("fr")
   timezone       String @default("Africa/Tunis")
   memberships    Membership[]
+  invitations    ShopInvitation[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -109,4 +110,21 @@ model Membership {
   createdAt DateTime @default(now())
   @@unique([shopId,userId])
   @@index([userId,active])
+}
+
+model ShopInvitation {
+  id          String @id @default(uuid())
+  shopId      String
+  shop        Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  email       String
+  role        String
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shopId, email])
+  @@index([email, acceptedAt, revokedAt, expiresAt])
 }
