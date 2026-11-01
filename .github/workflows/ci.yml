@@ -1,7 +1,7 @@
 name: TuniCommerce checks
 on:
   push:
-    branches: [main, platform-spaces, 'audit/**']
+    branches: [main, platform-spaces]
   pull_request:
 permissions:
   contents: read
