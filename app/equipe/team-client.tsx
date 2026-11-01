@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useState,type FormEvent} from 'react';
 import styles from './team.module.css';
 
 type Shop={id:string,name:string,slug:string,status:string,role:string,organization:{id:string,name:string}};
@@ -93,7 +93,7 @@ export default function TeamClient({userId,userName}:{userId:string,userName:str
   }finally{setBusy(false);}
  };
 
- const invite=async(event:React.FormEvent<HTMLFormElement>)=>{
+ const invite=async(event:FormEvent<HTMLFormElement>)=>{
   event.preventDefault();
   if(!selected)return;
   await run(async()=>{
