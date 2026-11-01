@@ -10,5 +10,5 @@ export function AuthForm({setup=false}:{setup?:boolean}){
  {setup&&<><label>Clé d’initialisation<input name="token" type="password" autoComplete="off" required minLength={32} maxLength={256}/></label><small>Copiez SETUP_TOKEN depuis les variables d’environnement de votre service Render. Le mot de passe doit contenir au moins 12 caractères.</small></>}
  {error&&<p className="auth-error" role="alert">{error}</p>}
  <button className="primary" disabled={busy}>{busy?'Veuillez patienter…':setup?'Créer mon compte':'Se connecter'}<ArrowRight size={16}/></button></form>}
- <div className="auth-foot">{setup?<a href="/login">J’ai déjà un compte</a>:<a href="/setup">Première installation ? Initialiser l’espace</a>}<p><a href="/boutiques">Découvrir les boutiques publiques</a></p></div></div></section></div>;
+ <div className="auth-foot">{setup?<a href="/login">J’ai déjà un compte</a>:<a href="/setup">Première installation ? Initialiser l’espace</a>}{!setup&&<p><a href="/inscription">Créer ma boutique gratuitement</a></p>}<p><a href="/boutiques">Découvrir les boutiques publiques</a></p></div></div></section></div>;
 }
