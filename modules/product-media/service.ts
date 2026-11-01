@@ -49,13 +49,16 @@ export async function ownsProductPhoto(ownerId:string,id:string){
 
 export async function removeProductPhoto(ownerId:string,id:string){
  return prisma.$transaction(async tx=>{
-  const row=await tx.workspace.findUnique({where:{ownerId},select:{id:true,data:true}});
+  const row=await tx.workspace.findUnique({where:{ownerId},select:{id:true}});
   if(!row)throw new HttpError(404,'Boutique introuvable');
-  // Lock to coordinate with concurrent library uploads/deletions.
+  // Lock, then reread current JSON. A concurrent product save must not race deletion.
   await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${row.id} FOR UPDATE`;
-  const photo=await tx.productMedia.findFirst({where:{id,workspaceId:row.id},select:{id:true}});
+  const [photo,current]=await Promise.all([
+   tx.productMedia.findFirst({where:{id,workspaceId:row.id},select:{id:true}}),
+   tx.workspace.findUniqueOrThrow({where:{id:row.id},select:{data:true}})
+  ]);
   if(!photo)throw new HttpError(404,'Photo introuvable');
-  const state=normalizeState(row.data as unknown as State);
+  const state=normalizeState(current.data as unknown as State);
   const url=productPhotoUrl(id);
   if(state.products.some(p=>p.imageUrl===url))
    throw new HttpError(409,'Cette image est utilisée par un produit. Changez sa photo avant de la supprimer.');
