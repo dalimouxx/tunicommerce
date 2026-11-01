@@ -16,7 +16,7 @@ export default async function ShopManagement(){
 
  const [shops,audit]=await Promise.all([
   prisma.workspace.findMany({
-   where:{owner:{role:'MERCHANT'}},
+   
    include:{owner:{select:{name:true,email:true}}},
    orderBy:{updatedAt:'desc'}
   }),
