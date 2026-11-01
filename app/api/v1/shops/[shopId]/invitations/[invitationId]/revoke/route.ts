@@ -1,9 +1,9 @@
 import {z} from 'zod';
-import {getCurrentUser} from '../../../../../../../modules/auth/session';
-import {assertSameOrigin,respond,HttpError} from '../../../../../../../modules/auth/http';
-import {shopIdInput} from '../../../../../../../modules/shops/validation';
-import {uuidParam} from '../../../../../../../modules/shops/team-validation';
-import {revokeShopInvitation} from '../../../../../../../modules/shops/team';
+import {getCurrentUser} from '../../../../../../../../modules/auth/session';
+import {assertSameOrigin,respond,HttpError} from '../../../../../../../../modules/auth/http';
+import {shopIdInput} from '../../../../../../../../modules/shops/validation';
+import {uuidParam} from '../../../../../../../../modules/shops/team-validation';
+import {revokeShopInvitation} from '../../../../../../../../modules/shops/team';
 
 export const dynamic='force-dynamic';
 export async function POST(req:Request,context:{params:Promise<{shopId:string,invitationId:string}>}){
