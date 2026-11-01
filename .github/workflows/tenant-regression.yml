@@ -39,7 +39,7 @@ jobs:
       - run: npm ci
       - run: npm run db:generate
       - run: npm run typecheck
-      - run: node --import tsx --test tests/tenancy-validation.test.ts
+      - run: node --import tsx --test tests/permissions.test.ts tests/shop-permissions.test.ts tests/tenancy-validation.test.ts
       - run: npm run db:migrate
       - run: npm run build
       - run: node --import tsx --test tests/tenancy-api.test.ts
