@@ -23,5 +23,5 @@ export async function authenticate(email:string,password:string){
   const user=await prisma.user.findUnique({where:{email}});
   const valid=await verifyPassword(password,user?.passwordHash??dummyHash);
   if(!user||!valid)throw new HttpError(401,'E-mail ou mot de passe incorrect');
-  return {id:user.id};
+  return {id:user.id,role:user.role};
 }

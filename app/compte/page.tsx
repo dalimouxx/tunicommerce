@@ -1,0 +1,14 @@
+import {redirect} from 'next/navigation';
+import {getCurrentUser} from '../../modules/auth/session';
+import {prisma} from '../../modules/storage/client';
+import {normalizeState} from '../../modules/commerce/normalize';
+import {money,labels,type State} from '../../modules/commerce/types';
+import CustomerLogout from '../../components/customer-logout';
+export const dynamic='force-dynamic';
+export const metadata={robots:{index:false,follow:false}};
+export default async function Page({searchParams}:{searchParams:Promise<{page?:string}>}){
+ const user=await getCurrentUser();if(!user)redirect('/compte/connexion');if(user.role!=='CUSTOMER')redirect('/');
+ const query=await searchParams;const page=Math.max(1,Math.min(100000,Number(query.page)||1));const offset=(Math.floor(page)-1)*20;
+ const rows=await prisma.publicReceipt.findMany({where:{customerId:user.userId},orderBy:[{createdAt:'desc'},{id:'desc'}],skip:offset,take:21,include:{workspace:{select:{data:true}}}});
+ return <main className="platform customer-space"><header><a className="brand" href="/boutiques">TuniCommerce</a><CustomerLogout/></header><section className="platform-hero"><span className="eyebrow">MON ESPACE CLIENT</span><h1>Bonjour {user.displayName}.</h1><p>Vos achats et vos échanges avec les boutiques, sur tous vos appareils.</p><a className="primary" href="/boutiques">Découvrir les boutiques</a></section><section><h2>Mes commandes</h2><p>Les commandes passées en étant connecté apparaissent ici. Vos anciennes commandes invitées restent accessibles avec leur lien privé.</p><div className="customer-orders">{rows.slice(0,20).map(r=>{const state=normalizeState(r.workspace.data as unknown as State);const order=state.orders.find(o=>o.publicReceiptId===r.id);return <article key={r.id} className="card shop-tile"><small>{new Intl.DateTimeFormat('fr-TN',{dateStyle:'medium',timeZone:'Africa/Tunis'}).format(r.createdAt)}</small><h3>{state.shop.name}</h3><strong>{r.reference} · {money(r.total)} TND</strong><p>{order?labels[order.status]:'Suivi indisponible'}</p>{order&&<><p>{order.items.map(i=>i.name+' × '+i.quantity).join(' · ')}</p>{order.customerRequests?.some(q=>q.status==='PENDING')&&<p className="notice">Une demande attend la réponse du marchand.</p>}<a className="button" href={'/suivi/'+r.id}>Suivre / demander une annulation ou un retour</a></>}</article>;})}</div>{!rows.length&&<div className="card shop-tile"><h3>Aucune commande sur cette page</h3><p>Connectez-vous avant de commander pour retrouver vos achats ici.</p></div>}<nav className="customer-pagination" aria-label="Pages des commandes">{page>1&&<a className="button" href={'/compte?page='+(Math.floor(page)-1)}>Précédent</a>}{rows.length>20&&<a className="button" href={'/compte?page='+(Math.floor(page)+1)}>Suivant</a>}</nav></section></main>;
+}
