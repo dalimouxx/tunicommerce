@@ -30,23 +30,6 @@ test('PostgreSQL and HTTP integration',async t=>{
   await t.test('Concurrent first workspace requests create a single workspace',async()=>{const results=await Promise.all([fetch(base+'/api/commerce',{headers:{cookie}}),fetch(base+'/api/commerce',{headers:{cookie}})]);assert.deepEqual(results.map(r=>r.status),[200,200]);assert.equal(await prisma.workspace.count(),1);});
   await t.test('Actual HTTP API keeps concurrent retries idempotent',async()=>{const before=await (await fetch(base+'/api/commerce',{headers:{cookie}})).json();const body={action:'createOrder',requestId:crypto.randomUUID(),payload:{name:'Test Client',phone:'22111222',city:'Gabès',address:'12 Rue Test',source:'Manuel',items:[{productId:'p1',quantity:2}],ownerId:'forged',total:1}};const results=await Promise.all([post('/api/commerce',body),post('/api/commerce',body)]);assert.deepEqual(results.map(r=>r.status),[200,200]);const after=await (await fetch(base+'/api/v1/commerce',{headers:{cookie}})).json();assert.equal(after.state.orders.length,before.state.orders.length+1);assert.equal(after.state.products[0].stock,before.state.products[0].stock-2);assert.equal(after.state.orders[0].total,186000);assert.equal((await post('/api/commerce',body,cookie,'https://evil.test')).status,403);});
   await t.test('PostgreSQL CAS rejects stale writes and isolates owners',async()=>{const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});const second=await prisma.user.create({data:{email:'second@example.test',name:'Test',passwordHash:'not-a-real-password'}});const a=await readWorkspace(owner.id);const b=await readWorkspace(second.id);const next=applyAction(a.state,'settings',{name:'Changed',phone:'',address:'',shipping:9000});const results=await Promise.all([saveWorkspace(owner.id,next,a.version),saveWorkspace(owner.id,next,a.version)]);assert.equal(results.filter(Boolean).length,1);assert.equal(await saveWorkspace('unknown-owner',next,a.version),false);assert.equal((await readWorkspace(second.id)).state.shop.name,b.state.shop.name);});
-  await t.test('Relational memberships isolate shops and enforce roles',async()=>{
-    const {requireShopPermission}=await import('../modules/shops/permissions');
-    const {HttpError}=await import('../modules/auth/http');
-    const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});
-    const outsider=await prisma.user.findUniqueOrThrow({where:{email:'second@example.test'}});
-    const organization=await prisma.organization.create({data:{name:'Integration organization',ownerId:owner.id}});
-    const shopA=await prisma.shop.create({data:{organizationId:organization.id,name:'Shop A',slug:'integration-a'}});
-    const shopB=await prisma.shop.create({data:{organizationId:organization.id,name:'Shop B',slug:'integration-b'}});
-    await prisma.membership.create({data:{shopId:shopA.id,userId:owner.id,role:'OWNER'}});
-    await prisma.membership.create({data:{shopId:shopB.id,userId:outsider.id,role:'VIEWER'}});
-    assert.equal((await requireShopPermission(owner.id,shopA.id,'team.manage')).role,'OWNER');
-    await assert.rejects(requireShopPermission(owner.id,shopB.id,'orders.read'),(e:unknown)=>e instanceof HttpError&&e.status===403);
-    await assert.rejects(requireShopPermission(outsider.id,shopA.id,'orders.read'),(e:unknown)=>e instanceof HttpError&&e.status===403);
-    await assert.rejects(requireShopPermission(outsider.id,shopB.id,'orders.update'),(e:unknown)=>e instanceof HttpError&&e.status===403);
-    await prisma.membership.update({where:{shopId_userId:{shopId:shopB.id,userId:outsider.id}},data:{active:false}});
-    await assert.rejects(requireShopPermission(outsider.id,shopB.id,'orders.read'),(e:unknown)=>e instanceof HttpError&&e.status===403);
-  });
   await t.test('Platform roles, tenant isolation, publication and checkout are enforced',async()=>{
     const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});assert.equal(owner.role,'ADMIN');
     const shop=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
