@@ -4,10 +4,10 @@ import {applyAction} from '../../../modules/commerce/service';
 import {HttpError,assertSameOrigin,readJson,respond} from '../../../modules/auth/http';
 import {z} from 'zod';
 export const dynamic='force-dynamic';
-export async function GET(){try{const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);return respond(await readWorkspace(user.userId));}catch{return respond({error:'Base de données indisponible'},503);}}
+export async function GET(){try{const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);if(!['ADMIN','MERCHANT'].includes(user.role))return respond({error:'Accès marchand requis'},403);return respond(await readWorkspace(user.userId));}catch{return respond({error:'Base de données indisponible'},503);}}
 export async function POST(req:Request){
  try{
-  assertSameOrigin(req);const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);
+  assertSameOrigin(req);const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);if(!['ADMIN','MERCHANT'].includes(user.role))return respond({error:'Accès marchand requis'},403);
   const body=z.object({action:z.string(),payload:z.unknown(),requestId:z.string().uuid()}).parse(await readJson(req));
   for(let attempt=0;attempt<4;attempt++){
    const {state,version}=await readWorkspace(user.userId);if(state.requests.includes(body.requestId))return respond({state,version});

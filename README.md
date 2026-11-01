@@ -1,3 +1,9 @@
+## v0.7 — Comptes clients
+
+Inscription client, connexion et historique des commandes sur plusieurs appareils (`/compte`). Les nouvelles commandes passées avec une session CUSTOMER sont rattachées côté serveur ; aucun rattachement par téléphone/e-mail ou reprise automatique des commandes invitées. Les clients ne peuvent pas accéder aux API marchand/admin. Les liens privés de suivi restent utilisables et doivent rester confidentiels.
+
+Migration additive `202611010001_customers` : relation facultative PublicReceipt → User, index chronologique. Les anciens reçus restent inchangés. Inscription sans validation e-mail ni récupération de mot de passe pour le moment ; aucune notification automatique. Le panier reste local au navigateur. Aucun nouveau service payant.
+
 # TuniCommerce — GitHub / Render (0.4.0)
 
 Version autonome de l’application de test : React / Next.js sur Node.js, PostgreSQL et Prisma. Le code métier de la version privée 0.3 est conservé. Cette livraison prépare le transfert hors de Sites ; elle ne constitue pas encore le SaaS complet du cahier des charges.

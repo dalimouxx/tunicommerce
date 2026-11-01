@@ -58,6 +58,35 @@ test('PostgreSQL and HTTP integration',async t=>{
     assert.equal((await post('/api/commerce',resolution,merchantCookie)).status,400);
     assert.equal((await post('/api/commerce',resolution)).status,200);const cancelled=await readWorkspace(owner.id);assert.equal(cancelled.state.orders[0].status,'CANCELLED');assert.equal(cancelled.state.products[0].stock,before.state.products[0].stock);
     assert.equal((await post('/api/boutiques/second-store/checkout',{...body,requestId:crypto.randomUUID()},'')).status,400);
+    // Customer registration must never create a merchant workspace or claim guest receipts.
+    const buyerInput={email:'buyer@example.test',name:'Buyer Account',password};
+    assert.equal((await post('/api/auth/register',buyerInput,'','https://evil.test')).status,403);
+    assert.equal((await post('/api/auth/register',{...buyerInput,role:'ADMIN'},'')).status,400);
+    assert.equal((await post('/api/auth/register',buyerInput,'')).status,201);
+    const buyer=await prisma.user.findUniqueOrThrow({where:{email:buyerInput.email}});assert.equal(buyer.role,'CUSTOMER');
+    assert.equal((await post('/api/auth/register',{...buyerInput,email:'owner@example.test'},'')).status,201);
+    assert.equal((await prisma.user.findUniqueOrThrow({where:{id:owner.id}})).role,'ADMIN');
+    const buyerLogin=await post('/api/auth/login',{email:buyerInput.email,password},'');assert.equal((await buyerLogin.json()).redirect,'/compte');
+    const buyerCookie=buyerLogin.headers.get('set-cookie')!.split(';')[0];
+    assert.equal((await fetch(base+'/api/commerce',{headers:{cookie:buyerCookie}})).status,403);
+    assert.equal((await post('/api/commerce',{action:'settings',requestId:crypto.randomUUID(),payload:{}},buyerCookie)).status,403);
+    assert.equal((await post('/api/admin/shops',create,buyerCookie)).status,403);
+    assert.equal(await prisma.workspace.count({where:{ownerId:buyer.id}}),0);
+    const emptyHistory=await (await fetch(base+'/compte',{headers:{cookie:buyerCookie}})).text();assert.ok(!emptyHistory.includes(trackingUrl));
+    // Replaying an old guest attempt while signed in must not attach or expose it.
+    assert.equal((await post('/api/boutiques/test-store/checkout',body,buyerCookie)).status,409);
+    const buyerOrder={...body,requestId:crypto.randomUUID(),customerId:owner.id};
+    const buyerReplies=await Promise.all([post('/api/boutiques/test-store/checkout',buyerOrder,buyerCookie),post('/api/boutiques/test-store/checkout',buyerOrder,buyerCookie)]);
+    assert.deepEqual(buyerReplies.map(r=>r.status),[201,201]);
+    const buyerReceipt=await buyerReplies[0].json();assert.deepEqual(await buyerReplies[1].json(),buyerReceipt);
+    const purchase=await prisma.publicReceipt.findUniqueOrThrow({where:{workspaceId_requestId:{workspaceId:shop.id,requestId:buyerOrder.requestId}}});assert.equal(purchase.customerId,buyer.id);
+    const anotherLogin=await post('/api/auth/login',{email:buyerInput.email,password},'');const deviceCookie=anotherLogin.headers.get('set-cookie')!.split(';')[0];
+    const buyerHistory=await (await fetch(base+'/compte',{headers:{cookie:deviceCookie}})).text();assert.ok(buyerHistory.includes(buyerReceipt.trackingUrl));assert.ok(!buyerHistory.includes(trackingUrl));assert.ok(!buyerHistory.includes('Public Street'));assert.ok(!buyerHistory.includes('22999888'));
+    assert.equal((await post('/api/auth/register',{...buyerInput,email:'other-buyer@example.test'},'')).status,201);
+    const otherLogin=await post('/api/auth/login',{email:'other-buyer@example.test',password},'');const otherCookie=otherLogin.headers.get('set-cookie')!.split(';')[0];
+    const otherHistory=await (await fetch(base+'/compte',{headers:{cookie:otherCookie}})).text();assert.ok(!otherHistory.includes(buyerReceipt.trackingUrl));
+    assert.equal((await post('/api/boutiques/test-store/checkout',buyerOrder,otherCookie)).status,409);
+    assert.equal((await fetch(base+'/compte',{redirect:'manual'})).status,307);
     for(const change of [{subscriptionStatus:'SUSPENDED'},{subscriptionEndsAt:new Date(0).toISOString()},{published:false}]){
       assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config,...change})).status,200);
       assert.equal((await fetch(base+'/boutiques/test-store')).status,404);

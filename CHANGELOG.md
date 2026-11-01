@@ -1,3 +1,9 @@
+## v0.7 — Comptes clients
+
+Inscription client, connexion et historique des commandes sur plusieurs appareils (`/compte`). Les nouvelles commandes passées avec une session CUSTOMER sont rattachées côté serveur ; aucun rattachement par téléphone/e-mail ou reprise automatique des commandes invitées. Les clients ne peuvent pas accéder aux API marchand/admin. Les liens privés de suivi restent utilisables et doivent rester confidentiels.
+
+Migration additive `202611010001_customers` : relation facultative PublicReceipt → User, index chronologique. Les anciens reçus restent inchangés. Inscription sans validation e-mail ni récupération de mot de passe pour le moment ; aucune notification automatique. Le panier reste local au navigateur. Aucun nouveau service payant.
+
 # 0.4.0 — 30 octobre 2026
 Préparation du transfert vers GitHub et Render : Next.js Node.js, PostgreSQL/Prisma, migrations, compte propriétaire, mot de passe scrypt, sessions persistantes révocables, Origin strict, limite de taille réelle et limitation des connexions. Blueprint Render et workflow GitHub Actions. 39 tests locaux réussis et suite PostgreSQL à exécuter en CI. Code métier 0.3 conservé. Pas encore de déploiement Render.
 
