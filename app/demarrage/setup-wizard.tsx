@@ -166,6 +166,7 @@ export default function SetupWizard(){
        <div><CheckCircle2 size={20} color={data.availableCount?'#24855a':'#bd9b70'}/><span>Produits disponibles</span><strong>{data.availableCount} actif(s)</strong></div>
       </div>
       {data.missing.length>0&&<p className={styles.warning}>{data.missing.join(' · ')}</p>}
+      <Link href="/personnalisation" className={styles.secondary} style={{marginBottom:18}}>Personnaliser le thème, le logo et la bannière <ArrowRight size={15}/></Link>
       <div className={styles.publishBox}>
        <span className={data.published?styles.live:styles.draft}>{data.published?'Boutique en ligne':'Boutique non publiée'}</span>
        <strong>{data.shop.name}</strong>
