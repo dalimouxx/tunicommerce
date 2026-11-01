@@ -70,6 +70,17 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
   assert.equal((await post('/api/auth/setup','',{email:'owner@example.test',name:'Owner',password,token:setupToken})).status,201);
   const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});
   const ownerCookie=await login('owner@example.test');
+  await t.test('Team screen is private and available to the signed-in merchant',async()=>{
+   const anonymous=await fetch(base+'/equipe',{redirect:'manual'});
+   assert.equal(anonymous.status,307);
+   assert.ok(anonymous.headers.get('location')?.includes('/login'));
+   const authorized=await get('/equipe',ownerCookie);
+   assert.equal(authorized.status,200);
+   const html=await authorized.text();
+   assert.ok(html.includes('Équipe et accès'));
+   assert.ok(!html.includes('passwordHash'));
+  });
+
   await createUser('member@example.test');
   await createUser('admin@example.test');
   await createUser('viewer@example.test');
