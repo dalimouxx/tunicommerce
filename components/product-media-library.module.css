@@ -1,0 +1,27 @@
+.panel{border:1px solid #dfe9e1;background:#fbfdfb;border-radius:11px;padding:17px;margin:16px 0;color:#2c4736}
+.heading{display:flex;justify-content:space-between;align-items:start;gap:15px;margin-bottom:13px}
+.heading strong{font-size:13px;display:block;font-weight:800}
+.heading small{display:block;font-size:10px;line-height:1.65;color:#819386;margin-top:5px}
+.refresh{border:1px solid #d9e6dc;color:#397b56;background:white;border-radius:8px;padding:7px}
+.upload{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;min-height:42px;background:#e7f3ea;color:#287c55;border:1px dashed #85bca0;border-radius:9px;font-size:11px;font-weight:750;cursor:pointer;text-align:center;padding:8px}
+.upload:focus-within{outline:3px solid #5da983;outline-offset:2px}
+.upload input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.upload:has(input:disabled){opacity:.6;cursor:not-allowed}
+.hint{font-size:10px;line-height:1.65;color:#819487;margin:9px 0}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:9px;max-height:295px;overflow:auto;margin-top:15px}
+.cell{border:1px solid #e2e9e3;background:white;border-radius:8px;padding:5px;min-width:0}
+.thumbnail{position:relative;width:100%;background:#f3f7f3;border:1px solid #e8eee8;border-radius:6px;overflow:hidden;aspect-ratio:1;display:grid;place-items:center}
+.thumbnail img{width:100%;height:100%;object-fit:cover}
+.thumbnail:disabled{cursor:default}
+.chosen{outline:3px solid #26895f;outline-offset:-3px}
+.check{position:absolute;right:4px;top:4px;background:#21815f;color:white;border-radius:50%;padding:3px;display:grid;place-items:center}
+.meta{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:7px 2px 1px}
+.meta small{font-size:9px;color:#89988c}
+.meta button{padding:4px;color:#bd635b}
+.meta button:disabled{opacity:.4}
+.empty{padding:24px 12px;display:flex;align-items:center;flex-direction:column;gap:9px;color:#89a090;text-align:center}
+.empty p{font-size:11px;line-height:1.5}
+.error,.success{font-size:11px;border-radius:7px;padding:10px;margin-top:11px;line-height:1.5}
+.error{color:#b14d44;background:#fff0ee}
+.success{color:#287649;background:#e5f4e9}
+.clear{font-size:11px;color:#966052;margin-top:12px;padding:6px;text-decoration:underline}
