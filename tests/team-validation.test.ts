@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {inviteInput,memberChangeInput,staffRole,uuidParam} from '../modules/shops/team-validation';
 
 test('Only non-owner roles may be invited or assigned',()=>{
- assert.equal(staffRole.options.includes('OWNER'),false);
+ assert.equal((staffRole.options as readonly string[]).includes('OWNER'),false);
  assert.deepEqual(inviteInput.parse({email:'  TEAM@EXAMPLE.TEST ',role:'CALL_CENTER'}),{email:'team@example.test',role:'CALL_CENTER'});
  for(const role of ['OWNER','SUPERADMIN','admin','']){
   assert.throws(()=>inviteInput.parse({email:'team@example.test',role}));
