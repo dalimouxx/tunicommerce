@@ -154,14 +154,14 @@ export default function StoreBrandEditor(){
          onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(file)void upload('logo',file);}}/>
         {uploading==='logo'&&<p className={styles.helper} role="status">Importation du logo…</p>}
         <label htmlFor="logo-url">Lien du logo <small>HTTPS · PNG, JPG ou WebP recommandé</small></label>
-        <input id="logo-url" type="url" maxLength={2000} value={form.logoUrl} onChange={e=>change('logoUrl',e.target.value)} placeholder="https://exemple.tn/logo.png"/>
+        <input id="logo-url" type="text" maxLength={2000} value={form.logoUrl} onChange={e=>change('logoUrl',e.target.value)} placeholder="https://exemple.tn/logo.png"/>
         <label htmlFor="banner-file">Importer une bannière <small>PNG, JPG, WebP · maximum 2 Mo</small></label>
         <input id="banner-file" type="file" accept="image/png,image/jpeg,image/webp"
          disabled={busy||uploading!==null}
          onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(file)void upload('banner',file);}}/>
         {uploading==='banner'&&<p className={styles.helper} role="status">Importation de la bannière…</p>}
         <label htmlFor="banner-url">Lien de la bannière <small>Image panoramique, idéalement 1600 × 600</small></label>
-        <input id="banner-url" type="url" maxLength={2000} value={form.bannerUrl} onChange={e=>change('bannerUrl',e.target.value)} placeholder="https://exemple.tn/banniere.webp"/>
+        <input id="banner-url" type="text" maxLength={2000} value={form.bannerUrl} onChange={e=>change('bannerUrl',e.target.value)} placeholder="https://exemple.tn/banniere.webp"/>
        </div>
        <p className={styles.helper}>Les fichiers importés sont enregistrés directement pour cette boutique. Les liens HTTPS externes restent acceptés. Cette première version limite le stockage aux petits visuels de marque.</p>
       </section>
