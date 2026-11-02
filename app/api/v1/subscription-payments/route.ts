@@ -6,21 +6,23 @@ import {consumeAttempt} from '../../../../modules/auth/service';
 import {prisma} from '../../../../modules/storage/client';
 import {subscriptionRequestInput} from '../../../../modules/billing/validation';
 import {listMySubscriptionRequests,submitSubscriptionRequest} from '../../../../modules/billing/service';
+import {enabledReceptionMethods} from '../../../../modules/billing/reception';
 
 export const dynamic='force-dynamic';
 
 export async function GET(){
  try{
   const user=await requireOwnCommerceWorkspace();
-  const [payments,plans]=await Promise.all([
+  const [payments,plans,methods]=await Promise.all([
    listMySubscriptionRequests(user.userId),
    prisma.subscriptionPlan.findMany({
     where:{enabled:true,priceMillimes:{gt:0}},
     select:{code:true,name:true,description:true,priceMillimes:true,durationDays:true},
     orderBy:{code:'asc'}
-   })
+   }),
+   enabledReceptionMethods()
   ]);
-  return respond({payments,plans});
+  return respond({payments,plans,methods});
  }catch(e){
   if(e instanceof HttpError)return respond({error:e.message},e.status);
   return respond({error:'Paiements temporairement indisponibles'},503);

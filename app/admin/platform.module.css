@@ -191,3 +191,28 @@
 .paymentFinal span{display:inline-flex;align-items:center;gap:7px;font-weight:700}
 .paymentFinal p{font-size:11px;color:#7a8b7d}
 @media(max-width:800px){.paymentCaseGrid{grid-template-columns:1fr}.paymentQueue{padding:0 11px 12px}.paymentCaseTop{flex-wrap:wrap}}
+
+
+/* Official payment reception settings, configured by platform administrator only */
+.receptionNotice{display:flex;align-items:flex-start;gap:12px;padding:17px;background:#fff8e9;border:1px solid #f1dfb7;border-radius:11px;margin-bottom:20px;color:#8b642a}
+.receptionNotice>svg{flex-shrink:0;margin-top:2px}
+.receptionNotice strong{font-size:13px;color:#7b5a2e}
+.receptionNotice p{margin-top:7px;font-size:11px;line-height:1.7}
+.receptionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:18px}
+.receptionCard{background:white;border:1px solid #e2eae4;border-radius:12px;padding:21px;display:grid;gap:16px;min-width:0}
+.receptionHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.receptionHeader h2{display:flex;gap:10px;align-items:center;font-size:17px;margin-bottom:7px;color:#2d5540}
+.receptionHeader h2 svg{color:#23855c}
+.receptionHeader p{color:#849789;font-size:11px;line-height:1.6}
+.receptionSwitch{display:flex;align-items:center;gap:11px;background:#f1f8f3;padding:13px;border-radius:9px;color:#345940;font-size:12px;font-weight:750;line-height:1.5;cursor:pointer}
+.receptionSwitch input{width:19px;height:19px;accent-color:#21805e;flex-shrink:0}
+.receptionFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.receptionFields label{display:grid;gap:8px;align-content:start;color:#557360;font-size:11px;font-weight:700}
+.receptionFields input,.receptionFields textarea{width:100%;min-width:0;border:1px solid #d9e7dd;background:white;color:#2e563d;border-radius:8px;padding:11px;min-height:42px;font-size:12px;outline-color:#2c8560}
+.receptionFields .receptionWide{grid-column:1/-1}
+.receptionFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.receptionFooter small{font-size:10px;color:#859c8b;line-height:1.6}
+.receptionFooter button{border:0;cursor:pointer}
+.receptionFooter button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:1120px){.receptionGrid{grid-template-columns:1fr}}
+@media(max-width:600px){.receptionCard{padding:15px}.receptionFields{grid-template-columns:1fr}.receptionFields label{grid-column:1/-1}.receptionNotice{padding:13px}}

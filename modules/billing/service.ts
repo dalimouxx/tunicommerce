@@ -2,6 +2,7 @@ import {randomBytes} from 'node:crypto';
 import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import type {SubscriptionDecisionInput,SubscriptionRequestInput} from './validation';
+import {assertReceptionEnabled} from './reception';
 
 function normalizedReference(input:SubscriptionRequestInput){
  return input.method==='CASH'?null:input.transferReference.trim().replace(/\s+/g,' ').toUpperCase();
@@ -31,6 +32,7 @@ export async function submitSubscriptionRequest(ownerId:string,input:Subscriptio
   });
   if(pending)throw new HttpError(409,'Une demande est déjà en attente de vérification. Consultez son statut avant de déposer une nouvelle demande.');
 
+  await assertReceptionEnabled(input.method,tx);
   const plan=await tx.subscriptionPlan.findUnique({
    where:{code:input.planCode},
    select:{code:true,name:true,enabled:true,priceMillimes:true,durationDays:true}

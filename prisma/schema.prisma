@@ -240,3 +240,33 @@ model SubscriptionPayment {
   @@index([workspaceId, createdAt])
   @@index([status, createdAt])
 }
+
+/**
+ * Public-facing instructions for receiving external SaaS payments.
+ * No payment credentials, card data, API keys or automatic charges.
+ * Methods start disabled until a global ADMIN configures real details.
+ */
+model PaymentReceptionMethod {
+  code          String   @id
+  enabled       Boolean  @default(false)
+  recipientName String   @default("")
+  identifier    String   @default("")
+  bankName      String   @default("")
+  instructions  String   @default("")
+  version       Int      @default(0)
+  updatedById   String?
+  updatedAt     DateTime @updatedAt
+}
+
+/** Global configuration changes, not attached to merchant workspaces. */
+model PaymentReceptionAudit {
+  id          String   @id @default(uuid())
+  actorId     String
+  methodCode  String
+  oldVersion  Int
+  nextVersion Int
+  changed     Json
+  createdAt   DateTime @default(now())
+
+  @@index([methodCode, createdAt])
+}
