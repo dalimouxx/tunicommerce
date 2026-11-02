@@ -10,7 +10,7 @@ export type ManagedShop={
  subscriptionEndsAt:string;hasLinkedShop:boolean;
 };
 
-function Settings({shop}:{shop?:ManagedShop}){
+function Settings({shop,plans}:{shop?:ManagedShop;plans:string[]}){
  return <div className={styles.configGrid}>
   <label>Lien public de la boutique
    <input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" minLength={3} maxLength={60}
@@ -18,7 +18,7 @@ function Settings({shop}:{shop?:ManagedShop}){
   </label>
   <label>Formule (classification manuelle)
    <select name="plan" defaultValue={shop?.plan||'STARTER'}>
-    {['STARTER','PRO','BUSINESS'].map(plan=><option key={plan} value={plan}>{plan}</option>)}
+    {[...new Set([...plans,...(shop?[shop.plan]:[])])].map(plan=><option key={plan} value={plan}>{plan}</option>)}
    </select>
   </label>
   <label>Statut de l’abonnement
@@ -39,8 +39,8 @@ function Settings({shop}:{shop?:ManagedShop}){
 }
 
 export default function AdminPanel({
- shops,initialShopId='',initialFilter='all'
-}:{shops:ManagedShop[],initialShopId?:string,initialFilter?:string}){
+ shops,plans,initialShopId='',initialFilter='all'
+}:{shops:ManagedShop[],plans:string[],initialShopId?:string,initialFilter?:string}){
  const [query,setQuery]=useState('');
  const [filter,setFilter]=useState(initialFilter==='unlinked'?'unlinked':'all');
  const [selected,setSelected]=useState(initialShopId);
@@ -122,7 +122,7 @@ export default function AdminPanel({
      <label>Mot de passe initial<input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required/></label>
      <label>Nom de la boutique<input name="shopName" minLength={2} maxLength={100} required/></label>
     </div>
-    <Settings/>
+    <Settings plans={plans}/>
     <div className={styles.inlineWarning}>Privilégiez une boutique non publiée jusqu’à l’ajout des coordonnées et d’au moins un produit. Le mot de passe initial doit être transmis au marchand par un canal privé.</div>
     <button className={styles.primary} type="submit" disabled={busy}>{busy?'Création…':'Créer le compte et la boutique'}</button>
    </form>
@@ -157,7 +157,7 @@ export default function AdminPanel({
       <Link href={'/admin/boutiques/'+current.id} className={styles.action}>Fiche complète <ArrowUpRight size={15}/></Link>
      </div>
      <form key={current.id} className={styles.configForm} onSubmit={e=>void submit(e,current.id)}>
-      <Settings shop={current}/>
+      <Settings shop={current} plans={plans}/>
       <button type="submit" className={styles.primary} disabled={busy}>{busy?'Enregistrement…':'Enregistrer les paramètres'}</button>
      </form>
      <div className={styles.editExtra}>
