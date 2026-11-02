@@ -26,7 +26,7 @@ export async function uploadProductPhoto(
 ){
  const copy=new Uint8Array(bytes);
  return prisma.$transaction(async tx=>{
-  const workspace=await tx.workspace.findUnique({where:{ownerId},select:{id:true}});
+  const workspace=await tx.workspace.findUnique({where:{ownerId},select:{id:true,plan:true}});
   if(!workspace)throw new HttpError(404,'Boutique introuvable');
   // Serialize uploads for a workspace; concurrent requests may not evade quota.
   await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} FOR UPDATE`;
