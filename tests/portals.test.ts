@@ -63,6 +63,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(root.headers.get('location')?.includes('/login'));
    assert.equal((await get('/admin')).status,307);
    assert.equal((await get('/marchand')).status,307);
+   assert.equal((await get('/mes-boutiques')).status,307);
    assert.equal((await get('/admin/gestion-boutiques')).status,307);
    assert.equal((await get('/boutiques')).status,200);
   });
@@ -79,6 +80,9 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const merchant=await get('/marchand',adminCookie);
    assert.equal(merchant.status,307);
    assert.ok(merchant.headers.get('location')?.endsWith('/admin'));
+   const ownShops=await get('/mes-boutiques',adminCookie);
+   assert.equal(ownShops.status,200);
+   assert.ok((await ownShops.text()).includes('Aucune boutique associée'));
    const admin=await get('/admin',adminCookie);
    assert.equal(admin.status,200);
    const html=await admin.text();
@@ -113,6 +117,12 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(html.includes('Espace marchand'));
    assert.ok(html.includes('Voir ma boutique publiée'));
    assert.ok(html.includes('Équipe et accès'));
+   assert.ok(html.includes('Mes boutiques'));
+   const personalShops=await get('/mes-boutiques',merchantCookie);
+   assert.equal(personalShops.status,200);
+   const personalHtml=await personalShops.text();
+   assert.ok(personalHtml.includes('Sousse Mode'));
+   assert.ok(!personalHtml.includes('Demo Store'));
    assert.ok(!html.includes('Administration globale</a>'));
    const catalog=await get('/boutiques/sousse-mode');
    assert.equal(catalog.status,200);
@@ -145,6 +155,13 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(member.headers.get('location')?.endsWith('/equipe'));
    assert.equal(await prisma.workspace.count(),1);
    assert.equal((await get('/equipe',memberCookie)).status,200);
+   const memberDirectory=await get('/mes-boutiques',memberCookie);
+   assert.equal(memberDirectory.status,200);
+   const teamHtml=await memberDirectory.text();
+   assert.ok(teamHtml.includes('Team Test Shop'));
+   assert.ok(!teamHtml.includes('Sousse Mode'));
+   assert.ok(!teamHtml.includes('Gérer ma boutique'));
+   assert.ok(teamHtml.includes('Gestion de l’équipe')||teamHtml.includes('Gestion de l\'équipe'));
    assert.equal((await get('/admin',memberCookie)).status,307);
   });
   await t.test('Existing platform-owned public demo store is clearly identified, not hidden',async()=>{
