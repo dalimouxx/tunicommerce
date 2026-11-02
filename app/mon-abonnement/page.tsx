@@ -8,6 +8,7 @@ import type {State} from '../../modules/commerce/types';
 import {loadWorkspaceQuotas} from '../../modules/subscriptions/quotas';
 import {subscriptionLabel} from '../../modules/platform/admin-overview';
 import styles from './plan.module.css';
+import SubscriptionBilling,{type PaymentHistory,type PaymentOffer} from './subscription-billing';
 
 export const dynamic='force-dynamic';
 
@@ -24,10 +25,23 @@ export default async function MySubscription(){
  if(!user)redirect('/login');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
- const [plan,quotas,photos]=await Promise.all([
+ const [plan,quotas,photos,availablePlans,payments]=await Promise.all([
   prisma.subscriptionPlan.findUnique({where:{code:workspace.plan}}),
   loadWorkspaceQuotas(workspace),
-  prisma.productMedia.count({where:{workspaceId:workspace.id}})
+  prisma.productMedia.count({where:{workspaceId:workspace.id}}),
+  prisma.subscriptionPlan.findMany({
+   where:{enabled:true,priceMillimes:{gt:0}},
+   select:{code:true,name:true,description:true,priceMillimes:true,durationDays:true},
+   orderBy:{code:'asc'}
+  }),
+  prisma.subscriptionPayment.findMany({
+   where:{workspaceId:workspace.id},orderBy:{createdAt:'desc'},take:60,
+   select:{
+    id:true,reference:true,planName:true,planCode:true,priceMillimes:true,durationDays:true,
+    method:true,transferReference:true,status:true,merchantNote:true,adminNote:true,
+    periodStartsAt:true,periodEndsAt:true,createdAt:true,decidedAt:true
+   }
+  })
  ]);
  const data=normalizeState(workspace.data as unknown as State);
  const month=tunisiaMonth(new Date());
@@ -66,9 +80,19 @@ export default async function MySubscription(){
     </div>
     <p>Les nouvelles créations sont limitées selon l'offre. Les produits, commandes et fichiers déjà enregistrés sont conservés si un plafond diminue.</p>
    </section>
+   <SubscriptionBilling
+    plans={availablePlans satisfies PaymentOffer[]}
+    history={payments.map(p=>({
+     ...p,
+     periodStartsAt:p.periodStartsAt?.toISOString()||null,
+     periodEndsAt:p.periodEndsAt?.toISOString()||null,
+     createdAt:p.createdAt.toISOString(),
+     decidedAt:p.decidedAt?.toISOString()||null
+    })) satisfies PaymentHistory[]}
+   />
    <section className={styles.card}>
-    <h2>Évolution de votre offre</h2>
-    <p>La modification ou le renouvellement d’un abonnement est actuellement réalisé manuellement par l’administrateur TuniCommerce. Aucune carte bancaire n'est débitée automatiquement.</p>
+    <h2>Renouvellement et contrôle</h2>
+    <p>Les déclarations sont examinées par l'administration. Seule sa validation prolonge l’abonnement ; aucune carte bancaire n'est débitée automatiquement.</p>
     <Link href="/marchand" className={styles.back}>Continuer à gérer ma boutique</Link>
    </section>
   </div>
