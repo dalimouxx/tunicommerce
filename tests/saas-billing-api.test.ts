@@ -31,6 +31,11 @@ function decision(id:string,action:'approve'|'reject',adminNote='Réception vér
  return {id,action,adminNote};
 }
 async function clean(){
+ await prisma.paymentReceptionAudit.deleteMany();
+ await prisma.paymentReceptionMethod.updateMany({data:{
+  enabled:false,recipientName:'',identifier:'',bankName:'',instructions:'',
+  version:0,updatedById:null
+ }});
  await prisma.subscriptionPayment.deleteMany();
  await prisma.subscriptionPlanAudit.deleteMany();
  await prisma.workspacePlanOverride.deleteMany();
