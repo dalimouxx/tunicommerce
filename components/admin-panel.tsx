@@ -104,7 +104,7 @@ export default function AdminPanel({
     <p>Créer un marchand, modifier une offre, gérer la publication ou relier une boutique historique à sa structure d’équipe.</p>
    </div>
    <button type="button" className={styles.primary} onClick={()=>{setCreate(v=>!v);setError('');setMessage('');}}>
-    <Plus size={17}/>{create?'Masquer le formulaire':'Nouveau marchand'}
+    <Plus size={17}/>{create?'Masquer le formulaire':'Créer une boutique et son marchand'}
    </button>
   </div>
   <div className={styles.metricsInline}>
