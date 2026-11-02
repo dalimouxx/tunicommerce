@@ -1,0 +1,45 @@
+name: TuniCommerce global administration regression
+on:
+  push:
+    branches: ['feat/admin-control-center-2026-11']
+  pull_request:
+    paths:
+      - 'app/admin/**'
+      - 'app/api/admin/shops/route.ts'
+      - 'components/admin-*'
+      - 'modules/platform/admin-overview.ts'
+      - 'tests/admin-control-center.test.ts'
+      - '.github/workflows/admin-control-center.yml'
+permissions:
+  contents: read
+jobs:
+  admin-control-center:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tunicommerce_admin_center_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_admin_center_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_admin_center_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: npm run db:migrate
+      - run: npm run db:migrate
+      - run: npm run build
+      - run: node --import tsx --test tests/admin-control-center.test.ts
