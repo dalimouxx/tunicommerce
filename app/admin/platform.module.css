@@ -134,3 +134,34 @@
  .auditItem{grid-template-columns:1fr;gap:6px}.detailList{padding:0 13px 17px}
  .detailsToolbar{margin:0 0 18px}.listFooter{padding:13px}
 }
+
+
+/* SaaS plans editor: responsive, light, high-contrast and accessible */
+.planWorkspace{display:grid;grid-template-columns:minmax(200px,255px) minmax(0,1fr);gap:18px;align-items:start;margin-bottom:20px}
+.planSidebar{background:#fff;border:1px solid #e3ebe5;border-radius:12px;padding:20px;display:grid;gap:9px}
+.planSidebar h2{font-size:15px;margin:0 0 10px}
+.planChoose{text-align:left;display:grid;gap:5px;border:1px solid #e4eae4;border-radius:9px;background:#fff;padding:13px 11px;cursor:pointer}
+.planChoose strong{font-size:12px;color:#2b503a}
+.planChoose small{font-size:10px;color:#778a7d}
+.planChoose span{font-size:10px;color:#688c72}
+.planChoose:hover,.planSelected{background:#eaf5ee;border-color:#a6cbb5}
+.planSidebar>.secondary{cursor:pointer;margin-top:11px}
+.planEditor{padding-bottom:18px}
+.planForm{display:grid;gap:24px;padding:0 22px 16px}
+.planSection{display:grid;gap:13px;padding:15px 0 18px;border-bottom:1px solid #edf2ee}
+.planSection h3{font-size:14px;color:#274f39}
+.planSection p{font-size:11px;color:#829888;line-height:1.7}
+.planInputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.planInputs label{display:grid;gap:7px;align-content:start;font-size:11px;font-weight:650;color:#47664f}
+.planInputs label svg{display:inline;vertical-align:middle;margin-right:5px}
+.planInputs input,.planInputs textarea,.planNewCode input{width:100%;background:#fff;color:#2c4e38;border:1px solid #d9e7dd;border-radius:8px;min-height:41px;padding:10px;outline-color:#27845c;font-size:12px}
+.planInputs input[readonly]{background:#f2f6f2;color:#677c6e}
+.planWide{grid-column:1/-1}
+.planToggle,.planModules label{display:flex;align-items:center;gap:9px;font-size:12px;color:#4d6e56;cursor:pointer}
+.planToggle input,.planModules input{width:16px;height:16px;accent-color:#21805e}
+.planModules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.planForm>.primary{justify-self:start;border:0;cursor:pointer}
+.planForm>.primary:disabled{opacity:.6;cursor:not-allowed}
+.planNewCode{display:grid;gap:9px;font-size:11px;color:#526c56;padding:0 22px}
+@media(max-width:1050px){.planWorkspace{grid-template-columns:1fr}.planSidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.planSidebar h2{grid-column:1/-1}}
+@media(max-width:650px){.planInputs,.planModules,.planSidebar{grid-template-columns:1fr}.planForm{padding:0 15px 17px}.planSection{gap:12px}.planNewCode{padding:0 15px}}
