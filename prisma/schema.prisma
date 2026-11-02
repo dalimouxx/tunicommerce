@@ -196,3 +196,13 @@ model WorkspacePlanOverride {
   note                String    @default("")
   updatedAt           DateTime  @updatedAt
 }
+
+/** Immutable audit snapshots for plan-catalog edits (distinct from merchant events). */
+model SubscriptionPlanAudit {
+ id          String   @id @default(uuid())
+ actorId     String
+ planCode    String
+ details     Json
+ createdAt   DateTime @default(now())
+ @@index([planCode, createdAt])
+}
