@@ -18,6 +18,7 @@ export default async function Abonnements({
   </div>
   <div className={styles.metricsInline}>
    <Link href="/admin/plans" className={styles.secondary}>Configurer les prix, durées et quotas des offres →</Link>
+   <Link href="/admin/paiements" className={styles.secondary}>Vérifier les règlements D17 et virements →</Link>
    <span>Les formules sont configurables, mais la facturation reste manuelle.</span>
   </div>
   <div className={styles.stats}>
