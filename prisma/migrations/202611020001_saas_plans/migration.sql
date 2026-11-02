@@ -50,3 +50,13 @@ INSERT INTO "SubscriptionPlan" (
  ('BUSINESS','Business','Équipes et opérations à configurer',0,30,'{}'::jsonb,true,NOW()),
  ('AGENCY','Agency','Gestion multi-boutique à configurer',0,30,'{}'::jsonb,true,NOW())
 ON CONFLICT ("code") DO NOTHING;
+
+CREATE TABLE "SubscriptionPlanAudit" (
+ "id" TEXT NOT NULL,
+ "actorId" TEXT NOT NULL,
+ "planCode" TEXT NOT NULL,
+ "details" JSONB NOT NULL,
+ "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ CONSTRAINT "SubscriptionPlanAudit_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "SubscriptionPlanAudit_planCode_createdAt_idx" ON "SubscriptionPlanAudit"("planCode","createdAt");
