@@ -46,7 +46,7 @@ export default function AdminShopExplorer({shops,allCount}:{shops:PlatformShopRo
    <table className={styles.table}>
     <thead><tr><th>Boutique</th><th>Propriétaire</th><th>Abonnement</th><th>Catalogue</th><th>Visibilité</th><th>Actions</th></tr></thead>
     <tbody>{current.map(shop=><tr key={shop.id}>
-     <td><strong>{shop.name}</strong><small>{shop.slug?'/boutiques/'+shop.slug:'Adresse publique non configurée'}</small></td>
+     <td><strong>{shop.name}</strong><small>{shop.slug?'/boutiques/'+shop.slug:'Adresse publique non configurée'}</small>{shop.ownerRole==='ADMIN'&&<small>Boutique historique du compte plateforme</small>}</td>
      <td><strong>{shop.ownerName}</strong><small>{shop.ownerEmail}</small></td>
      <td>{shop.plan}<small>{shop.subscriptionStatus} · {shop.subscriptionEndsAt?new Date(shop.subscriptionEndsAt).toLocaleDateString('fr-TN'):'Aucune échéance'}</small></td>
      <td>{shop.productCount} produits<small>{shop.orderCount} commandes historiques</small></td>
@@ -58,7 +58,7 @@ export default function AdminShopExplorer({shops,allCount}:{shops:PlatformShopRo
     </tr>)}</tbody>
    </table>
   </div>
-  {current.length===0&&<div className={styles.empty}><Store size={28}/><strong>Aucune boutique correspondante</strong><p>Essayez une recherche ou un filtre différent.</p></div>}
+  {current.length===0&&<div className={styles.empty}><Store size={28}/><strong>{shops.length===0?'Aucune boutique marchande pour le moment':'Aucune boutique correspondante'}</strong><p>Essayez une recherche ou un filtre différent.</p></div>}
   <div className={styles.listFooter}>Affichage : {current.length} sur {shops.length} boutiques chargées{allCount>shops.length?' (les '+shops.length+' plus récentes parmi '+allCount+')':''}.</div>
  </section>;
 }
