@@ -9,9 +9,9 @@ export const dynamic='force-dynamic';
 export default async function MediaLibraryPage(){
  const user=await getCurrentUser();
  if(!user)redirect('/login');
- if(user.role==='ADMIN')redirect('/admin');
+
  const shop=await prisma.workspace.findUnique({where:{ownerId:user.userId},select:{id:true}});
- if(!shop)redirect('/equipe');
+ if(!shop)redirect(user.role==='ADMIN'?'/admin':'/equipe');
  return <main style={{background:'#f5f9f6',minHeight:'100vh',padding:'35px 20px'}}>
   <div style={{maxWidth:1080,margin:'0 auto'}}>
    <Link href="/marchand" style={{fontSize:12,color:'#247952'}}>← Retour au tableau de bord</Link>
