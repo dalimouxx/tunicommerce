@@ -9,7 +9,7 @@ export const dynamic='force-dynamic';
 export default async function MerchantDashboard(){
  const user=await getCurrentUser();
  if(!user)redirect('/login');
- if(user.role==='ADMIN')redirect('/admin');
+ // Administrators may manage only their OWN legacy boutique here; global management stays at /admin.
 
  const workspace=await prisma.workspace.findUnique({
   where:{ownerId:user.userId},
@@ -18,6 +18,7 @@ export default async function MerchantDashboard(){
  // Team members without an owner workspace must not receive a misleading
  // personal commerce dashboard. The new team area remains separate.
  if(!workspace){
+  if(user.role==='ADMIN')redirect('/admin');
   const membership=await prisma.membership.findFirst({
    where:{userId:user.userId,active:true},select:{id:true}
   });
@@ -29,5 +30,5 @@ export default async function MerchantDashboard(){
   subscriptionEndsAt:workspace.subscriptionEndsAt
  })?workspace.slug:null;
 
- return <CommerceApp admin={false} shopSlug={shopSlug}/>;
+ return <CommerceApp admin={user.role==='ADMIN'} shopSlug={shopSlug}/>;
 }
