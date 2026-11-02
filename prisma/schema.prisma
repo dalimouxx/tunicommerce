@@ -37,6 +37,7 @@ model Workspace {
   shop Shop?
   media ShopMedia[]
   productMedia ProductMedia[]
+  planOverride WorkspacePlanOverride?
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -165,4 +166,43 @@ model ProductMedia {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId, createdAt])
+}
+
+/** SaaS billing configuration only; payments are not taken by the application. */
+model SubscriptionPlan {
+  code               String   @id
+  name               String
+  description        String   @default("")
+  priceMillimes      Int      @default(0)
+  durationDays       Int      @default(30)
+  maxProducts        Int?
+  maxOrdersPerMonth  Int?
+  maxPhotos          Int?
+  maxShops           Int?
+  maxMembers         Int?
+  modules            Json     @default("{}")
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+/** Optional per-workspace exceptions. NULL = inherit; 0 = unlimited (physical 30-photo safety cap remains). */
+model WorkspacePlanOverride {
+  workspaceId         String    @id
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  maxProducts         Int?
+  maxOrdersPerMonth   Int?
+  maxPhotos           Int?
+  note                String    @default("")
+  updatedAt           DateTime  @updatedAt
+}
+
+/** Immutable audit snapshots for plan-catalog edits (distinct from merchant events). */
+model SubscriptionPlanAudit {
+ id          String   @id @default(uuid())
+ actorId     String
+ planCode    String
+ details     Json
+ createdAt   DateTime @default(now())
+ @@index([planCode, createdAt])
 }

@@ -1,4 +1,5 @@
 import {CalendarClock,Receipt,ShieldAlert} from 'lucide-react';
+import Link from 'next/link';
 import {loadPlatformStats,loadShopRows} from '../../../modules/platform/admin-overview';
 import AdminSubscriptions from '../../../components/admin-subscriptions';
 import styles from '../platform.module.css';
@@ -14,6 +15,10 @@ export default async function Abonnements({
     <h1>Gestion des abonnements</h1>
     <p>Contrôlez les abonnements et anticipez les expirations. Les prix, paiements et limites de chaque plan ne sont pas encore automatisés.</p>
    </div>
+  </div>
+  <div className={styles.metricsInline}>
+   <Link href="/admin/plans" className={styles.secondary}>Configurer les prix, durées et quotas des offres →</Link>
+   <span>Les formules sont configurables, mais la facturation reste manuelle.</span>
   </div>
   <div className={styles.stats}>
    <div className={styles.stat}><span><Receipt size={17}/> Espaces suivis</span><strong>{stats.workspaces}</strong><small>Toutes les boutiques historiques</small></div>

@@ -5,6 +5,7 @@ import {HttpError,assertSameOrigin,readJson,respond} from '../../../modules/auth
 import {z} from 'zod';
 import {productPhotoId} from '../../../modules/product-media/validation';
 import {ownsProductPhoto} from '../../../modules/product-media/service';
+import {assertCommerceQuotas,quotasForOwner} from '../../../modules/subscriptions/quotas';
 export const dynamic='force-dynamic';
 export async function GET(){try{const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);return respond(await readWorkspace(user.userId));}catch{return respond({error:'Base de données indisponible'},503);}}
 export async function POST(req:Request){
@@ -24,6 +25,13 @@ export async function POST(req:Request){
     }
    }
    let next;try{next=applyAction(state,body.action,body.payload);}catch(e){return respond({error:e instanceof z.ZodError?e.issues[0].message:e instanceof Error?e.message:'Action invalide'},400);}
+   try{
+    const quotas=await quotasForOwner(user.userId);
+    assertCommerceQuotas(state,next,quotas);
+   }catch(e){
+    if(e instanceof HttpError)return respond({error:e.message},e.status);
+    throw e;
+   }
    next.requests=[...state.requests.slice(-999),body.requestId];
    if(await saveWorkspace(user.userId,next,version))return respond({state:next,version:version+1});
   }

@@ -4,16 +4,18 @@ import {normalizeState} from '../commerce/normalize';
 import {isOpen} from '../platform/public';
 import type {State} from '../commerce/types';
 import {LIBRARY_LIMIT,productPhotoUrl} from './validation';
+import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 
 export async function listProductPhotos(ownerId:string){
- const shop=await prisma.workspace.findUnique({where:{ownerId},select:{id:true}});
+ const shop=await prisma.workspace.findUnique({where:{ownerId},select:{id:true,plan:true}});
  if(!shop)throw new HttpError(404,'Boutique introuvable');
+ const {maxPhotos}=await loadWorkspaceQuotas(shop);
  const rows=await prisma.productMedia.findMany({
   where:{workspaceId:shop.id},
   orderBy:{createdAt:'desc'},
   select:{id:true,size:true,width:true,height:true,createdAt:true}
  });
- return {limit:LIBRARY_LIMIT,photos:rows.map(p=>({
+ return {limit:maxPhotos,photos:rows.map(p=>({
   id:p.id,url:productPhotoUrl(p.id),size:p.size,width:p.width,height:p.height,
   createdAt:p.createdAt.toISOString()
  }))};
@@ -24,12 +26,13 @@ export async function uploadProductPhoto(
 ){
  const copy=new Uint8Array(bytes);
  return prisma.$transaction(async tx=>{
-  const workspace=await tx.workspace.findUnique({where:{ownerId},select:{id:true}});
+  const workspace=await tx.workspace.findUnique({where:{ownerId},select:{id:true,plan:true}});
   if(!workspace)throw new HttpError(404,'Boutique introuvable');
   // Serialize uploads for a workspace; concurrent requests may not evade quota.
   await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspace.id} FOR UPDATE`;
+  const {maxPhotos}=await loadWorkspaceQuotas(workspace,tx);
   const count=await tx.productMedia.count({where:{workspaceId:workspace.id}});
-  if(count>=LIBRARY_LIMIT)throw new HttpError(409,'Bibliothèque pleine (30 photos). Supprimez une image inutilisée.');
+  if(count>=maxPhotos)throw new HttpError(409,`Quota de photos atteint (${maxPhotos}). Supprimez une image inutilisée ou changez de formule.`);
   const saved=await tx.productMedia.create({
    data:{workspaceId:workspace.id,content:copy,...info},
    select:{id:true,size:true,width:true,height:true,createdAt:true}
