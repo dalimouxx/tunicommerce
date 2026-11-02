@@ -52,3 +52,14 @@
 .paymentItem small{font-size:11px;color:#7b917f;overflow-wrap:anywhere}
 .paymentDocument{color:#247e59;text-decoration:underline;font-size:11px;font-weight:750;justify-self:start}
 @media(max-width:900px){.billingLayout{grid-template-columns:1fr}}
+
+
+/* Official receiving coordinates; never show an empty/unconfigured destination */
+.billingDestination{display:grid;gap:11px;background:#edf7f0;border:1px solid #c4e4cf;border-radius:10px;padding:16px;color:#2a533c;overflow-wrap:anywhere}
+.billingDestination>strong{font-size:13px}
+.billingDestination dl{display:grid;grid-template-columns:minmax(100px,.65fr) minmax(0,1.35fr);gap:8px 12px;font-size:12px}
+.billingDestination dt{font-weight:550;color:#748d7a}
+.billingDestination dd{font-weight:800;color:#265941;overflow-wrap:anywhere}
+.billingDestination p{white-space:pre-wrap;color:#385e47;font-size:12px;line-height:1.75}
+.billingDestination small{color:#5e7f68;font-size:10px;line-height:1.65}
+@media(max-width:500px){.billingDestination dl{grid-template-columns:1fr;gap:3px}.billingDestination dd{margin-bottom:9px}}
