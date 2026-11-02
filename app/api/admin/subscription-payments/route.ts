@@ -13,7 +13,7 @@ export async function GET(){
   await requireAdmin();
   const payments=await prisma.subscriptionPayment.findMany({
    orderBy:{createdAt:'desc'},take:200,
-   include:{workspace:{select:{slug:true,data:true,owner:{select:{name:true,email:true}}}}}
+   include:{workspace:{select:{slug:true,owner:{select:{name:true,email:true}}}}}
   });
   return respond({payments});
  }catch(e){
