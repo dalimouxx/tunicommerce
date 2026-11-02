@@ -23,7 +23,7 @@ const post=(path:string,payload:unknown,cookie='',requestOrigin=origin)=>fetch(b
 });
 const put=(path:string,body:Uint8Array,cookie='',requestOrigin=origin)=>fetch(base+path,{
  method:'PUT',headers:{origin:requestOrigin,cookie,'content-type':'image/png'},
- body:new Blob([body]),redirect:'manual'
+ body:new Blob([new Uint8Array(body)]),redirect:'manual'
 });
 async function resetDatabase(){
  await prisma.productMedia.deleteMany();
