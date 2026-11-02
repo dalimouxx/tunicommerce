@@ -1,0 +1,23 @@
+name: TuniCommerce isolated shop inventory
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/inventory.ts'
+      - 'app/api/v1/shops/**/inventory/**'
+      - 'tests/isolated-shop-inventory.test.ts'
+      - '.github/workflows/isolated-shop-inventory.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-shop-inventory.test.ts
+      - run: npm run typecheck
+      - run: npm run build
