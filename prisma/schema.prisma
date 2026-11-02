@@ -98,6 +98,7 @@ model Shop {
   timezone       String @default("Africa/Tunis")
   memberships    Membership[]
   invitations    ShopInvitation[]
+  commerce       ShopCommerce?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -269,4 +270,15 @@ model PaymentReceptionAudit {
   createdAt   DateTime @default(now())
 
   @@index([methodCode, createdAt])
+}
+
+
+/** Isolated commercial workspace for newly created shops. Legacy Workspace remains untouched. */
+model ShopCommerce {
+  shopId    String @id
+  shop      Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  data      Json
+  version   Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
