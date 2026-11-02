@@ -202,6 +202,29 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const merchantProductList=await get(inventoryPath,merchantCookie);
    assert.equal(merchantProductList.status,200);
    assert.equal((await merchantProductList.json() as {products:unknown[]}).products.length,1);
+   const orderPath='/api/v1/shops/'+fresh.id+'/orders';
+   assert.equal((await get(orderPath)).status,401);
+   assert.equal((await get(orderPath,adminCookie)).status,404);
+   assert.equal((await post(orderPath,adminCookie,{action:'createOrder',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174013'})).status,404);
+   const orderRequest={action:'createOrder',requestId:'123e4567-e89b-42d3-a456-426614174014',payload:{
+    name:'Commande pilote',phone:'22123456',city:'Gabès',address:'Rue des tests',
+    source:'Manuel',items:[{productId:data.products[0].id,quantity:1}]
+   }};
+   const createdOrder=await post(orderPath,merchantCookie,orderRequest);
+   assert.equal(createdOrder.status,200);
+   const orderData=await createdOrder.json() as {orders:{id:string;status:string}[];version:number};
+   assert.equal(orderData.orders.length,1);
+   assert.equal(orderData.orders[0].status,'TO_CONFIRM');
+   const replayOrder=await post(orderPath,merchantCookie,orderRequest);
+   assert.equal(replayOrder.status,200);
+   assert.equal((await replayOrder.json() as {version:number}).version,orderData.version);
+   const notAllowed=await post(orderPath,merchantCookie,{action:'settlement',requestId:'123e4567-e89b-42d3-a456-426614174015',payload:{}});
+   assert.equal(notAllowed.status,400);
+   const afterOrders=await get(orderPath,merchantCookie);
+   assert.equal(afterOrders.status,200);
+   assert.equal((await afterOrders.json() as {orders:unknown[]}).orders.length,1);
+   const inventoryAfterOrder=await get(inventoryPath,merchantCookie);
+   assert.equal((await inventoryAfterOrder.json() as {products:{stock:number}[]}).products[0].stock,2);
    const original=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    assert.equal(original.slug,'sousse-mode','old linked Workspace untouched');
   });
