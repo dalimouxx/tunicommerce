@@ -253,6 +253,53 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
     where:{shopId:{in:[fresh.id,otherShop.id]}},select:{data:true}
    });
    assert.equal(allStates.reduce((total,row)=>total+((row.data as unknown as {products:unknown[]}).products.length),0),2);
+   // Independent shop: active team members see only their explicitly granted sections.
+   for(const [email,role] of [
+    ['stock@example.test','STOCK'],
+    ['calls@example.test','CALL_CENTER'],
+    ['finance@example.test','ACCOUNTANT'],
+    ['viewer@example.test','VIEWER']
+   ]){
+    const employee=await prisma.user.create({data:{
+     email,name:role,passwordHash:await hashPassword(password),role:'MERCHANT'
+    }});
+    await prisma.membership.create({data:{shopId:fresh.id,userId:employee.id,role,active:true}});
+   }
+   const stockCookie=await cookieFor('stock@example.test');
+   const callsCookie=await cookieFor('calls@example.test');
+   const financeCookie=await cookieFor('finance@example.test');
+   const viewerCookie=await cookieFor('viewer@example.test');
+   const teamView=(shop:string,section:string)=>'/api/v1/shops/'+shop+'/team-view?section='+section;
+   assert.equal((await get(teamView(fresh.id,'orders'))).status,401);
+   assert.equal((await get(teamView(fresh.id,'orders'),adminCookie)).status,404);
+   assert.equal((await get(teamView(fresh.id,'finance'),stockCookie)).status,403);
+   assert.equal((await get(teamView(fresh.id,'products'),financeCookie)).status,403);
+   assert.equal((await get(teamView(fresh.id,'finance'),financeCookie)).status,200);
+   assert.equal((await get(teamView(fresh.id,'products'),stockCookie)).status,200);
+   assert.equal((await get(teamView(fresh.id,'orders'),callsCookie)).status,200);
+   const callBody=JSON.stringify(await (await get(teamView(fresh.id,'orders'),callsCookie)).json());
+   assert.ok(callBody.includes('22123456'));
+   assert.ok(!callBody.includes('Rue des tests'));
+   const viewBody=JSON.stringify(await (await get(teamView(fresh.id,'orders'),viewerCookie)).json());
+   assert.ok(!viewBody.includes('22123456'));
+   assert.ok(!viewBody.includes('Commande pilote'));
+   assert.ok(!viewBody.includes('"total"'));
+   const financial=JSON.stringify(await (await get(teamView(fresh.id,'finance'),financeCookie)).json());
+   assert.ok(!financial.includes('22123456'));
+   assert.equal((await get(teamView(otherShop.id,'products'),stockCookie)).status,404);
+   const teamDashboard=await get('/mes-boutiques/'+fresh.id,stockCookie);
+   assert.equal(teamDashboard.status,200);
+   assert.ok((await teamDashboard.text()).includes('Espace collaborateur'));
+   // A teammate cannot mutate stock or orders through the owner-only APIs.
+   assert.equal((await post(inventoryPath,stockCookie,{action:'stock',requestId:'123e4567-e89b-42d3-a456-426614174018',payload:{
+    id:data.products[0].id,quantity:1,reason:'Opération interdite'
+   }})).status,403);
+   assert.equal((await post(orderPath,callsCookie,{action:'note',requestId:'123e4567-e89b-42d3-a456-426614174019',payload:{
+    id:orderData.orders[0].id,note:'Tentative interdite'
+   }})).status,403);
+   const employee=await prisma.user.findUniqueOrThrow({where:{email:'stock@example.test'}});
+   await prisma.membership.update({where:{shopId_userId:{shopId:fresh.id,userId:employee.id}},data:{active:false}});
+   assert.equal((await get(teamView(fresh.id,'products'),stockCookie)).status,404);
    const original=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    assert.equal(original.slug,'sousse-mode','old linked Workspace untouched');
   });
