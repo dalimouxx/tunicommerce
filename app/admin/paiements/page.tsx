@@ -1,5 +1,6 @@
 import {Banknote,Clock3,CheckCheck,ShieldAlert} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
+import Link from 'next/link';
 import AdminPaymentQueue,{type AdminPaymentRow} from './payment-queue';
 import styles from '../platform.module.css';
 
@@ -39,6 +40,10 @@ export default async function AdminSaasPayments(){
     <h1>Règlements et renouvellements</h1>
     <p>Contrôlez les déclarations D17, virements et espèces avant de renouveler un abonnement. Une déclaration ne prouve pas que les fonds ont été reçus.</p>
    </div>
+  </div>
+  <div className={styles.metricsInline}>
+   <Link href="/admin/coordonnees-paiement" className={styles.secondary}>Configurer les coordonnées D17, bancaires et espèces →</Link>
+   <span>Seuls les moyens de réception activés sont proposés aux marchands.</span>
   </div>
   <div className={styles.stats}>
    <div className={styles.stat}><span><Banknote size={17}/> Dossiers enregistrés</span><strong>{total}</strong><small>Toutes les déclarations</small></div>
