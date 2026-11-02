@@ -59,7 +59,7 @@ export default async function MyShops(){
      <div className={styles.meta}><span>Rôle : {role}</span><span>Statut : {shop.status}</span></div>
      <p>{access.explanation}</p>
      <div className={styles.actions}>
-      {access.manageOwnCommerce&&<Link className={styles.primary} href="/marchand">Gérer ma boutique</Link>}
+      {access.manageOwnCommerce&&<Link className={styles.primary} href={"/mes-boutiques/"+encodeURIComponent(shop.id)}>Tableau de bord boutique</Link>}
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
       {publicSlug&&<Link className={styles.secondary} href={'/boutiques/'+encodeURIComponent(publicSlug)}>Vitrine publique</Link>}
      </div>
