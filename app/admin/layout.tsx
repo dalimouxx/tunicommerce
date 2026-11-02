@@ -1,6 +1,6 @@
 import {redirect} from 'next/navigation';
 import Link from 'next/link';
-import {ShieldCheck,Store,Users,Globe,Layers,Settings2,Receipt,Activity,ArrowLeftRight,CircleDollarSign,Banknote} from 'lucide-react';
+import {ShieldCheck,Store,Users,Globe,Layers,Settings2,Receipt,Activity,ArrowLeftRight,CircleDollarSign,Banknote,Landmark} from 'lucide-react';
 import {getCurrentUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import styles from './platform.module.css';
@@ -27,6 +27,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <Link href="/admin/gestion-boutiques"><Store size={18}/> Boutiques</Link>
     <Link href="/admin/abonnements"><Receipt size={18}/> Abonnements</Link>
     <Link href="/admin/paiements"><Banknote size={18}/> Règlements SaaS</Link>
+    <Link href="/admin/coordonnees-paiement"><Landmark size={18}/> Coordonnées de paiement</Link>
     <Link href="/admin/plans"><CircleDollarSign size={18}/> Offres et quotas</Link>
     <Link href="/admin/journal"><Activity size={18}/> Journal d’activité</Link>
     <Link href="/boutiques"><Globe size={18}/> Boutiques publiques</Link>
