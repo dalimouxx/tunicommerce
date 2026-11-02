@@ -1,0 +1,38 @@
+name: TuniCommerce isolated shop commerce
+on:
+  pull_request:
+    paths:
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/202611020004_isolated_shop_commerce/**'
+      - 'modules/shops/isolated-commerce.ts'
+      - 'app/api/v1/shops/**/commerce/**'
+      - 'app/mes-boutiques/**'
+      - 'tests/isolated-shop-commerce.test.ts'
+      - '.github/workflows/isolated-shop-commerce.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: commerce_test
+        ports: ['5432:5432']
+        options: --health-cmd="pg_isready -U test" --health-interval=10s --health-timeout=5s --health-retries=5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/commerce_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: node --import tsx --test tests/isolated-shop-commerce.test.ts
+      - run: npm run typecheck
+      - run: npm run build
