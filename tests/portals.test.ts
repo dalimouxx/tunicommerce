@@ -118,6 +118,13 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(html.includes('Voir ma boutique publiée'));
    assert.ok(html.includes('Équipe et accès'));
    assert.ok(html.includes('Mes boutiques'));
+   const merchantWorkspace=await prisma.workspace.findUniqueOrThrow({where:{slug:'sousse-mode'},include:{shop:true}});
+   assert.ok(merchantWorkspace.shop?.id);
+   const ownShopOverview=await get('/mes-boutiques/'+merchantWorkspace.shop!.id,merchantCookie);
+   assert.equal(ownShopOverview.status,200);
+   assert.ok((await ownShopOverview.text()).includes('COD non encaissé'));
+   const crossShopOverview=await get('/mes-boutiques/'+merchantWorkspace.shop!.id,adminCookie);
+   assert.equal(crossShopOverview.status,404);
    const personalShops=await get('/mes-boutiques',merchantCookie);
    assert.equal(personalShops.status,200);
    const personalHtml=await personalShops.text();
@@ -162,6 +169,14 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(!teamHtml.includes('Sousse Mode'));
    assert.ok(!teamHtml.includes('Gérer ma boutique'));
    assert.ok(teamHtml.includes('Gestion de l’équipe')||teamHtml.includes('Gestion de l\'équipe'));
+   const teamShop=await prisma.shop.findUniqueOrThrow({where:{slug:'team-test-shop'}});
+   const teamOverview=await get('/mes-boutiques/'+teamShop.id,memberCookie);
+   assert.equal(teamOverview.status,200);
+   const overviewHtml=await teamOverview.text();
+   assert.ok(overviewHtml.includes('Vue commerciale indisponible'));
+   assert.ok(!overviewHtml.includes('COD non encaissé'));
+   const merchantWorkspace=await prisma.workspace.findUniqueOrThrow({where:{slug:'sousse-mode'},include:{shop:true}});
+   assert.equal((await get('/mes-boutiques/'+merchantWorkspace.shop!.id,memberCookie)).status,404);
    assert.equal((await get('/admin',memberCookie)).status,307);
   });
   await t.test('Existing platform-owned public demo store is clearly identified, not hidden',async()=>{
