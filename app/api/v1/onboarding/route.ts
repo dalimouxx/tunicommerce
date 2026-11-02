@@ -1,21 +1,15 @@
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
-import {getCurrentUser} from '../../../../modules/auth/session';
+import {requireOwnCommerceWorkspace} from '../../../../modules/auth/own-commerce';
 import {assertSameOrigin,readJson,respond,HttpError} from '../../../../modules/auth/http';
 import {merchantOnboardingAction} from '../../../../modules/onboarding/validation';
 import {getMerchantOnboarding,updateMerchantOnboarding} from '../../../../modules/onboarding/service';
 
 export const dynamic='force-dynamic';
 
-async function requireMerchant(){
- const user=await getCurrentUser();
- if(!user)throw new HttpError(401,'Connexion requise');
- if(user.role!=='MERCHANT')throw new HttpError(403,'Espace réservé aux marchands');
- return user;
-}
 export async function GET(){
  try{
-  const user=await requireMerchant();
+  const user=await requireOwnCommerceWorkspace();
   return respond({onboarding:await getMerchantOnboarding(user.userId)});
  }catch(e){
   if(e instanceof HttpError)return respond({error:e.message},e.status);
@@ -25,7 +19,7 @@ export async function GET(){
 export async function POST(req:Request){
  try{
   assertSameOrigin(req);
-  const user=await requireMerchant();
+  const user=await requireOwnCommerceWorkspace();
   const input=merchantOnboardingAction.parse(await readJson(req,10000));
   const result=await updateMerchantOnboarding(user.userId,input);
   return respond(result);
