@@ -7,6 +7,7 @@ import {money,type State} from '../../../modules/commerce/types';
 import {commercialOverview,mayReadOwnCommercialOverview} from '../../../modules/shops/commercial-overview';
 import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
+import ShopInventory from './shop-inventory';
 import styles from '../shops.module.css';
 
 export const dynamic='force-dynamic';
@@ -59,7 +60,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <div className={styles.actions}>{workspace&&<><Link className={styles.primary} href="/marchand">Accéder à ma gestion</Link>
     <Link className={styles.secondary} href="/mon-abonnement">Mon abonnement</Link></>}
     {!workspace&&<span>Stockage indépendant initialisé. Les fonctionnalités de gestion et les limites SaaS seront connectées dans les prochaines étapes.</span>}</div>
-   </section></>:
+   </section>{isolated?.initialized&&<ShopInventory shopId={shopId}/>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
