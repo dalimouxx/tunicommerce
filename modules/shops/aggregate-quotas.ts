@@ -45,7 +45,7 @@ export async function writeIsolatedCommerce(
  await requireIsolatedOwner(userId,shopId);
  const quotas=await quotasForOwner(userId);
  return prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${userId}))`;
   const membership=await tx.membership.findUnique({
    where:{shopId_userId:{shopId,userId}},
    select:{active:true,role:true,shop:{select:{legacyWorkspaceId:true}}}
