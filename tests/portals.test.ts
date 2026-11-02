@@ -225,6 +225,34 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal((await afterOrders.json() as {orders:unknown[]}).orders.length,1);
    const inventoryAfterOrder=await get(inventoryPath,merchantCookie);
    assert.equal((await inventoryAfterOrder.json() as {products:{stock:number}[]}).products[0].stock,2);
+   // Global merchant quota spans both isolated boutiques, not just the selected shop.
+   const billingWorkspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
+   await prisma.workspacePlanOverride.upsert({
+    where:{workspaceId:billingWorkspace.id},
+    create:{workspaceId:billingWorkspace.id,maxProducts:2,maxOrdersPerMonth:2},
+    update:{maxProducts:2,maxOrdersPerMonth:2}
+   });
+   const otherShop=await prisma.shop.create({data:{
+    organizationId:org.id,name:'Troisième boutique',slug:'third-independent-shop',
+    memberships:{create:{userId:owner.id,role:'OWNER'}}
+   }});
+   const otherCommerce='/api/v1/shops/'+otherShop.id+'/commerce';
+   assert.equal((await post(otherCommerce,merchantCookie,{action:'initialize'})).status,200);
+   const otherInventory='/api/v1/shops/'+otherShop.id+'/inventory';
+   const secondProduct={action:'product',requestId:'123e4567-e89b-42d3-a456-426614174016',payload:{
+    name:'Deuxième produit',sku:'PROD-02',category:'Mode',variant:'',price:12000,
+    cost:3000,stock:2,threshold:1,color:'#aabbcc'
+   }};
+   assert.equal((await post(otherInventory,merchantCookie,secondProduct)).status,200);
+   const exceed={...secondProduct,requestId:'123e4567-e89b-42d3-a456-426614174017',
+    payload:{...secondProduct.payload,name:'Troisième produit',sku:'PROD-03'}};
+   const rejected=await post(inventoryPath,merchantCookie,exceed);
+   assert.equal(rejected.status,409);
+   assert.match((await rejected.json() as {error:string}).error,/Plafond global/);
+   const allStates=await prisma.shopCommerce.findMany({
+    where:{shopId:{in:[fresh.id,otherShop.id]}},select:{data:true}
+   });
+   assert.equal(allStates.reduce((total,row)=>total+((row.data as unknown as {products:unknown[]}).products.length),0),2);
    const original=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    assert.equal(original.slug,'sousse-mode','old linked Workspace untouched');
   });
