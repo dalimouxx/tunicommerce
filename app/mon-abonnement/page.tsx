@@ -7,6 +7,7 @@ import {normalizeState} from '../../modules/commerce/normalize';
 import type {State} from '../../modules/commerce/types';
 import {loadWorkspaceQuotas} from '../../modules/subscriptions/quotas';
 import {subscriptionLabel} from '../../modules/platform/admin-overview';
+import {enabledReceptionMethods} from '../../modules/billing/reception';
 import styles from './plan.module.css';
 import SubscriptionBilling,{type PaymentHistory,type PaymentOffer} from './subscription-billing';
 
@@ -25,7 +26,7 @@ export default async function MySubscription(){
  if(!user)redirect('/login');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
- const [plan,quotas,photos,availablePlans,payments]=await Promise.all([
+ const [plan,quotas,photos,availablePlans,payments,methods]=await Promise.all([
   prisma.subscriptionPlan.findUnique({where:{code:workspace.plan}}),
   loadWorkspaceQuotas(workspace),
   prisma.productMedia.count({where:{workspaceId:workspace.id}}),
@@ -41,7 +42,8 @@ export default async function MySubscription(){
     method:true,transferReference:true,status:true,merchantNote:true,adminNote:true,
     periodStartsAt:true,periodEndsAt:true,createdAt:true,decidedAt:true
    }
-  })
+  }),
+  enabledReceptionMethods()
  ]);
  const data=normalizeState(workspace.data as unknown as State);
  const month=tunisiaMonth(new Date());
@@ -81,6 +83,7 @@ export default async function MySubscription(){
     <p>Les nouvelles créations sont limitées selon l'offre. Les produits, commandes et fichiers déjà enregistrés sont conservés si un plafond diminue.</p>
    </section>
    <SubscriptionBilling
+    methods={methods}
     plans={availablePlans satisfies PaymentOffer[]}
     history={payments.map(p=>({
      ...p,
