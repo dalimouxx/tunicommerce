@@ -26,7 +26,7 @@ export default async function GlobalAdministration(){
   prisma.workspace.findMany({
    
    select:{
-    id:true,slug:true,data:true,published:true,subscriptionStatus:true,
+    id:true,ownerId:true,slug:true,data:true,published:true,subscriptionStatus:true,
     subscriptionEndsAt:true,plan:true,owner:{select:{name:true,email:true,role:true}},
     updatedAt:true
    },
@@ -43,6 +43,7 @@ export default async function GlobalAdministration(){
  ]);
  const newShops=relationalShops.filter(shop=>!shop.legacyWorkspaceId);
  const linked=new Set(relationalShops.map(shop=>shop.legacyWorkspaceId).filter(Boolean));
+ const ownWorkspace=workspaces.find(row=>row.ownerId===user.userId);
  const live=workspaces.filter(row=>isOpen(row)).length;
  const total=workspaces.length+newShops.length;
 
@@ -54,6 +55,7 @@ export default async function GlobalAdministration(){
     <Link className={styles.active} href="/admin"><ShieldCheck size={18}/> Vue d’ensemble</Link>
     <Link href="/admin/gestion-boutiques"><Store size={18}/> Gérer les boutiques</Link>
     <Link href="/boutiques"><Globe size={18}/> Boutiques publiques</Link>
+    {ownWorkspace&&<Link href="/marchand"><Store size={18}/> Ma boutique personnelle</Link>}
    </nav>
    <div className={styles.identity}><span className={styles.identityIcon}><ShieldCheck size={19}/></span><div><strong>Super-administrateur</strong><small>{user.email}</small></div></div>
   </aside>
@@ -105,7 +107,8 @@ export default async function GlobalAdministration(){
     <div className={styles.infoGrid}>
      <Link className={styles.infoCard} href="/admin/gestion-boutiques"><Settings2 size={22}/><strong>Gestion centrale</strong><span>Créer des marchands, configurer les boutiques, leurs liens publics, leurs offres et leurs abonnements.</span><ArrowUpRight size={17}/></Link>
      <Link className={styles.infoCard} href="/boutiques"><Globe size={22}/><strong>Vue des acheteurs</strong><span>Consulter uniquement les boutiques publiées visibles par les clients, sans connexion.</span><ArrowUpRight size={17}/></Link>
-     <div className={styles.infoCard}><Users size={22}/><strong>Espace des marchands</strong><span>Chaque marchand utilise son tableau de bord privé à l’adresse /marchand. Les super-administrateurs restent ici.</span><span className={styles.tag}>Espaces séparés</span></div>
+     {ownWorkspace?<Link className={styles.infoCard} href="/marchand"><Store size={22}/><strong>Gérer ma boutique personnelle</strong><span>Accédez aux produits, commandes, clients, stocks et visuels de la boutique qui appartient à votre compte, sans modifier les autres marchands.</span><ArrowUpRight size={17}/></Link>:
+     <div className={styles.infoCard}><Users size={22}/><strong>Espace des marchands</strong><span>Chaque marchand utilise son tableau de bord privé à l’adresse /marchand. Seuls les propriétaires peuvent y accéder.</span><span className={styles.tag}>Espaces séparés</span></div>}
     </div>
    </div>
   </main>
