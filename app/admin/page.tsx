@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {Users,Store,Globe,Layers,ArrowUpRight,Clock,Link2Off,Activity,Receipt,Plus,ShieldCheck} from 'lucide-react';
+import {Users,Store,Globe,Layers,ArrowUpRight,Clock,Link2Off,Activity,Receipt,Plus,ShieldCheck,Settings2} from 'lucide-react';
 import {prisma} from '../../modules/storage/client';
 import {loadPlatformStats,loadShopRows} from '../../modules/platform/admin-overview';
 import AdminShopExplorer from '../../components/admin-shop-explorer';
@@ -47,6 +47,11 @@ export default async function GlobalAdministration(){
   </div>
   <AdminShopExplorer shops={shops} allCount={stats.workspaces}/>
   <div className={styles.infoGrid}>
+   <Link href="/admin/gestion-boutiques" className={styles.infoCard}>
+    <Settings2 size={22}/><strong>Gestion centrale</strong>
+    <span>Créer et configurer les marchands, boutiques, abonnements et publications.</span>
+    <ArrowUpRight size={17}/>
+   </Link>
    <div className={styles.infoCard}>
     <Activity size={22}/>
     <strong>Dernières opérations globales</strong>
