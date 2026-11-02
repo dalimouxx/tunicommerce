@@ -8,6 +8,7 @@ import {applyAction} from '../../../../../modules/commerce/service';
 import type {State} from '../../../../../modules/commerce/types';
 import {assertSameOrigin,readJson,respond,HttpError} from '../../../../../modules/auth/http';
 import {consumeAttempt} from '../../../../../modules/auth/service';
+import {assertCommerceQuotas,loadWorkspaceQuotas} from '../../../../../modules/subscriptions/quotas';
 export async function POST(req:Request,{params}:{params:Promise<{slug:string}>}){try{
  assertSameOrigin(req);const {slug}=await params;
  const input=z.object({requestId:z.string().uuid(),customer:z.object({name:z.string().trim().min(2).max(100),phone:z.string().max(12),city:z.string().max(40),address:z.string().trim().min(3).max(300)}),items:z.array(z.object({productId:z.string().max(100),quantity:z.number().int().min(1).max(100)})).min(1).max(100)}).parse(await readJson(req));
@@ -18,6 +19,8 @@ export async function POST(req:Request,{params}:{params:Promise<{slug:string}>})
  const row=await tx.workspace.findUniqueOrThrow({where:{id:shop.id}});if(!isOpen(row))throw new HttpError(403,'Cette boutique ne prend pas de commandes actuellement.');
  const previous=await tx.publicReceipt.findUnique({where:{workspaceId_requestId:{workspaceId:row.id,requestId:input.requestId}},select:{id:true,reference:true,total:true}});if(previous)return previous;
  let next:State;try{next=applyAction(normalizeState(row.data as unknown as State),'createOrder',{...input.customer,items:input.items,source:'Boutique'});}catch(e){throw new HttpError(400,e instanceof Error?e.message:'Commande invalide');}
+ const quotas=await loadWorkspaceQuotas(row,tx);
+ assertCommerceQuotas(normalizeState(row.data as unknown as State),next,quotas);
  const receiptId=randomBytes(32).toString('hex');next.orders[0].publicReceiptId=receiptId;
  await tx.workspace.update({where:{id:row.id},data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}});
  return tx.publicReceipt.create({data:{id:receiptId,workspaceId:row.id,requestId:input.requestId,reference:next.orders[0].reference,total:next.orders[0].total},select:{id:true,reference:true,total:true}});
