@@ -146,6 +146,37 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(await prisma.workspace.count(),1);
   });
 
+  await t.test('Isolated new shop initializes once and never reads another merchant workspace',async()=>{
+   const owner=await prisma.user.findUniqueOrThrow({where:{email:'merchant@example.test'}});
+   const org=await prisma.organization.create({data:{name:'Merchant second organization',ownerId:owner.id}});
+   const fresh=await prisma.shop.create({data:{
+    organizationId:org.id,name:'Deuxième boutique',slug:'merchant-second-shop',
+    memberships:{create:{userId:owner.id,role:'OWNER'}}
+   }});
+   const path='/api/v1/shops/'+fresh.id+'/commerce';
+   assert.equal((await get(path)).status,401,'anonymous forbidden');
+   const forbidden=await get(path,adminCookie);
+   assert.equal(forbidden.status,404,'global admin has no implicit access');
+   const before=await get(path,merchantCookie);
+   assert.equal(before.status,200);
+   const freshState=await before.json() as {initialized:boolean;state:{orders:unknown[];products:unknown[]}};
+   assert.equal(freshState.initialized,false);
+   assert.equal(freshState.state.orders.length,0);
+   assert.equal(freshState.state.products.length,0);
+   assert.equal(await prisma.shopCommerce.count({where:{shopId:fresh.id}}),0,'GET must not persist');
+   assert.equal((await post(path,adminCookie,{action:'initialize'})).status,404);
+   const first=await post(path,merchantCookie,{action:'initialize'});
+   assert.equal(first.status,200);
+   const firstVersion=(await first.json() as {version:number}).version;
+   assert.equal((await post(path,merchantCookie,{action:'initialize'})).status,200);
+   assert.equal((await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:fresh.id}})).version,firstVersion);
+   const afterward=await get(path,merchantCookie);
+   assert.equal((await afterward.json() as {initialized:boolean}).initialized,true);
+   assert.equal((await get('/mes-boutiques/'+fresh.id,merchantCookie)).status,200);
+   const original=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
+   assert.equal(original.slug,'sousse-mode','old linked Workspace untouched');
+  });
+
   await t.test('Members invited to a team do not create phantom merchant shops',async()=>{
    const user=await prisma.user.create({data:{
     email:'employee@example.test',name:'Team Member',passwordHash:await hashPassword(password),role:'MERCHANT'
