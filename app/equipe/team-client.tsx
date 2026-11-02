@@ -108,7 +108,7 @@ export default function TeamClient({userId,userName}:{userId:string,userName:str
  return <div className={styles.shell}>
   <header className={styles.header}>
    <a href="/" className={styles.brand}><span className={styles.mark}>T</span><span>TuniCommerce</span></a>
-   <a href="/" className={styles.back}>← Tableau de bord</a>
+   <div className={styles.actions}><a href="/mes-boutiques" className={styles.back}>Mes boutiques</a><a href="/" className={styles.back}>← Tableau de bord</a></div>
   </header>
   <section className={styles.intro}>
    <div><h1>Équipe et accès</h1><p>Gérez vos collaborateurs en toute sécurité. Connecté : {userName}.</p></div>
