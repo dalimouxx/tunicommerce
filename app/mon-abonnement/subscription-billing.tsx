@@ -4,7 +4,7 @@ import {useRef,useState,type FormEvent} from 'react';
 import {useRouter} from 'next/navigation';
 import {Banknote,CheckCircle2,Clock3,ReceiptText,ShieldAlert} from 'lucide-react';
 import {paymentMethodLabel,paymentStatusLabel,toTnd} from '../../modules/billing/validation';
-import type {ReceptionPublic} from '../../modules/billing/reception';
+import {receptionCode,type ReceptionPublic} from '../../modules/billing/reception';
 import styles from './plan.module.css';
 
 export type PaymentOffer={
@@ -72,7 +72,7 @@ export default function SubscriptionBilling({
      </label>
      {plan&&<div className={styles.billingPrice}><strong>{toTnd(plan.priceMillimes)}</strong><span>{plan.durationDays} jours · Tarif enregistré lors de la déclaration</span></div>}
      <label>Moyen de règlement officiellement disponible
-      <select value={available.code} onChange={e=>{setMethod(e.target.value);requestId.current='';}}>
+      <select value={available.code} onChange={e=>{setMethod(receptionCode.parse(e.target.value));requestId.current='';}}>
        {methods.map(m=><option key={m.code} value={m.code}>{paymentMethodLabel(m.code)}</option>)}
       </select>
      </label>
