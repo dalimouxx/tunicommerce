@@ -1,32 +1,37 @@
 import {redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
-import {normalizeState} from '../../../modules/commerce/normalize';
-import type {State} from '../../../modules/commerce/types';
-import AdminPanel from '../../../components/admin-panel';
+import {legacyShopName} from '../../../modules/platform/admin-overview';
+import AdminPanel,{type ManagedShop} from '../../../components/admin-panel';
 
 export const dynamic='force-dynamic';
 
-// Keep the existing admin shop management forms available without mixing
-// them into the merchant's own sales dashboard.
-export default async function ShopManagement(){
- const user=await getCurrentUser();
- if(!user)redirect('/login');
- if(user.role!=='ADMIN')redirect('/marchand');
-
- const [shops,audit]=await Promise.all([
+export default async function ShopManagement({
+ searchParams
+}:{searchParams:Promise<{shop?:string,filtre?:string}>}){
+ const actor=await getCurrentUser();
+ if(!actor)redirect('/login');
+ if(actor.role!=='ADMIN')redirect('/marchand');
+ const [workspaces,options]=await Promise.all([
   prisma.workspace.findMany({
-   
-   include:{owner:{select:{name:true,email:true}}},
-   orderBy:{updatedAt:'desc'}
+   select:{
+    id:true,data:true,slug:true,published:true,plan:true,
+    subscriptionStatus:true,subscriptionEndsAt:true,
+    owner:{select:{name:true,email:true,role:true}},
+    shop:{select:{id:true}}
+   },
+   orderBy:{updatedAt:'desc'},
+   take:200
   }),
-  prisma.platformAudit.findMany({take:20,orderBy:{createdAt:'desc'}})
+  searchParams
  ]);
- return <AdminPanel shops={shops.map(s=>({
-  id:s.id,
-  name:normalizeState(s.data as unknown as State).shop.name,
-  owner:s.owner.name,email:s.owner.email,slug:s.slug||'',published:s.published,
-  plan:s.plan,subscriptionStatus:s.subscriptionStatus,
-  subscriptionEndsAt:s.subscriptionEndsAt?.toISOString()||''
- }))} audit={audit.map(a=>({id:a.id,at:a.createdAt.toISOString(),detail:a.detail}))}/>;
+ const shops:ManagedShop[]=workspaces.map(s=>({
+  id:s.id,name:legacyShopName(s.data),owner:s.owner.name,
+  email:s.owner.email,ownerRole:s.owner.role,
+  slug:s.slug||'',published:s.published,plan:s.plan,
+  subscriptionStatus:s.subscriptionStatus,
+  subscriptionEndsAt:s.subscriptionEndsAt?.toISOString()||'',
+  hasLinkedShop:!!s.shop
+ }));
+ return <AdminPanel shops={shops} initialShopId={options.shop||''} initialFilter={options.filtre||'all'}/>;
 }
