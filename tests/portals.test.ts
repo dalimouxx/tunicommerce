@@ -173,6 +173,35 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const afterward=await get(path,merchantCookie);
    assert.equal((await afterward.json() as {initialized:boolean}).initialized,true);
    assert.equal((await get('/mes-boutiques/'+fresh.id,merchantCookie)).status,200);
+   // Isolated inventory uses the dedicated ShopCommerce row, never the legacy Workspace.
+   const inventoryPath='/api/v1/shops/'+fresh.id+'/inventory';
+   assert.equal((await get(inventoryPath)).status,401);
+   assert.equal((await get(inventoryPath,adminCookie)).status,404);
+   assert.equal((await post(inventoryPath,adminCookie,{action:'stock',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174001'})).status,404);
+   const requestId='123e4567-e89b-42d3-a456-426614174002';
+   const productInput={action:'product',requestId,payload:{
+    name:'Chemise',sku:'CHEMISE-01',category:'Mode',variant:'Bleu',
+    price:40000,cost:20000,stock:5,threshold:2,color:'#aabbcc'
+   }};
+   const created=await post(inventoryPath,merchantCookie,productInput);
+   assert.equal(created.status,200);
+   const data=await created.json() as {products:{id:string;stock:number}[];version:number};
+   assert.equal(data.products.length,1);
+   assert.equal(data.products[0].stock,5);
+   const replay=await post(inventoryPath,merchantCookie,productInput);
+   assert.equal(replay.status,200);
+   assert.equal((await replay.json() as {version:number}).version,data.version);
+   const invalid=await post(inventoryPath,merchantCookie,{action:'reset',requestId:'123e4567-e89b-42d3-a456-426614174003',payload:{}});
+   assert.equal(invalid.status,400);
+   const adjusted=await post(inventoryPath,merchantCookie,{action:'stock',requestId:'123e4567-e89b-42d3-a456-426614174004',payload:{
+    id:data.products[0].id,quantity:-2,reason:'Inventaire physique'
+   }});
+   assert.equal(adjusted.status,200);
+   assert.equal((await adjusted.json() as {products:{stock:number}[]}).products[0].stock,3);
+   assert.equal((await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:fresh.id}})).version,data.version+1);
+   const merchantProductList=await get(inventoryPath,merchantCookie);
+   assert.equal(merchantProductList.status,200);
+   assert.equal((await merchantProductList.json() as {products:unknown[]}).products.length,1);
    const original=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    assert.equal(original.slug,'sousse-mode','old linked Workspace untouched');
   });
