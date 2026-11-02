@@ -6,11 +6,12 @@ import {assertSameOrigin,readJson,respond,HttpError} from '../../../../modules/a
 import {hashPassword} from '../../../../modules/auth/crypto';
 import {initialState} from '../../../../modules/commerce/seed';
 import {legacyShopName} from '../../../../modules/platform/admin-overview';
+import {planCode} from '../../../../modules/subscriptions/validation';
 
 const config=z.object({
  slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(60),
  published:z.boolean(),
- plan:z.enum(['STARTER','PRO','BUSINESS']),
+ plan:planCode,
  subscriptionStatus:z.enum(['TRIAL','ACTIVE','SUSPENDED','CANCELLED']),
  subscriptionEndsAt:z.string().datetime()
 });
@@ -66,6 +67,10 @@ export async function POST(req:Request){
     return {ok:true,shopId:shop.id,alreadyLinked:false};
    }
 
+   const selectedPlan=await tx.subscriptionPlan.findUnique({
+    where:{code:input.plan},select:{enabled:true}
+   });
+   if(!selectedPlan?.enabled)throw new HttpError(409,'Offre inexistante ou désactivée');
    const data={
     slug:input.slug,published:input.published,plan:input.plan,
     subscriptionStatus:input.subscriptionStatus,
