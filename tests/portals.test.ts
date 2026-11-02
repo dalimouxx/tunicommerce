@@ -356,7 +356,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(managed.status,200);
    assert.ok((await managed.text()).includes('Demo Store'));
    assert.equal((await get('/boutiques/platform-demo')).status,200);
-   assert.equal(await prisma.user.count({where:{role:'MERCHANT'}}),2);
+   assert.equal(await prisma.user.count({where:{role:'MERCHANT'}}),6,'Two original merchants and four explicitly created team members');
   });
  }finally{
   child?.kill('SIGTERM');
