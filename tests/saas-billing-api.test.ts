@@ -105,6 +105,39 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
   const workspaceA=await prisma.workspace.findUniqueOrThrow({where:{ownerId:ownerA.id}});
   const workspaceB=await prisma.workspace.findUniqueOrThrow({where:{ownerId:ownerB.id}});
 
+  await t.test('Payment methods are disabled by default, then only official configured methods can be declared',async()=>{
+   const disabled=await post('/api/v1/subscription-payments',
+    claim(randomUUID()),merchantA);
+   assert.equal(disabled.status,409,'No declarations before configuring official recipient');
+   const before=(await (await get('/api/v1/subscription-payments',merchantA)).json()).methods;
+   assert.equal(before.length,0);
+   assert.equal((await get('/api/admin/payment-reception',merchantA)).status,403);
+   assert.equal((await post('/api/admin/payment-reception',{
+    code:'D17',version:0,enabled:true,recipientName:'Compte test du bénéficiaire',
+    identifier:'TEST-ONLY-D17-123',bankName:'',
+    instructions:'Test seulement : virement simulé en environnement PostgreSQL isolé.'
+   },merchantA)).status,403);
+   const setupD17=await post('/api/admin/payment-reception',{
+    code:'D17',version:0,enabled:true,recipientName:'Compte test du bénéficiaire',
+    identifier:'TEST-ONLY-D17-123',bankName:'',
+    instructions:'Test seulement : virement simulé en environnement PostgreSQL isolé.'
+   },adminCookie);
+   assert.equal(setupD17.status,200);
+   const cashSetup=await post('/api/admin/payment-reception',{
+    code:'CASH',version:0,enabled:true,recipientName:'Caissier de test',
+    identifier:'',bankName:'',
+    instructions:'Remise fictive au guichet de test uniquement.'
+   },adminCookie);
+   assert.equal(cashSetup.status,200);
+   assert.equal((await prisma.paymentReceptionAudit.count()),2);
+   const methods=(await (await get('/api/v1/subscription-payments',merchantA)).json()).methods;
+   assert.equal(methods.length,2);
+   assert.ok(methods.some((m:{code:string})=>m.code==='D17'));
+   assert.ok(methods.some((m:{code:string})=>m.code==='CASH'));
+   assert.equal(methods.some((m:{code:string})=>m.code==='BANK_TRANSFER'),false);
+  });
+
+
   let firstId='';
   let firstDocument='';
   await t.test('Merchant can declare D17 once, cannot change the plan or expiry, and cannot access other data',async()=>{
