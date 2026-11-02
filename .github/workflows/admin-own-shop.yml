@@ -1,0 +1,50 @@
+name: TuniCommerce admin personal shop access
+on:
+  push:
+    branches: ['fix/**']
+  pull_request:
+    paths:
+      - 'app/marchand/**'
+      - 'app/admin/page.tsx'
+      - 'app/demarrage/**'
+      - 'app/personnalisation/page.tsx'
+      - 'app/mediatheque/page.tsx'
+      - 'app/api/v1/onboarding/**'
+      - 'app/api/v1/appearance/**'
+      - 'app/api/v1/media/**'
+      - 'app/api/v1/product-media/**'
+      - 'modules/auth/own-commerce.ts'
+      - 'tests/admin-own-shop.test.ts'
+      - '.github/workflows/admin-own-shop.yml'
+permissions:
+  contents: read
+jobs:
+  admin-owned-shop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tunicommerce_admin_shop_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_admin_shop_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tunicommerce_admin_shop_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: npm run db:migrate
+      - run: npm run build
+      - run: node --import tsx --test tests/admin-own-shop.test.ts
