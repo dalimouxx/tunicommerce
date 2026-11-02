@@ -43,6 +43,9 @@ export default async function AdminSaasPayments(){
   </div>
   <div className={styles.metricsInline}>
    <Link href="/admin/coordonnees-paiement" className={styles.secondary}>Configurer les coordonnées D17, bancaires et espèces →</Link>
+   <Link href="/api/admin/subscription-payments/export?status=ALL" className={styles.secondary}>Exporter tous les règlements (CSV)</Link>
+   <Link href="/api/admin/subscription-payments/export?status=PENDING" className={styles.secondary}>Exporter les dossiers à vérifier</Link>
+   <Link href="/api/admin/subscription-payments/export?status=APPROVED" className={styles.secondary}>Exporter les règlements validés</Link>
    <span>Seuls les moyens de réception activés sont proposés aux marchands.</span>
   </div>
   <div className={styles.stats}>
