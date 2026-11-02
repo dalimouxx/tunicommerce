@@ -38,6 +38,7 @@ model Workspace {
   media ShopMedia[]
   productMedia ProductMedia[]
   planOverride WorkspacePlanOverride?
+  subscriptionPayments SubscriptionPayment[]
   ownerId   String @unique
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
@@ -205,4 +206,37 @@ model SubscriptionPlanAudit {
  details     Json
  createdAt   DateTime @default(now())
  @@index([planCode, createdAt])
+}
+
+/**
+ * Manual declaration + administrative verification of an external SaaS payment.
+ * A request is NEVER proof of payment and cannot renew a subscription itself.
+ * This record is not a fiscal invoice until legal issuer/tax details are configured.
+ */
+model SubscriptionPayment {
+  id                String    @id @default(uuid())
+  reference         String    @unique
+  requestId         String
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requesterId       String
+  planCode          String
+  planName          String
+  priceMillimes     Int
+  durationDays      Int
+  method            String
+  transferReference String?
+  merchantNote      String    @default("")
+  status            String    @default("PENDING")
+  adminNote         String    @default("")
+  decidedById       String?
+  decidedAt         DateTime?
+  periodStartsAt    DateTime?
+  periodEndsAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workspaceId, requestId])
+  @@index([workspaceId, createdAt])
+  @@index([status, createdAt])
 }

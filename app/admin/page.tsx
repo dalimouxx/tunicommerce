@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {Users,Store,Globe,Layers,ArrowUpRight,Clock,Link2Off,Activity,Receipt,Plus,ShieldCheck,Settings2} from 'lucide-react';
+import {Users,Store,Globe,Layers,ArrowUpRight,Clock,Link2Off,Activity,Receipt,Plus,ShieldCheck,Settings2,Banknote} from 'lucide-react';
 import {prisma} from '../../modules/storage/client';
 import {loadPlatformStats,loadShopRows} from '../../modules/platform/admin-overview';
 import AdminShopExplorer from '../../components/admin-shop-explorer';
@@ -8,10 +8,11 @@ import styles from './platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function GlobalAdministration(){
- const [stats,shops,events]=await Promise.all([
+ const [stats,shops,events,pendingPayments]=await Promise.all([
   loadPlatformStats(),
   loadShopRows(120),
-  prisma.platformAudit.findMany({orderBy:{createdAt:'desc'},take:5,select:{id:true,createdAt:true,detail:true}})
+  prisma.platformAudit.findMany({orderBy:{createdAt:'desc'},take:5,select:{id:true,createdAt:true,detail:true}}),
+  prisma.subscriptionPayment.count({where:{status:'PENDING'}})
  ]);
  return <>
   <div className={styles.head}>
@@ -29,6 +30,11 @@ export default async function GlobalAdministration(){
    <Link href="/admin/marchands" className={styles.stat}><span><Layers size={17}/> Organisations</span><strong>{stats.organizations}</strong><small>Structures multi-boutique enregistrées</small></Link>
   </div>
   <div className={styles.signalGrid}>
+   <Link href="/admin/paiements" className={styles.signal}>
+    <Banknote size={19}/>
+    <span><strong>{pendingPayments} règlement(s) SaaS à vérifier</strong><small>Validation humaine D17, virement ou espèces</small></span>
+    <ArrowUpRight size={15}/>
+   </Link>
    <Link href="/admin/abonnements?statut=expiring" className={styles.signal}>
     <Clock size={19}/>
     <span><strong>{stats.expiring} échéance(s) dans les 7 jours</strong><small>Essais et abonnements à renouveler</small></span>

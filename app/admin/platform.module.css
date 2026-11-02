@@ -165,3 +165,29 @@
 .planNewCode{display:grid;gap:9px;font-size:11px;color:#526c56;padding:0 22px}
 @media(max-width:1050px){.planWorkspace{grid-template-columns:1fr}.planSidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.planSidebar h2{grid-column:1/-1}}
 @media(max-width:650px){.planInputs,.planModules,.planSidebar{grid-template-columns:1fr}.planForm{padding:0 15px 17px}.planSection{gap:12px}.planNewCode{padding:0 15px}}
+
+
+/* Manual SaaS payment review: intentionally distinct from merchant order/COD data */
+.paymentQueue{display:grid;gap:14px;padding:0 20px 20px}
+.paymentCase{background:#fff;border:1px solid #e1eae4;border-radius:12px;padding:17px;display:grid;gap:13px}
+.paymentCaseTop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.paymentCaseTop>div{display:grid;gap:6px}
+.paymentCaseTop strong{font-size:14px;color:#284d38;overflow-wrap:anywhere}
+.paymentCaseTop small{font-size:11px;color:#809685}
+.paymentCaseTop>span{font-size:16px;color:#287e57;font-weight:800;white-space:nowrap}
+.paymentCaseGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.paymentCaseGrid>div{display:grid;align-content:start;gap:6px;background:#f4f8f5;border-radius:9px;padding:12px;min-width:0}
+.paymentCaseGrid small{color:#8b9d8f;font-size:10px}
+.paymentCaseGrid strong{color:#365641;font-size:12px;overflow-wrap:anywhere}
+.paymentCaseGrid span{color:#607964;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.paymentNote{font-size:11px;color:#526d5a;line-height:1.65;overflow-wrap:anywhere}
+.paymentActions{display:grid;gap:13px;padding-top:12px;border-top:1px solid #e7ede8}
+.paymentActions>label{display:grid;gap:8px;font-size:11px;font-weight:650;color:#54725b}
+.paymentActions textarea{width:100%;max-width:670px;min-height:65px;border:1px solid #d7e5da;border-radius:8px;background:#fff;color:#294b36;padding:11px;font-size:12px;outline-color:#35845c}
+.paymentActions>div{display:flex;flex-wrap:wrap;align-items:center;gap:11px}
+.paymentActions button{border:0;cursor:pointer}
+.paymentActions button:disabled{opacity:.5;cursor:not-allowed}
+.paymentFinal{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 0 0;border-top:1px solid #e7ede8;color:#477a59;font-size:11px}
+.paymentFinal span{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+.paymentFinal p{font-size:11px;color:#7a8b7d}
+@media(max-width:800px){.paymentCaseGrid{grid-template-columns:1fr}.paymentQueue{padding:0 11px 12px}.paymentCaseTop{flex-wrap:wrap}}
