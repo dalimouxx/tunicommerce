@@ -79,3 +79,4 @@ export default function ShopInventory({shopId}:{shopId:string}){
    </div>
   </>}
  </section>;
+}
