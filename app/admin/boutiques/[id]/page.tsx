@@ -8,6 +8,7 @@ import {money,type State} from '../../../../modules/commerce/types';
 import {isOpen} from '../../../../modules/platform/public';
 import {legacyShopName,subscriptionAttention,subscriptionLabel} from '../../../../modules/platform/admin-overview';
 import styles from '../../platform.module.css';
+import PlanOverrideEditor from '../../../../components/plan-override-editor';
 
 export const dynamic='force-dynamic';
 
@@ -40,6 +41,13 @@ export default async function AdminShopDetails({params}:{params:Promise<{id:stri
   where:{workspaceId:row.id},orderBy:{createdAt:'desc'},take:20,
   select:{id:true,createdAt:true,detail:true}
  });
+ const [plan,override]=await Promise.all([
+  prisma.subscriptionPlan.findUnique({
+   where:{code:row.plan},select:{maxProducts:true,maxOrdersPerMonth:true,maxPhotos:true}
+  }),
+  prisma.workspacePlanOverride.findUnique({where:{workspaceId:row.id},
+   select:{maxProducts:true,maxOrdersPerMonth:true,maxPhotos:true,note:true}})
+ ]);
  const shopName=legacyShopName(row.data);
  return <>
   <div className={styles.head}>
@@ -90,6 +98,9 @@ export default async function AdminShopDetails({params}:{params:Promise<{id:stri
      <Link href={'/admin/gestion-boutiques?shop='+row.id} className={styles.primary}>Modifier le plan et les dates <ArrowUpRight size={15}/></Link>
     </div>
    </section>
+  </div>
+  <div style={{marginBottom:21}}>
+   <PlanOverrideEditor workspaceId={row.id} planCode={row.plan} plan={plan} override={override}/>
   </div>
   <section className={styles.panel}>
    <div className={styles.panelHead}><div><h2><Clock size={18}/> Journal administratif de cette boutique</h2><p>Changements effectués depuis la console globale</p></div>
