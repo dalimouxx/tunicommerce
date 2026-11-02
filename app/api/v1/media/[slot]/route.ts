@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {getCurrentUser} from '../../../../../modules/auth/session';
+import {requireOwnCommerceWorkspace} from '../../../../../modules/auth/own-commerce';
 import {assertSameOrigin,respond,HttpError} from '../../../../../modules/auth/http';
 import {consumeAttempt} from '../../../../../modules/auth/service';
 import {mediaSlots,readBoundedMedia} from '../../../../../modules/media/validation';
@@ -11,9 +11,7 @@ export const runtime='nodejs';
 export async function PUT(req:Request,{params}:{params:Promise<{slot:string}>}){
  try{
   assertSameOrigin(req);
-  const user=await getCurrentUser();
-  if(!user)throw new HttpError(401,'Connexion requise');
-  if(user.role!=='MERCHANT')throw new HttpError(403,'Importation réservée au propriétaire');
+  const user=await requireOwnCommerceWorkspace();
   const {slot:input}=await params;
   const slot=z.enum(mediaSlots).parse(input);
   await consumeAttempt('media-upload:'+user.userId,30);
