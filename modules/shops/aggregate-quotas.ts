@@ -32,7 +32,7 @@ export function assertMerchantAggregateQuotas(
   throw new HttpError(409,`Plafond global atteint : ${usage.ordersThisMonth}/${quotas.maxOrdersPerMonth} commandes ce mois-ci, toutes boutiques confondues.`);
 }
 
-type Mutation={action:string;payload:unknown;requestId:string};
+type Mutation={action:string;payload?:unknown;requestId:string};
 /**
  * A per-owner transaction advisory lock serializes writes to all NEW ShopCommerce records
  * initiated by this service. Legacy Workspace writes use their existing code path and are
