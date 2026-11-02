@@ -12,7 +12,7 @@ export default async function ShopManagement({
  const actor=await getCurrentUser();
  if(!actor)redirect('/login');
  if(actor.role!=='ADMIN')redirect('/marchand');
- const [workspaces,options]=await Promise.all([
+ const [workspaces,options,plans]=await Promise.all([
   prisma.workspace.findMany({
    select:{
     id:true,data:true,slug:true,published:true,plan:true,
@@ -23,7 +23,8 @@ export default async function ShopManagement({
    orderBy:{updatedAt:'desc'},
    take:200
   }),
-  searchParams
+  searchParams,
+  prisma.subscriptionPlan.findMany({where:{enabled:true},select:{code:true},orderBy:{code:'asc'}})
  ]);
  const shops:ManagedShop[]=workspaces.map(s=>({
   id:s.id,name:legacyShopName(s.data),owner:s.owner.name,
@@ -33,5 +34,5 @@ export default async function ShopManagement({
   subscriptionEndsAt:s.subscriptionEndsAt?.toISOString()||'',
   hasLinkedShop:!!s.shop
  }));
- return <AdminPanel shops={shops} initialShopId={options.shop||''} initialFilter={options.filtre||'all'}/>;
+ return <AdminPanel plans={plans.map(p=>p.code)} shops={shops} initialShopId={options.shop||''} initialFilter={options.filtre||'all'}/>;
 }
