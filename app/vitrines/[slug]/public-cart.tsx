@@ -3,10 +3,11 @@ import {useRef,useState,type FormEvent} from 'react';
 import {governors} from '../../../modules/commerce/types';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
+type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;error?:string};
 const amount=(v:number)=>(v/1000).toFixed(3);
 
-export default function PublicCart({slug,products}:{slug:string;products:Product[]}){
+export default function PublicCart({slug,products,shipping,zones}:{slug:string;products:Product[];shipping:number;zones:Zone[]}){
  const [quantities,setQuantities]=useState<Record<string,number>>({});
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
@@ -18,6 +19,9 @@ export default function PublicCart({slug,products}:{slug:string;products:Product
  const requestId=useRef<string|null>(null);
  const selected=products.filter(p=>p.available&&quantities[p.id]>0).map(p=>({...p,quantity:quantities[p.id]}));
  const subtotal=selected.reduce((n,p)=>n+p.price*p.quantity,0);
+ const zone=zones.find(zone=>zone.governorates.includes(city));
+ const delivery=zone?(zone.freeAbove!==null&&subtotal>=zone.freeAbove?0:zone.fee):shipping;
+ const estimatedTotal=subtotal+delivery;
  function updateQuantity(id:string,qty:number){
   requestId.current=null;
   setQuantities(previous=>({...previous,[id]:qty}));
@@ -58,7 +62,8 @@ export default function PublicCart({slug,products}:{slug:string;products:Product
     onChange={e=>updateQuantity(p.id,Math.min(10,Math.max(0,Number.isFinite(Number(e.target.value))?Math.floor(Number(e.target.value)):0)))}
     style={{padding:8,width:72}}/>
   </label>)}
-  <p>Sous-total indicatif : <strong>{amount(subtotal)} TND</strong> · livraison ajoutée à la confirmation</p>
+  <p>Sous-total : <strong>{amount(subtotal)} TND</strong> · livraison : {amount(delivery)} TND · total estimé : <strong>{amount(estimatedTotal)} TND</strong></p>
+  <p>Les tarifs et les stocks sont revérifiés par le serveur lors de la commande. Aucun paiement n'est demandé en ligne.</p>
   {notice&&<p role="alert">{notice}</p>}
   <form onSubmit={e=>void submit(e)} style={{display:'grid',gap:12,maxWidth:420}}>
    <label>Nom complet<input required minLength={2} maxLength={160} value={name} onChange={e=>{setName(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
