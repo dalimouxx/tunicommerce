@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
+import {replenishmentQueue} from '../../../modules/shops/operational-queues';
 
 type Product={id:string;sku:string;name:string;category:string;variant:string;price:number;cost:number;stock:number;threshold:number;color:string;active:boolean};
 const toTnd=(millimes:number)=>(millimes/1000).toFixed(3);
@@ -16,7 +17,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
  const [cost,setCost]=useState('');
  const [openingStock,setOpeningStock]=useState('0');
  const [stockAdjust,setStockAdjust]=useState<Record<string,string>>({});
- const lowStock=products.filter(p=>p.active&&p.stock<=p.threshold).sort((a,b)=>a.stock-b.stock);
+ const lowStock=replenishmentQueue(products);
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/inventory';
  useEffect(()=>{
   let active=true;
@@ -66,8 +67,8 @@ export default function ShopInventory({shopId}:{shopId:string}){
    </form>
    {lowStock.length>0&&<div style={{border:'1px solid #ead2a6',background:'#fff9ed',borderRadius:12,padding:14,marginBottom:16}}>
     <strong>Alertes de stock · {lowStock.length} produit(s)</strong>
-    <p style={{margin:'8px 0'}}>Ces articles sont épuisés ou à leur seuil de réapprovisionnement.</p>
-    <ul>{lowStock.slice(0,10).map(p=><li key={p.id}>{p.name} ({p.sku}) : {p.stock} unité(s), seuil {p.threshold}</li>)}</ul>
+    <p style={{margin:'8px 0'}}>Ces articles sont épuisés ou à leur seuil de réapprovisionnement. Les quantités proposées sont indicatives pour dépasser le seuil, sans commande fournisseur automatique.</p>
+    <ul>{lowStock.slice(0,10).map(p=><li key={p.id}>{p.name} ({p.sku}) : {p.stock} unité(s), seuil {p.threshold} · {p.outOfStock?'RUPTURE · ':''}réapprovisionnement minimum suggéré : {p.suggestedMinimum}</li>)}</ul>
     {lowStock.length>10&&<p>Et {lowStock.length-10} autres articles à vérifier.</p>}
    </div>}
    <div style={{overflowX:'auto'}}> 

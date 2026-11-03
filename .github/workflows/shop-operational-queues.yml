@@ -1,0 +1,24 @@
+name: TuniCommerce shop operational queues
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/operational-queues.ts'
+      - 'app/mes-boutiques/[shopId]/shop-confirmation-desk.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-inventory.tsx'
+      - 'tests/shop-operational-queues.test.ts'
+      - '.github/workflows/shop-operational-queues.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/shop-operational-queues.test.ts
+      - run: npm run typecheck
+      - run: npm run build

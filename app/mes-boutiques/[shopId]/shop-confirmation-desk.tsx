@@ -1,8 +1,8 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import {confirmationQueue} from '../../../modules/shops/operational-queues';
 
 type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[]};
-const due=new Set(['TO_CONFIRM','NO_ANSWER','CALLBACK']);
 
 export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/orders';
@@ -45,20 +45,22 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau');}
   finally{setBusy('');}
  }
- const toProcess=orders.filter(order=>due.has(order.status));
+ const toProcess=confirmationQueue(orders);
+ const overdueCount=toProcess.filter(order=>order.priority==='OVERDUE').length;
+ const scheduledCount=toProcess.filter(order=>order.priority==='SCHEDULED').length;
  return <section style={{background:'white',padding:24,borderRadius:18,border:'1px solid #e0e6ee',marginTop:16}}>
   <h2>Centre de confirmation · Boutique indépendante</h2>
   <p style={{color:'#566477'}}>Confirmer, noter sans réponse, programmer un rappel ou annuler. Aucune communication téléphonique ou WhatsApp n'est envoyée automatiquement.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement…</p>:<>
-   <p>{toProcess.length} commande(s) à traiter</p>
+   <p>{toProcess.length} commande(s) dans la file · {overdueCount} rappel(s) à effectuer · {scheduledCount} rappel(s) à venir.</p>
    <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
     <thead><tr><th>Commande</th><th>Client</th><th>Articles</th><th>Statut</th><th>Actions</th></tr></thead>
     <tbody>{toProcess.slice(0,30).map(order=><tr key={order.id} style={{borderTop:'1px solid #e0e6ee'}}>
      <td style={{padding:10}}>{order.reference}</td>
      <td style={{padding:10}}>{order.customerSnapshot?order.customerSnapshot.name+' · '+order.customerSnapshot.phone:'Client non renseigné'}</td>
      <td style={{padding:10}}>{order.items.map(i=>i.name+' × '+i.quantity).join(', ')}</td>
-     <td style={{padding:10}}>{order.status}{order.callbackAt&&order.status==='CALLBACK'?' · '+new Date(order.callbackAt).toLocaleString('fr-TN'):''}</td>
+     <td style={{padding:10}}>{order.status}{order.priority==='OVERDUE'?' · Rappel dû':order.priority==='SCHEDULED'?' · Rappel prévu':''}{order.callbackAt&&order.status==='CALLBACK'&&Number.isFinite(Date.parse(order.callbackAt))?' · '+new Date(order.callbackAt).toLocaleString('fr-TN'):''}</td>
      <td style={{padding:10}}>
       <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
        <button disabled={!!busy} onClick={()=>void change(order.id,'CONFIRMED')}>Confirmer</button>
