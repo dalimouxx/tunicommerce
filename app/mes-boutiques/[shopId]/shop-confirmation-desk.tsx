@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {confirmationQueue} from '../../../modules/shops/operational-queues';
+import {contactChannels,contactOutcomes,contactHistory,contactLogNote,contactHistoryStats,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
 type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[]};
 
@@ -11,7 +12,10 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const [busy,setBusy]=useState('');
  const [notice,setNotice]=useState('');
  const [callbackDates,setCallbackDates]=useState<Record<string,string>>({});
+ const [channels,setChannels]=useState<Record<string,ContactChannel>>({});
+ const [outcomes,setOutcomes]=useState<Record<string,ContactOutcome>>({});
  const pending=useRef<Record<string,{action:'transition';payload:{id:string;status:string;callbackAt?:string};requestId:string}>>({});
+ const notesPending=useRef<Record<string,{action:'note';payload:{id:string;note:string};requestId:string}>>({});
  useEffect(()=>{
   const controller=new AbortController();
   fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{
@@ -45,7 +49,26 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau');}
   finally{setBusy('');}
  }
+ async function recordContact(order:Order){
+  const channel=channels[order.id]||'Téléphone';
+  const outcome=outcomes[order.id]||'Sans réponse';
+  if(!window.confirm('Confirmer que ce contact a réellement été effectué ? Aucun appel ou message ne sera envoyé par TuniCommerce.'))return;
+  const note=contactLogNote(channel,outcome);
+  const key=order.id+':'+note;
+  const previous=notesPending.current[key];
+  const request=previous||{action:'note' as const,payload:{id:order.id,note},requestId:crypto.randomUUID()};
+  notesPending.current[key]=request;setBusy(order.id);setNotice('');
+  try{
+   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+   const result=await response.json() as {orders?:Order[];error?:string};
+   if(!response.ok)throw new Error(result.error||'Contact non enregistré');
+   setOrders(result.orders||[]);delete notesPending.current[key];
+   setNotice('Tentative manuelle enregistrée dans l’historique de la commande.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier le résultat.');}
+  finally{setBusy('');}
+ }
  const toProcess=confirmationQueue(orders);
+ const contactStats=contactHistoryStats(orders);
  const overdueCount=toProcess.filter(order=>order.priority==='OVERDUE').length;
  const scheduledCount=toProcess.filter(order=>order.priority==='SCHEDULED').length;
  return <section style={{background:'white',padding:24,borderRadius:18,border:'1px solid #e0e6ee',marginTop:16}}>
@@ -53,7 +76,8 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   <p style={{color:'#566477'}}>Confirmer, noter sans réponse, programmer un rappel ou annuler. Aucune communication téléphonique ou WhatsApp n'est envoyée automatiquement.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement…</p>:<>
-   <p>{toProcess.length} commande(s) dans la file · {overdueCount} rappel(s) à effectuer · {scheduledCount} rappel(s) à venir.</p>
+   <p>{toProcess.length} commande(s) dans la file · {overdueCount} rappel(s) à effectuer · {scheduledCount} rappel(s) à venir · {contactStats.attempts} tentative(s) manuelle(s) enregistrée(s).</p>
+   <p>Les résultats ci-dessous sont saisis par les agents et ne constituent pas une preuve d’appel ou de message envoyé.</p>
    <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
     <thead><tr><th>Commande</th><th>Client</th><th>Articles</th><th>Statut</th><th>Actions</th></tr></thead>
     <tbody>{toProcess.slice(0,30).map(order=><tr key={order.id} style={{borderTop:'1px solid #e0e6ee'}}>
@@ -68,7 +92,11 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
        <label>Rappel<input type="datetime-local" aria-label={'Date du rappel '+order.reference} value={callbackDates[order.id]||''} onChange={e=>setCallbackDates(values=>({...values,[order.id]:e.target.value}))}/></label>
        <button disabled={!!busy||order.status==='CALLBACK'||!callbackDates[order.id]||Number.isNaN(new Date(callbackDates[order.id]).getTime())||new Date(callbackDates[order.id]).getTime()<=Date.now()} onClick={()=>void change(order.id,'CALLBACK')}>Planifier</button>
        <button disabled={!!busy} onClick={()=>{if(window.confirm('Annuler '+order.reference+' et libérer le stock ?'))void change(order.id,'CANCELLED');}}>Annuler</button>
+       <label>Canal déclaré<select aria-label={'Canal contact '+order.reference} value={channels[order.id]||'Téléphone'} onChange={e=>setChannels(values=>({...values,[order.id]:e.target.value as ContactChannel}))}>{contactChannels.map(channel=><option key={channel}>{channel}</option>)}</select></label>
+       <label>Résultat déclaré<select aria-label={'Résultat contact '+order.reference} value={outcomes[order.id]||'Sans réponse'} onChange={e=>setOutcomes(values=>({...values,[order.id]:e.target.value as ContactOutcome}))}>{contactOutcomes.map(outcome=><option key={outcome}>{outcome}</option>)}</select></label>
+       <button disabled={!!busy} onClick={()=>void recordContact(order)}>Enregistrer le contact effectué</button>
       </div>
+      {contactHistory(order).length>0&&<details><summary>Historique des contacts manuels ({contactHistory(order).length})</summary><ul>{contactHistory(order).map((entry,i)=><li key={i}>{new Date(entry.at).toLocaleString('fr-TN')} · {entry.label}</li>)}</ul></details>}
      </td>
     </tr>)}</tbody>
    </table></div>
