@@ -1,0 +1,93 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+import {fulfillmentQueue} from '../../../modules/shops/order-fulfillment';
+
+type Order={
+ id:string;reference:string;status:string;total:number;createdAt:string;
+ items:{name:string;variant:string;quantity:number}[];
+ customerSnapshot?:{name:string;phone:string;city:string;address:string};
+ carrier:string;tracking:string
+};
+type Transition='PREPARING'|'READY'|'SHIPPED'|'DELIVERED';
+type Request={action:'transition';requestId:string;payload:{id:string;status:Transition;carrier?:string;tracking?:string}};
+
+export default function ShopFulfillment({shopId}:{shopId:string}){
+ const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/orders';
+ const [orders,setOrders]=useState<Order[]>([]);
+ const [carrier,setCarrier]=useState<Record<string,string>>({});
+ const [tracking,setTracking]=useState<Record<string,string>>({});
+ const [loading,setLoading]=useState(true);
+ const [busy,setBusy]=useState(false);
+ const [notice,setNotice]=useState('');
+ const pending=useRef<Record<string,Request>>({});
+ useEffect(()=>{
+  const controller=new AbortController();
+  setLoading(true);setNotice('');
+  fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{
+   const data=await response.json() as {orders?:Order[];error?:string};
+   if(!response.ok)throw Error(data.error||'Commandes indisponibles');
+   if(!controller.signal.aborted)setOrders(data.orders||[]);
+  }).catch(error=>{if(!controller.signal.aborted)setNotice(error instanceof Error?error.message:'Erreur réseau');})
+  .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+  return()=>controller.abort();
+ },[url]);
+
+ async function advance(order:Order,status:Transition){
+  if(status==='DELIVERED'&&!window.confirm('Confirmer que la commande '+order.reference+' a réellement été livrée ?'))return;
+  const extra=status==='SHIPPED'?{carrier:(carrier[order.id]||'').trim(),tracking:(tracking[order.id]||'').trim()}:{};
+  if(status==='SHIPPED'&&(!('carrier' in extra&&extra.carrier)||!('tracking' in extra&&extra.tracking))){
+   setNotice('Transporteur et numéro de suivi sont obligatoires pour expédier.');return;
+  }
+  const payload={id:order.id,status,...extra};
+  const key=order.id+':'+status;
+  const previous=pending.current[key];
+  const request=previous&&JSON.stringify(previous.payload)===JSON.stringify(payload)?previous:
+   {action:'transition' as const,requestId:crypto.randomUUID(),payload};
+  pending.current[key]=request;setBusy(true);setNotice('');
+  try{
+   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+   const result=await response.json() as {orders?:Order[];error?:string};
+   if(!response.ok)throw Error(result.error||'Transition refusée');
+   setOrders(result.orders||[]);
+   delete pending.current[key];
+   setNotice('Commande '+order.reference+' mise à jour. Le statut est maintenant visible dans le suivi client.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier les champs.');}
+  finally{setBusy(false);}
+ }
+ const queue=fulfillmentQueue(orders);
+ return <section style={{background:'#fff',border:'1px solid #e0e6ee',borderRadius:18,padding:24,marginTop:16}}>
+  <h2>Préparation, expédition et livraison</h2>
+  <p style={{color:'#566477'}}>Seules les commandes de cette boutique sont affichées. Les transitions sont contrôlées par le serveur ; déclarer « Livrée » exige une confirmation manuelle.</p>
+  {notice&&<p role="status" aria-live="polite">{notice}</p>}
+  {loading?<p>Chargement des commandes…</p>:<>
+   <p>{queue.length} commande(s) à préparer, expédier ou clôturer.</p>
+   <div style={{overflowX:'auto'}}><table style={{borderCollapse:'collapse',textAlign:'left',width:'100%'}}>
+    <thead><tr><th>Commande et client</th><th>Articles à préparer</th><th>État</th><th>Action</th></tr></thead>
+    <tbody>{queue.slice(0,30).map(order=><tr key={order.id} style={{borderTop:'1px solid #e5ebee'}}>
+     <td style={{padding:10}}><strong>{order.reference}</strong>
+      <p>{order.customerSnapshot?.name||'Client'} · {order.customerSnapshot?.phone||'Numéro indisponible'}</p>
+      <p>{order.customerSnapshot?.city||''} · {order.customerSnapshot?.address||''}</p>
+      <p>{(order.total/1000).toFixed(3)} TND</p>
+     </td>
+     <td style={{padding:10}}>{order.items.map((item,i)=><p key={i}>{item.name}{item.variant?' · '+item.variant:''} × {item.quantity}</p>)}</td>
+     <td style={{padding:10}}>{order.status}</td>
+     <td style={{padding:10}}>
+      {order.status==='CONFIRMED'&&<button disabled={busy} onClick={()=>void advance(order,'PREPARING')}>Commencer préparation</button>}
+      {order.status==='PREPARING'&&<button disabled={busy} onClick={()=>void advance(order,'READY')}>Colis prêt</button>}
+      {order.status==='READY'&&<div style={{display:'grid',gap:6}}>
+       <label>Transporteur<input maxLength={160} value={carrier[order.id]||''} onChange={e=>setCarrier(x=>({...x,[order.id]:e.target.value}))} placeholder="Nom du transporteur"/></label>
+       <label>Numéro de suivi<input maxLength={160} value={tracking[order.id]||''} onChange={e=>setTracking(x=>({...x,[order.id]:e.target.value}))} placeholder="Référence unique"/></label>
+       <button disabled={busy} onClick={()=>void advance(order,'SHIPPED')}>Confirmer l'expédition</button>
+      </div>}
+      {order.status==='SHIPPED'&&<div>
+       <p>Transporteur : {order.carrier||'Non renseigné'} · {order.tracking||'Sans suivi'}</p>
+       <button disabled={busy} onClick={()=>void advance(order,'DELIVERED')}>Marquer livrée</button>
+      </div>}
+     </td>
+    </tr>)}</tbody>
+   </table></div>
+   {queue.length===0&&<p>Aucune commande en préparation ou en livraison.</p>}
+   {queue.length>30&&<p>Seules les 30 premières commandes sont affichées.</p>}
+  </>}
+ </section>;
+}
