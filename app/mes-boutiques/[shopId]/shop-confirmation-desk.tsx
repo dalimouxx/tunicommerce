@@ -24,7 +24,11 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  },[url]);
 
  async function change(id:string,status:'CONFIRMED'|'NO_ANSWER'|'CALLBACK'|'CANCELLED'){
-  const callbackAt=status==='CALLBACK'?new Date(callbackDates[id]||'').toISOString():undefined;
+  const scheduled=status==='CALLBACK'?new Date(callbackDates[id]||''):null;
+  if(scheduled&&(!Number.isFinite(scheduled.getTime())||scheduled.getTime()<=Date.now())){
+   setNotice('Choisissez une date de rappel future.');return;
+  }
+  const callbackAt=scheduled?.toISOString();
   const key=id+':'+status;
   const payload={id,status,...(callbackAt?{callbackAt}:{})};
   const existing=pending.current[key];
@@ -60,7 +64,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
        <button disabled={!!busy} onClick={()=>void change(order.id,'CONFIRMED')}>Confirmer</button>
        {order.status!=='NO_ANSWER'&&<button disabled={!!busy} onClick={()=>void change(order.id,'NO_ANSWER')}>Sans réponse</button>}
        <label>Rappel<input type="datetime-local" aria-label={'Date du rappel '+order.reference} value={callbackDates[order.id]||''} onChange={e=>setCallbackDates(values=>({...values,[order.id]:e.target.value}))}/></label>
-       <button disabled={!!busy||!callbackDates[order.id]||Number.isNaN(new Date(callbackDates[order.id]).getTime())||new Date(callbackDates[order.id]).getTime()<=Date.now()} onClick={()=>void change(order.id,'CALLBACK')}>Planifier</button>
+       <button disabled={!!busy||order.status==='CALLBACK'||!callbackDates[order.id]||Number.isNaN(new Date(callbackDates[order.id]).getTime())||new Date(callbackDates[order.id]).getTime()<=Date.now()} onClick={()=>void change(order.id,'CALLBACK')}>Planifier</button>
        <button disabled={!!busy} onClick={()=>{if(window.confirm('Annuler '+order.reference+' et libérer le stock ?'))void change(order.id,'CANCELLED');}}>Annuler</button>
       </div>
      </td>
