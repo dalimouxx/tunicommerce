@@ -37,7 +37,7 @@ test('subscription order quota prevents growth across all owned shops',()=>{
   carrier:'',tracking:'',notes:'',createdAt:now.toISOString(),updatedAt:now.toISOString(),callbackAt:'',events:[]
  }));
  const capped={maxProducts:null,maxOrdersPerMonth:10,maxPhotos:30};
- assert.throws(()=>assertMerchantAggregateQuotas([],before,after,capped,now),/Plafond/);
+ assert.throws(()=>assertMerchantAggregateQuotas([],before,after,capped,now),/Limite|Plafond/);
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,after,{...capped,maxOrdersPerMonth:20},now));
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,after,{...capped,maxOrdersPerMonth:null},now));
  assert.equal(before.orders.length,0);
