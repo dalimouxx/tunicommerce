@@ -82,7 +82,6 @@ export default async function MyShops(){
      <p>{access.explanation}</p>
      <div className={styles.actions}>
       {(access.manageOwnCommerce||(active&&role==='OWNER'&&shop.legacyWorkspaceId===null))&&<Link className={styles.primary} href={"/mes-boutiques/"+encodeURIComponent(shop.id)}>Tableau de bord boutique</Link>}
-      {active&&role==='OWNER'&&shop.legacyWorkspaceId===null&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/apercu'}>Aperçu de ma vitrine</Link>}
       {!access.manageOwnCommerce&&access.mayOpenTeam&&shop.legacyWorkspaceId===null&&<Link className={styles.primary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)}>Mon espace collaborateur</Link>}
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
       {publicSlug&&<Link className={styles.secondary} href={'/boutiques/'+encodeURIComponent(publicSlug)}>Vitrine publique</Link>}
