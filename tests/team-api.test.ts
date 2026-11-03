@@ -189,6 +189,52 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
    assert.equal(ownerAfter.active,true);
   });
 
+  await t.test('Subscription staff seats cover all shops and cannot be bypassed by reactivation',async()=>{
+   // Establish an existing merchant Workspace using the historical API, preserving its data.
+   assert.equal((await get('/api/commerce',ownerCookie)).status,200);
+   const workspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
+   const oldPlan=await prisma.subscriptionPlan.findUniqueOrThrow({where:{code:workspace.plan}});
+   const member=await prisma.user.findUniqueOrThrow({where:{email:'member@example.test'}});
+   const viewer=await prisma.user.findUniqueOrThrow({where:{email:'viewer@example.test'}});
+   try{
+    await prisma.subscriptionPlan.update({where:{code:workspace.plan},data:{maxMembers:2}});
+    // Two existing active staff (MANAGER + ADMIN) exhaust the plan; OWNER is free.
+    assert.equal((await prisma.membership.count({where:{
+     active:true,userId:{not:owner.id},shop:{organization:{ownerId:owner.id}}
+    }})),2);
+    const deniedInvitation=await post('/api/v1/shops/'+otherShopId+'/invitations',ownerCookie,{
+     email:'viewer@example.test',role:'VIEWER'
+    });
+    // Invitations may be issued, but accepting cannot exceed the plan.
+    assert.equal(deniedInvitation.status,201);
+    const deniedId=(await deniedInvitation.json()).invitation.id as string;
+    assert.equal((await post('/api/v1/invitations/'+deniedId+'/accept',viewerCookie,{})).status,409);
+    const employee=await prisma.membership.findUniqueOrThrow({where:{shopId_userId:{shopId,userId:member.id}}});
+    assert.equal((await patch(members+'/'+employee.id,ownerCookie,{action:'setActive',active:false})).status,200);
+    // An invitation rejected for quota is not consumed, and can be accepted later.
+    assert.equal((await post('/api/v1/invitations/'+deniedId+'/accept',viewerCookie,{})).status,201);
+    assert.equal((await patch(members+'/'+employee.id,ownerCookie,{action:'setActive',active:true})).status,409);
+    // Revoke the second shop seat and restore the original employee.
+    const viewerMembership=await prisma.membership.findUniqueOrThrow({where:{shopId_userId:{shopId:otherShopId,userId:viewer.id}}});
+    assert.equal((await patch('/api/v1/shops/'+otherShopId+'/members/'+viewerMembership.id,ownerCookie,{action:'setActive',active:false})).status,200);
+    assert.equal((await patch(members+'/'+employee.id,ownerCookie,{action:'setActive',active:true})).status,200);
+    // Existing employee can join another shop of the same owner without consuming a seat.
+    const duplicate=await post('/api/v1/shops/'+otherShopId+'/invitations',ownerCookie,{
+     email:'member@example.test',role:'STOCK'
+    });
+    assert.equal(duplicate.status,201);
+    const duplicateId=(await duplicate.json()).invitation.id as string;
+    assert.equal((await post('/api/v1/invitations/'+duplicateId+'/accept',memberCookie,{})).status,201);
+    const all=await prisma.membership.findMany({
+     where:{active:true,shop:{organization:{ownerId:owner.id}}},
+     select:{userId:true}
+    });
+    assert.equal(new Set(all.filter(m=>m.userId!==owner.id).map(m=>m.userId)).size,2);
+   }finally{
+    await prisma.subscriptionPlan.update({where:{code:workspace.plan},data:{maxMembers:oldPlan.maxMembers}});
+   }
+  });
+
   await t.test('Existing JSON commerce workspace still operates unchanged',async()=>{
    const legacy=await get('/api/commerce',ownerCookie);
    assert.equal(legacy.status,200);
