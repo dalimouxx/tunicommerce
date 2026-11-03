@@ -1,0 +1,24 @@
+name: TuniCommerce merchant shop plan limits
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/plan-limits.ts'
+      - 'app/api/v1/shops/route.ts'
+      - 'tests/shop-plan-limits.test.ts'
+      - 'tests/tenancy-api.test.ts'
+      - '.github/workflows/merchant-shop-plan-limits.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/shop-plan-limits.test.ts
+      - run: npm run typecheck
+      - run: npm run build
