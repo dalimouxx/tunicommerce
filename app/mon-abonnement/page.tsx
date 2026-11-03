@@ -7,6 +7,10 @@ import {normalizeState} from '../../modules/commerce/normalize';
 import type {State} from '../../modules/commerce/types';
 import {loadWorkspaceQuotas} from '../../modules/subscriptions/quotas';
 import {subscriptionLabel} from '../../modules/platform/admin-overview';
+import {countMerchantShopSlots} from '../../modules/shops/plan-limits';
+import {countStaffSeats} from '../../modules/shops/member-limits';
+import {effectiveLimit} from '../../modules/subscriptions/validation';
+import {quotaOverview,subscriptionOverview} from '../../modules/subscriptions/overview';
 import {enabledReceptionMethods} from '../../modules/billing/reception';
 import styles from './plan.module.css';
 import SubscriptionBilling,{type PaymentHistory,type PaymentOffer} from './subscription-billing';
@@ -26,7 +30,7 @@ export default async function MySubscription(){
  if(!user)redirect('/login');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
- const [plan,quotas,photos,availablePlans,payments,methods]=await Promise.all([
+ const [plan,quotas,photos,availablePlans,payments,methods,shopCount,staffMemberships,linkedShop]=await Promise.all([
   prisma.subscriptionPlan.findUnique({where:{code:workspace.plan}}),
   loadWorkspaceQuotas(workspace),
   prisma.productMedia.count({where:{workspaceId:workspace.id}}),
@@ -43,7 +47,10 @@ export default async function MySubscription(){
     periodStartsAt:true,periodEndsAt:true,createdAt:true,decidedAt:true
    }
   }),
-  enabledReceptionMethods()
+  enabledReceptionMethods(),
+  prisma.shop.count({where:{organization:{ownerId:user.userId}}}),
+  prisma.membership.findMany({where:{active:true,shop:{organization:{ownerId:user.userId}}},select:{userId:true}}),
+  prisma.shop.findUnique({where:{legacyWorkspaceId:workspace.id},select:{id:true}})
  ]);
  const data=normalizeState(workspace.data as unknown as State);
  const month=tunisiaMonth(new Date());
@@ -54,6 +61,9 @@ export default async function MySubscription(){
   {name:'Photos produits',amount:photos,cap:quotas.maxPhotos,Icon:Images}
  ];
  const label=subscriptionLabel(workspace.subscriptionStatus,workspace.subscriptionEndsAt);
+ const status=subscriptionOverview(workspace.subscriptionStatus,workspace.subscriptionEndsAt);
+ const shops=quotaOverview(countMerchantShopSlots(shopCount,!linkedShop),effectiveLimit(plan?.maxShops??null,undefined));
+ const collaborators=quotaOverview(countStaffSeats(staffMemberships.map(m=>m.userId),user.userId),effectiveLimit(plan?.maxMembers??null,undefined));
  return <main className={styles.shell}>
   <div className={styles.content}>
    <Link href="/marchand" className={styles.back}><ArrowLeft size={16}/> Retour à ma boutique</Link>
@@ -71,6 +81,18 @@ export default async function MySubscription(){
     <div><small>Durée de l'offre</small><strong>{plan?plan.durationDays+' jours':'Non définie'}</strong><span>Référence de tarification</span></div>
     <div><small>Échéance actuelle</small><strong>{workspace.subscriptionEndsAt?workspace.subscriptionEndsAt.toLocaleDateString('fr-TN'):'Non définie'}</strong><span>Gérée par l'administration</span></div>
    </div>
+   <section className={styles.card}>
+    <h2><CalendarClock size={19}/> Abonnement et capacité multi-boutique</h2>
+    <p>{status.active?`Abonnement valide · ${status.daysRemaining} jour(s) restant(s)`:'Abonnement non actif ou échéance non configurée. Les droits sont contrôlés par le serveur.'}</p>
+    <div className={styles.usage}>
+     {[{name:'Boutiques',usage:shops},{name:'Collaborateurs distincts',usage:collaborators}].map(item=><div key={item.name}>
+      <ShieldCheck size={19}/>
+      <span><strong>{item.name}</strong><small>{item.usage.limit===null?`${item.usage.used} utilisés · Sans limite`:`${item.usage.used} / ${item.usage.limit} · ${item.usage.remaining} restant(s)`}</small></span>
+      {item.usage.limit!==null&&<progress max={Math.max(1,item.usage.limit)} value={Math.min(item.usage.used,item.usage.limit)} aria-label={'Utilisation '+item.name}/>}
+     </div>)}
+    </div>
+    <p>Les limites s'appliquent à l'ensemble de vos organisations. Un collaborateur présent dans plusieurs boutiques n'occupe qu'une place. Cette vue ne renouvelle pas l'abonnement.</p>
+   </section>
    <section className={styles.card}>
     <h2><CalendarClock size={19}/> Utilisation de votre boutique</h2>
     <div className={styles.usage}>
