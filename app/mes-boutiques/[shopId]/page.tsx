@@ -12,6 +12,7 @@ import ShopInventory from './shop-inventory';
 import ShopOrders from './shop-orders';
 import ShopCustomers from './shop-customers';
 import ShopExpenses from './shop-expenses';
+import ShopCodSettlements from './shop-cod-settlements';
 import TeamCommerce from './team-commerce';
 import styles from '../shops.module.css';
 
@@ -105,7 +106,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      </div>)}
     </div>
    </section>}
-   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/></>}</>:
+   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/></>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
