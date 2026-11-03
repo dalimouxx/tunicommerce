@@ -9,6 +9,8 @@ export function isolatedStorefrontPreview(state:State){
  return {
   name:catalog.name,
   description:catalog.description,
+  shipping:catalog.shipping,
+  zones:catalog.zones,
   products:catalog.products.map(product=>({
    id:product.id,name:product.name,category:product.category,variant:product.variant,
    price:product.price,description:product.description,imageUrl:product.imageUrl,
