@@ -20,13 +20,20 @@ export type ShopSlotUsage={used:number;limit:number|null;plan:string};
  */
 export async function shopSlotsForOwner(
  ownerId:string,
- tx:Pick<typeof prisma,'workspace'|'subscriptionPlan'|'shop'>
+ tx:Pick<typeof prisma,'workspace'|'subscriptionPlan'|'shop'|'user'>
 ):Promise<ShopSlotUsage>{
  const workspace=await tx.workspace.findUnique({
   where:{ownerId},
   select:{id:true,plan:true,shop:{select:{id:true}}}
  });
- if(!workspace)throw new HttpError(409,'Un abonnement marchand doit être configuré avant la création de boutiques.');
+ if(!workspace){
+  // The bootstrap platform ADMIN predates merchant Workspace creation. Preserve
+  // this existing setup path; ordinary merchant accounts still fail closed.
+  const actor=await tx.user.findUnique({where:{id:ownerId},select:{role:true}});
+  if(actor?.role!=='ADMIN')throw new HttpError(409,'Un abonnement marchand doit être configuré avant la création de boutiques.');
+  const ownedCount=await tx.shop.count({where:{organization:{ownerId}}});
+  return {used:ownedCount,limit:null,plan:'PLATFORM_ADMIN_BOOTSTRAP'};
+ }
  const [plan,ownedCount]=await Promise.all([
   tx.subscriptionPlan.findUnique({where:{code:workspace.plan},select:{maxShops:true,enabled:true}}),
   tx.shop.count({where:{organization:{ownerId}}})
