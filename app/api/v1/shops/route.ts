@@ -4,6 +4,7 @@ import {prisma} from '../../../../modules/storage/client';
 import {getCurrentUser} from '../../../../modules/auth/session';
 import {assertSameOrigin,readJson,respond,HttpError} from '../../../../modules/auth/http';
 import {newShopInput} from '../../../../modules/shops/validation';
+import {shopSlotsForOwner,assertShopSlotLimit} from '../../../../modules/shops/plan-limits';
 
 export const dynamic='force-dynamic';
 
@@ -31,8 +32,12 @@ export async function POST(req:Request){
   if(!user)return respond({error:'Connexion requise'},401);
   const input=newShopInput.parse(await readJson(req));
   const shop=await prisma.$transaction(async tx=>{
+   // Serialize all shop creations for this merchant, across every organization.
+   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${user.userId}))`;
    const org=await tx.organization.findFirst({where:{id:input.organizationId,ownerId:user.userId},select:{id:true}});
    if(!org)throw new HttpError(403,'Organisation inaccessible');
+   const slots=await shopSlotsForOwner(user.userId,tx);
+   assertShopSlotLimit(slots.used,slots.limit);
    if(await tx.workspace.findUnique({where:{slug:input.slug},select:{id:true}}))
     throw new HttpError(409,'Ce lien de boutique est déjà utilisé');
    return tx.shop.create({
