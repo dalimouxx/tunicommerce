@@ -11,6 +11,7 @@ import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
 import ShopInventory from './shop-inventory';
 import ShopOrders from './shop-orders';
+import ShopConfirmationDesk from './shop-confirmation-desk';
 import ShopCustomers from './shop-customers';
 import ShopExpenses from './shop-expenses';
 import ShopCodSettlements from './shop-cod-settlements';
@@ -126,7 +127,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      {carrierRows.length===0&&<p>Aucune commande livrée avec encaissement COD à suivre.</p>}
     </div>
    </section>}
-   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/></>}</>:
+   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/></>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
