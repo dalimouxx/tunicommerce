@@ -114,9 +114,9 @@ export async function changeShopMember(actorId:string,shopId:string,memberId:str
   if(!target)throw new HttpError(404,'Membre introuvable');
   if(target.userId===actorId)throw new HttpError(403,'Vous ne pouvez pas modifier votre propre accès');
   if(target.role==='OWNER')throw new HttpError(403,'Le propriétaire ne peut pas être modifié');
-  if(target.role==='ADMIN'&&actor.role!=='OWNER')
+  if(target.role==='ADMIN'&&currentActor.role!=='OWNER')
    throw new HttpError(403,'Seul le propriétaire peut modifier un administrateur');
-  if(change.action==='setRole'&&change.role==='ADMIN'&&actor.role!=='OWNER')
+  if(change.action==='setRole'&&change.role==='ADMIN'&&currentActor.role!=='OWNER')
    throw new HttpError(403,'Seul le propriétaire peut attribuer le rôle administrateur');
   if(change.action==='setActive'&&change.active&&!target.active)
    await assertCanActivateStaff(ownerId,target.userId,tx);
