@@ -34,7 +34,7 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='recordCarrierStatement'){
   const p=z.object({
    orderId:str,reference:str,amount:amount.refine(n=>n>0),
-   date:z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/)
+   date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   }).strict().parse(payload);
   const parsed=new Date(p.date+'T12:00:00.000Z');
   if(!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==p.date)
