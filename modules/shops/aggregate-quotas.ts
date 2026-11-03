@@ -8,6 +8,7 @@ import type {State} from '../commerce/types';
 import {assertCommerceQuotas,quotasForOwner,type EnforcedQuotas} from '../subscriptions/quotas';
 import {requireIsolatedOwner} from './isolated-commerce';
 import {canAccessShop,type ShopPermission} from './permissions';
+import {assertPlanForNewCommerce,isCommerceGrowth} from './plan-growth-policy';
 
 export function tunisianMonth(value:Date|string):string{
  const date=typeof value==='string'?new Date(value):value;
@@ -71,6 +72,19 @@ export async function writeIsolatedCommerce(
    throw new HttpError(400,error instanceof Error?error.message:'Opération invalide');
   }
   check(before,next);
+  if(isCommerceGrowth(before,next)){
+   const account=await tx.workspace.findUnique({
+    where:{ownerId:billingOwnerId},
+    select:{plan:true,subscriptionStatus:true,subscriptionEndsAt:true}
+   });
+   const plan=account?await tx.subscriptionPlan.findUnique({
+    where:{code:account.plan},select:{enabled:true}
+   }):null;
+   assertPlanForNewCommerce({
+    status:account?.subscriptionStatus||'',expiresAt:account?.subscriptionEndsAt||null,
+    planExists:!!plan,planEnabled:plan?.enabled===true
+   });
+  }
   if(permission)next.audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),label:'Équipe '+userId+' ('+membership.role+') · '+input.action});
   const [legacy,otherShopRows]=await Promise.all([
    tx.workspace.findUnique({where:{ownerId:billingOwnerId},select:{data:true}}),

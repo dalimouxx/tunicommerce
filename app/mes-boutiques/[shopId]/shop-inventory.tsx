@@ -78,7 +78,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
  }
  return <section style={{background:'white',padding:24,borderRadius:18,border:'1px solid #e0e6ee',marginTop:16}}>
   <h2>Catalogue et stock indépendants</h2>
-  <p style={{color:'#566477'}}>Ces produits appartiennent uniquement à cette boutique. Pilote limité à 20 produits, sous réserve des quotas de votre offre.</p>
+  <p style={{color:'#566477'}}>Ces produits appartiennent uniquement à cette boutique. La quantité de produits autorisée dépend de votre formule SaaS et des plafonds globaux de votre compte.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement du catalogue…</p>:<>
    <form onSubmit={e=>void add(e)} style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'end',margin:'18px 0'}}>
@@ -87,7 +87,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
     <label>Prix (TND)<input required type="number" min="0" max="1000000" step="0.001" value={price} onChange={e=>setPrice(e.target.value)} style={{display:'block',padding:10,width:120}}/></label>
     <label>Coût (TND)<input required type="number" min="0" max="1000000" step="0.001" value={cost} onChange={e=>setCost(e.target.value)} style={{display:'block',padding:10,width:120}}/></label>
     <label>Stock initial<input required type="number" min="0" max="100000" step="1" value={openingStock} onChange={e=>setOpeningStock(e.target.value)} style={{display:'block',padding:10,width:110}}/></label>
-    <button type="submit" disabled={busy||products.length>=20} style={{border:0,borderRadius:10,padding:'12px 16px',background:'#126c65',color:'white',fontWeight:700}}>Ajouter le produit</button>
+    <button type="submit" disabled={busy} style={{border:0,borderRadius:10,padding:'12px 16px',background:'#126c65',color:'white',fontWeight:700}}>Ajouter le produit</button>
    </form>
    <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',margin:'14px 0'}}>
     <button type="button" disabled={busy||products.length===0} onClick={exportCatalog}>Exporter mon catalogue en CSV</button>

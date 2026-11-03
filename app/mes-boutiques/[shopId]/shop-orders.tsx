@@ -69,7 +69,7 @@ export default function ShopOrders({shopId}:{shopId:string}){
  }
  return <section style={{background:'white',borderRadius:18,padding:24,border:'1px solid #e0e6ee',marginTop:16}}>
   <h2>Commandes de cette boutique</h2>
-  <p style={{color:'#556477'}}>Pilote : commandes manuelles privées, limitées à 10 par mois et soumises aux quotas existants. Aucun checkout public activé.</p>
+  <p style={{color:'#556477'}}>Commandes manuelles et commandes publiques COD : plafonds définis par votre formule SaaS, toutes boutiques du même marchand confondues.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement…</p>:<>
    <form onSubmit={e=>void create(e)} style={{display:'flex',flexWrap:'wrap',alignItems:'end',gap:10,margin:'18px 0'}}>

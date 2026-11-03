@@ -8,8 +8,6 @@ import type {State} from '../commerce/types';
 import {assertCommerceQuotas,quotasForOwner} from '../subscriptions/quotas';
 import {requireIsolatedOwner} from './isolated-commerce';
 
-// Additional pilot guard until organization-wide shop/plan accounting is implemented.
-export const PILOT_MAX_PRODUCTS=20;
 export const inventoryMutation=z.object({
  action:z.enum(['product','stock']),
  payload:z.unknown(),
@@ -23,11 +21,7 @@ export function disallowLegacyProductMedia(action:'product'|'stock',payload:unkn
    throw new HttpError(409,'Les photos de la bibliothèque historique ne sont pas liées à cette boutique.');
  }
 }
-export function enforcePilotProductCap(previous:State,next:State){
- if(next.products.length>previous.products.length&&next.products.length>PILOT_MAX_PRODUCTS)
-  throw new HttpError(409,'Plafond provisoire de '+PILOT_MAX_PRODUCTS+' produits pour les nouvelles boutiques.');
-}
 export async function performShopInventoryAction(userId:string,shopId:string,input:z.infer<typeof inventoryMutation>){
  disallowLegacyProductMedia(input.action,input.payload);
- return writeIsolatedCommerce(userId,shopId,input,enforcePilotProductCap);
+ return writeIsolatedCommerce(userId,shopId,input,()=>{});
 }
