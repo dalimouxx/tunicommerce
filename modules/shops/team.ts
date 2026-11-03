@@ -2,6 +2,7 @@ import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import {requireShopPermission} from './permissions';
 import type {StaffRole} from './team-validation';
+import {ownerForShop,assertCanActivateStaff} from './member-limits';
 
 const inviteProjection={
  id:true,email:true,role:true,expiresAt:true,acceptedAt:true,revokedAt:true,createdAt:true
@@ -72,11 +73,15 @@ export async function acceptShopInvitation(user:{userId:string,email:string},inv
   const now=new Date();
   if(invitation.acceptedAt||invitation.revokedAt||invitation.expiresAt<=now)
    throw new HttpError(409,'Invitation expirée ou déjà utilisée');
+  const ownerId=await ownerForShop(invitation.shopId,tx);
+  // The same lock protects cross-shop activations and shop creation quotas.
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${ownerId}))`;
   const existing=await tx.membership.findUnique({
    where:{shopId_userId:{shopId:invitation.shopId,userId:user.userId}}
   });
   if(existing?.role==='OWNER')throw new HttpError(409,'Le propriétaire conserve son rôle');
   if(existing?.active)throw new HttpError(409,'Vous avez déjà accès à cette boutique');
+  await assertCanActivateStaff(ownerId,user.userId,tx);
   const claimed=await tx.shopInvitation.updateMany({
    where:{id:invitation.id,email:user.email,acceptedAt:null,revokedAt:null,expiresAt:{gt:now}},
    data:{acceptedAt:now}
@@ -95,8 +100,16 @@ export async function acceptShopInvitation(user:{userId:string,email:string},inv
 export async function changeShopMember(actorId:string,shopId:string,memberId:string,change:{action:'setRole',role:StaffRole}|{action:'setActive',active:boolean}){
  const actor=await requireShopPermission(actorId,shopId,'team.manage');
  return prisma.$transaction(async tx=>{
+  const ownerId=await ownerForShop(shopId,tx);
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${ownerId}))`;
+  // Recheck the actor while holding the lock; revoked managers cannot perform updates.
+  const currentActor=await tx.membership.findUnique({
+   where:{shopId_userId:{shopId,userId:actorId}},select:{role:true,active:true}
+  });
+  if(!currentActor?.active||!['OWNER','ADMIN'].includes(currentActor.role))
+   throw new HttpError(403,'Accès équipe interdit');
   const target=await tx.membership.findFirst({
-   where:{id:memberId,shopId},select:{id:true,userId:true,role:true}
+   where:{id:memberId,shopId},select:{id:true,userId:true,role:true,active:true}
   });
   if(!target)throw new HttpError(404,'Membre introuvable');
   if(target.userId===actorId)throw new HttpError(403,'Vous ne pouvez pas modifier votre propre accès');
@@ -105,6 +118,8 @@ export async function changeShopMember(actorId:string,shopId:string,memberId:str
    throw new HttpError(403,'Seul le propriétaire peut modifier un administrateur');
   if(change.action==='setRole'&&change.role==='ADMIN'&&actor.role!=='OWNER')
    throw new HttpError(403,'Seul le propriétaire peut attribuer le rôle administrateur');
+  if(change.action==='setActive'&&change.active&&!target.active)
+   await assertCanActivateStaff(ownerId,target.userId,tx);
   return tx.membership.update({
    where:{id:target.id},
    data:change.action==='setRole'?{role:change.role}:{active:change.active},
