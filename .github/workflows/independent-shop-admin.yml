@@ -1,0 +1,24 @@
+name: TuniCommerce global independent shop overview
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/independent-shop-admin.ts'
+      - 'app/admin/boutiques-independantes/page.tsx'
+      - 'app/admin/gestion-boutiques/page.tsx'
+      - 'tests/independent-shop-admin.test.ts'
+      - '.github/workflows/independent-shop-admin.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/independent-shop-admin.test.ts
+      - run: npm run typecheck
+      - run: npm run build

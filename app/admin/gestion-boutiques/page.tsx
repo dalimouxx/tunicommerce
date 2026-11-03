@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
@@ -34,5 +35,7 @@ export default async function ShopManagement({
   subscriptionEndsAt:s.subscriptionEndsAt?.toISOString()||'',
   hasLinkedShop:!!s.shop
  }));
- return <AdminPanel plans={plans.map(p=>p.code)} shops={shops} initialShopId={options.shop||''} initialFilter={options.filtre||'all'}/>;
+ return <><nav style={{padding:'12px 24px',background:'#f6fafb'}}>
+  <Link href="/admin/boutiques-independantes">Supervision des nouvelles boutiques indépendantes</Link>
+ </nav><AdminPanel plans={plans.map(p=>p.code)} shops={shops} initialShopId={options.shop||''} initialFilter={options.filtre||'all'}/></>;
 }
