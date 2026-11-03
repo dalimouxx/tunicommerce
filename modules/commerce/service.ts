@@ -31,6 +31,27 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  let result=s;if(p.status==='ACCEPTED'&&request.type==='CANCEL')result=applyAction(s,'transition',{id:order.id,status:'CANCELLED'});
  const target=result.orders.find(o=>o.id===p.orderId)!.customerRequests!.find(r=>r.id===p.requestId)!;target.status=p.status;target.reply=p.reply;result.audit.unshift({id:id(),at:now,label:'Demande client '+p.status+' · '+order.reference});return result;
  }
+ if(action==='recordCarrierStatement'){
+  const p=z.object({
+   orderId:str,reference:str,amount:amount.refine(n=>n>0),
+   date:z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/)
+  }).strict().parse(payload);
+  const parsed=new Date(p.date+'T12:00:00.000Z');
+  if(!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==p.date)
+   throw Error('Date de bordereau invalide');
+  const order=s.orders.find(o=>o.id===p.orderId);
+  if(!order||order.status!=='DELIVERED')throw Error('Bordereau autorisé seulement pour une commande livrée');
+  if(!order.carrier.trim())throw Error('Transporteur non renseigné sur la commande');
+  const records=s.carrierStatements||[];
+  if(records.some(record=>record.orderId===order.id&&record.reference===p.reference))
+   throw Error('Cette référence de bordereau existe déjà pour cette commande');
+  records.unshift({id:id(),orderId:order.id,carrier:order.carrier,reference:p.reference,
+   amount:p.amount,date:p.date,at:now});
+  s.carrierStatements=records;
+  order.events.push({at:now,label:'Bordereau déclaré '+p.reference+' · '+(p.amount/1000).toFixed(3)+' TND (non encaissé)'});
+  log('Bordereau déclaré '+p.reference+' · '+order.reference);
+  return s;
+ }
  if(action==='reset'){if((payload as {confirm?:string})?.confirm!=='EFFACER')throw Error('Confirmation requise');return initialState(false);}
  if(['receiveReturn','refundReturn'].includes(action))return applyReturn(s,action,payload);
  if(['createInvoice','issueInvoice','cancelInvoice'].includes(action))return applyInvoice(s,action,payload);
