@@ -20,7 +20,7 @@ test('product limits use plan and optional workspace override rather than a fixe
   color:'#aabbcc',price:1000,cost:0,stock:1,threshold:0,active:true
  }));
  const basic={maxProducts:20,maxOrdersPerMonth:null,maxPhotos:30};
- assert.throws(()=>assertMerchantAggregateQuotas([],before,next,basic),/Plafond/);
+ assert.throws(()=>assertMerchantAggregateQuotas([],before,next,basic),/Limite|Plafond/);
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,next,{...basic,maxProducts:100}));
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,next,{...basic,maxProducts:null}));
  assert.equal(next.products.length,21);
