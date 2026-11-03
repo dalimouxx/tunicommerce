@@ -32,7 +32,8 @@ export default async function MyShops(){
    orderBy:{createdAt:'desc'}
   })
  ]);
- const hasUnlinkedLegacy=!!legacy&&!memberships.some(m=>m.shop.legacyWorkspaceId===legacy.id);
+ const linkedLegacyShop=legacy?await prisma.shop.findUnique({where:{legacyWorkspaceId:legacy.id},select:{id:true}}):null;
+ const hasUnlinkedLegacy=!!legacy&&!linkedLegacyShop;
  // Owner-wide quotas must include shops from every organization, even if an
  // unusual historic membership is missing; staff-only accounts see no owner quotas.
  const ownerWorkspace=legacy?await prisma.workspace.findUnique({where:{id:legacy.id},select:{plan:true,subscriptionStatus:true,subscriptionEndsAt:true}}):null;
