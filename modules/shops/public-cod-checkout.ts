@@ -12,7 +12,7 @@ import {enforcePilotOrderCap} from './orders';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 
 export const publicCodCheckoutInput=z.object({
- requestId:z.string().uuid(),
+ requestId:z.string().uuid().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
  name:z.string().trim().min(2).max(160),
  phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/),
  city:z.enum(governors as [string,...string[]]),
@@ -55,7 +55,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   }))throw new HttpError(404,'Boutique indisponible');
   const row=shop.commerce!;
   const before=normalizeState(row.data as unknown as State);
-  if(before.requests.includes(input.requestId))return {accepted:true,alreadyApplied:true};
+  if(before.requests.includes(input.requestId))return {accepted:true,alreadyApplied:true,trackingToken:input.requestId};
   const phone=input.phone.replace(/^\+216/,'');
   const recentOrder=before.orders.find(order=>
    order.customerSnapshot?.phone===phone&&
@@ -78,6 +78,9 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
    if(error instanceof z.ZodError)throw new HttpError(400,error.issues[0]?.message||'Commande invalide');
    throw new HttpError(409,error instanceof Error?error.message:'Commande invalide');
   }
+  // Random v4 checkout request ID doubles as an unguessable, bearer-only tracking token.
+  // No customer address or phone is exposed by the tracking view.
+  next.orders[0].publicReceiptId=input.requestId;
   enforcePilotOrderCap(before,next);
   const quotas=await loadWorkspaceQuotas(workspace!,tx);
   const otherShops=await tx.shopCommerce.findMany({where:{
@@ -96,6 +99,6 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   await tx.authThrottle.upsert({where:{key},create:{key,count:1,expiresAt},
    update:{count:newCount,expiresAt}});
   const order=next.orders[0];
-  return {accepted:true,alreadyApplied:false,reference:order.reference,totalMillimes:order.total};
+  return {accepted:true,alreadyApplied:false,reference:order.reference,totalMillimes:order.total,trackingToken:input.requestId};
  },{timeout:15000});
 }

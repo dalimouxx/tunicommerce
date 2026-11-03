@@ -4,7 +4,7 @@ import {governors} from '../../../modules/commerce/types';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
-type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;error?:string};
+type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
 const amount=(v:number)=>(v/1000).toFixed(3);
 
 export default function PublicCart({slug,products,shipping,zones}:{slug:string;products:Product[];shipping:number;zones:Zone[]}){
@@ -49,6 +49,8 @@ export default function PublicCart({slug,products,shipping,zones}:{slug:string;p
   <h2>Commande reçue</h2>
   <p>Votre demande de paiement à la livraison a été enregistrée. Le marchand doit encore la confirmer.</p>
   {accepted.reference&&<p>Référence : <strong>{accepted.reference}</strong></p>}
+  {accepted.trackingToken&&<p><a href={'/vitrines/'+encodeURIComponent(slug)+'/suivi/'+encodeURIComponent(accepted.trackingToken)}>Consulter le suivi de ma commande</a></p>}
+  {accepted.trackingToken&&<p>Conservez votre lien de suivi confidentiel. Il permet de consulter le statut sans connexion.</p>}
   {typeof accepted.totalMillimes==='number'&&<p>Total enregistré : {amount(accepted.totalMillimes)} TND</p>}
   {accepted.alreadyApplied&&<p>Cette demande avait déjà été reçue : aucun doublon créé.</p>}
   <button type="button" onClick={()=>setAccepted(null)}>Nouvelle commande</button>
