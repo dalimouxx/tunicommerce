@@ -34,7 +34,7 @@ export async function shopSlotsForOwner(
  if(!plan||!plan.enabled)throw new HttpError(409,'Offre marchand indisponible. Contactez l’administrateur.');
  return {
   used:countMerchantShopSlots(ownedCount,!workspace.shop),
-  limit:effectiveLimit(plan.maxShops),
+  limit:effectiveLimit(plan.maxShops,undefined),
   plan:workspace.plan
  };
 }
