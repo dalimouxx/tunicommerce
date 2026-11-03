@@ -1,0 +1,25 @@
+name: TuniCommerce isolated public COD checkout
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/public-cod-checkout.ts'
+      - 'app/api/v1/public/vitrines/[slug]/checkout/route.ts'
+      - 'app/vitrines/[slug]/public-cart.tsx'
+      - 'app/vitrines/[slug]/page.tsx'
+      - 'tests/isolated-public-cod-checkout.test.ts'
+      - '.github/workflows/isolated-public-cod-checkout.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-public-cod-checkout.test.ts
+      - run: npm run typecheck
+      - run: npm run build
