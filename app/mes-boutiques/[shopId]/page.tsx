@@ -33,7 +33,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
   where:{shopId_userId:{shopId,userId:actor.userId}},
   select:{active:true,role:true,shop:{
    select:{name:true,slug:true,status:true,legacyWorkspaceId:true,
-    organization:{select:{name:true}},
+    organization:{select:{name:true,ownerId:true}},
     legacyWorkspace:{select:{ownerId:true,data:true}}
    }
   }}
@@ -131,6 +131,11 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      </table>
      {carrierRows.length===0&&<p>Aucune commande livrée avec encaissement COD à suivre.</p>}
     </div>
+   </section>}
+   {isolated&&shop.organization.ownerId===actor.userId&&<section className={styles.card}>
+    <h2>Mon abonnement SaaS et mes plafonds</h2>
+    <p>Consultez le statut de votre formule et les produits et commandes utilisés par toutes vos boutiques. Cette page ne modifie pas votre abonnement.</p>
+    <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/abonnement'}>Voir mon offre et mes quotas</Link>
    </section>}
    {isolated?.initialized&&<section className={styles.card}>
     <h2>Ma vitrine · Aperçu privé</h2>
