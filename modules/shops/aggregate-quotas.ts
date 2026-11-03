@@ -7,6 +7,7 @@ import {applyAction} from '../commerce/service';
 import type {State} from '../commerce/types';
 import {assertCommerceQuotas,quotasForOwner,type EnforcedQuotas} from '../subscriptions/quotas';
 import {requireIsolatedOwner} from './isolated-commerce';
+import {canAccessShop,type ShopPermission} from './permissions';
 
 export function tunisianMonth(value:Date|string):string{
  const date=typeof value==='string'?new Date(value):value;
@@ -40,17 +41,23 @@ type Mutation={action:string;payload?:unknown;requestId:string};
  */
 export async function writeIsolatedCommerce(
  userId:string,shopId:string,input:Mutation,
- check:(before:State,after:State)=>void
+ check:(before:State,after:State)=>void,
+ permission?:ShopPermission
 ){
- await requireIsolatedOwner(userId,shopId);
- const quotas=await quotasForOwner(userId);
+ if(!permission)await requireIsolatedOwner(userId,shopId);
+ // Employees use the organization's billing owner; no private billing access is granted to them.
+ const shop=permission?await prisma.shop.findUnique({where:{id:shopId},select:{organization:{select:{ownerId:true}}}}):null;
+ if(permission&&!shop)throw new HttpError(404,'Boutique introuvable');
+ const billingOwnerId=permission?shop!.organization.ownerId:userId;
+ const quotas=await quotasForOwner(billingOwnerId);
  return prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${userId}))`;
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${billingOwnerId}))`;
   const membership=await tx.membership.findUnique({
    where:{shopId_userId:{shopId,userId}},
    select:{active:true,role:true,shop:{select:{legacyWorkspaceId:true}}}
   });
-  if(!membership?.active||membership.role!=='OWNER'||membership.shop.legacyWorkspaceId!==null)
+  if(!membership?.active||membership.shop.legacyWorkspaceId!==null||
+   (permission?!canAccessShop(membership.role,permission):membership.role!=='OWNER'))
    throw new HttpError(403,'Accès à cette boutique interdit');
   const row=await tx.shopCommerce.findUnique({where:{shopId},select:{data:true,version:true}});
   if(!row)throw new HttpError(409,'Initialisez votre boutique avant toute opération.');
@@ -64,10 +71,11 @@ export async function writeIsolatedCommerce(
    throw new HttpError(400,error instanceof Error?error.message:'Opération invalide');
   }
   check(before,next);
+  if(permission)next.audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),label:'Équipe '+userId+' ('+membership.role+') · '+input.action});
   const [legacy,otherShopRows]=await Promise.all([
-   tx.workspace.findUnique({where:{ownerId:userId},select:{data:true}}),
+   tx.workspace.findUnique({where:{ownerId:billingOwnerId},select:{data:true}}),
    tx.shopCommerce.findMany({
-    where:{shopId:{not:shopId},shop:{memberships:{some:{userId,role:'OWNER',active:true}}}},
+    where:{shopId:{not:shopId},shop:{organization:{ownerId:billingOwnerId}}},
     select:{data:true}
    })
   ]);

@@ -297,6 +297,31 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal((await post(orderPath,callsCookie,{action:'note',requestId:'123e4567-e89b-42d3-a456-426614174019',payload:{
     id:orderData.orders[0].id,note:'Tentative interdite'
    }})).status,403);
+   // Write-role validation against the same independent shop.
+   const teamActionPath='/api/v1/shops/'+fresh.id+'/team-actions';
+   const stockRequest={action:'adjustStock',requestId:'123e4567-e89b-42d3-a456-426614174120',
+    payload:{id:data.products[0].id,quantity:2,reason:'Inventaire équipe'}};
+   assert.equal((await post(teamActionPath,viewerCookie,stockRequest)).status,403);
+   assert.equal((await post(teamActionPath,callsCookie,stockRequest)).status,403);
+   assert.equal((await post(teamActionPath,stockCookie,{...stockRequest,action:'settlement'})).status,400);
+   const acceptedStock=await post(teamActionPath,stockCookie,stockRequest);
+   assert.equal(acceptedStock.status,200);
+   const stockVersion=(await acceptedStock.json() as {version:number}).version;
+   assert.equal((await post(teamActionPath,stockCookie,stockRequest)).status,200);
+   assert.equal((await (await post(teamActionPath,stockCookie,stockRequest)).json() as {version:number}).version,stockVersion);
+   const afterTeamStock=await get(inventoryPath,merchantCookie);
+   assert.equal((await afterTeamStock.json() as {products:{stock:number}[]}).products[0].stock,4);
+   assert.equal((await post('/api/v1/shops/'+otherShop.id+'/team-actions',stockCookie,stockRequest)).status,403);
+   const callRequest={action:'confirmOrder',requestId:'123e4567-e89b-42d3-a456-426614174121',
+    payload:{id:orderData.orders[0].id,status:'CONFIRMED'}};
+   assert.equal((await post(teamActionPath,stockCookie,callRequest)).status,403);
+   assert.equal((await post(teamActionPath,financeCookie,callRequest)).status,403);
+   assert.equal((await post(teamActionPath,callsCookie,{...callRequest,payload:{...callRequest.payload,status:'CANCELLED'}})).status,400);
+   assert.equal((await post(teamActionPath,callsCookie,callRequest)).status,200);
+   const resultOrders=await get(orderPath,merchantCookie);
+   assert.equal((await resultOrders.json() as {orders:{status:string}[]}).orders[0].status,'CONFIRMED');
+   const audit=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:fresh.id}});
+   assert.ok(JSON.stringify(audit.data).includes('Équipe'));
    const employee=await prisma.user.findUniqueOrThrow({where:{email:'stock@example.test'}});
    await prisma.membership.update({where:{shopId_userId:{shopId:fresh.id,userId:employee.id}},data:{active:false}});
    assert.equal((await get(teamView(fresh.id,'products'),stockCookie)).status,404);
