@@ -57,7 +57,25 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    </header>
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>
     <section key={name} className={styles.card}><span className={styles.kicker}>{name}</span><h2>{value}</h2></section>
-   )}</div><section className={styles.card}><h2>Gestion commerciale</h2>
+   )}</div>
+   <section className={styles.card}>
+    <h2>Suivi des commandes de cette boutique</h2>
+    <p>Répartition opérationnelle des commandes, sans coordonnées clients. Les chiffres reflètent les données enregistrées et non les opérations en cours de synchronisation.</p>
+    <div className={styles.grid}>
+     {([
+      ['À confirmer',summary.orderStatuses.toConfirm],
+      ['Confirmées',summary.orderStatuses.confirmed],
+      ['En préparation',summary.orderStatuses.preparing],
+      ['Expédiées',summary.orderStatuses.shipped],
+      ['Livrées',summary.orderStatuses.delivered],
+      ['Annulées',summary.orderStatuses.cancelled],
+      ['Retournées',summary.orderStatuses.returned]
+     ] as const).map(([label,count])=><div key={label} className={styles.card}>
+      <span className={styles.kicker}>{label}</span><h2>{count}</h2>
+     </div>)}
+    </div>
+   </section>
+   <section className={styles.card}><h2>Gestion commerciale</h2>
     <p>Ces statistiques concernent uniquement la boutique liée à votre espace personnel. Les informations des acheteurs ne sont pas affichées sur cette page.</p>
     <div className={styles.actions}>{workspace&&<><Link className={styles.primary} href="/marchand">Accéder à ma gestion</Link>
     <Link className={styles.secondary} href="/mon-abonnement">Mon abonnement</Link></>}
