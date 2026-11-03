@@ -1,9 +1,11 @@
-name: TuniCommerce isolated carrier COD report
+name: TuniCommerce multi-module shop operations
 on:
   pull_request:
     paths:
       - 'modules/shops/carrier-cod-report.ts'
       - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-confirmation-desk.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-inventory.tsx'
       - 'tests/isolated-shop-carrier-cod-report.test.ts'
       - '.github/workflows/isolated-shop-carrier-cod-report.yml'
   workflow_dispatch:
