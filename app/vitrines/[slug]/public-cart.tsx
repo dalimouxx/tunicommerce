@@ -62,7 +62,7 @@ export default function PublicCart({slug,products}:{slug:string;products:Product
   {notice&&<p role="alert">{notice}</p>}
   <form onSubmit={e=>void submit(e)} style={{display:'grid',gap:12,maxWidth:420}}>
    <label>Nom complet<input required minLength={2} maxLength={160} value={name} onChange={e=>{setName(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
-   <label>Téléphone tunisien<input required pattern="(\\+216)?[2459][0-9]{7}" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>Téléphone tunisien<input required pattern="(\+216)?[2459][0-9]{7}" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
    <label>Gouvernorat<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v}>{v}</option>)}</select></label>
    <label>Adresse de livraison<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
    <button type="submit" disabled={busy||selected.length===0} style={{padding:14,border:0,borderRadius:10,background:'#126c65',color:'white',fontWeight:700}}>Commander · payer à la livraison</button>
