@@ -6,6 +6,7 @@ on:
       - 'app/vitrines/[slug]/page.tsx'
       - 'app/api/v1/shops/[shopId]/publication/route.ts'
       - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-publication.tsx'
       - 'tests/isolated-shop-publication.test.ts'
       - '.github/workflows/isolated-shop-publication.yml'
   workflow_dispatch:
