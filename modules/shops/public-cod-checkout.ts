@@ -9,6 +9,7 @@ import {applyAction} from '../commerce/service';
 import {governors,type State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
+import {assertPlanForNewCommerce} from './plan-growth-policy';
 
 export const publicCodCheckoutInput=z.object({
  requestId:z.string().uuid().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
@@ -52,6 +53,8 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
    subscriptionStatus:workspace?.subscriptionStatus||'',
    subscriptionEndsAt:workspace?.subscriptionEndsAt||null
   }))throw new HttpError(404,'Boutique indisponible');
+  const plan=workspace?await tx.subscriptionPlan.findUnique({where:{code:workspace.plan},select:{enabled:true}}):null;
+  assertPlanForNewCommerce({status:workspace?.subscriptionStatus||'',expiresAt:workspace?.subscriptionEndsAt||null,planExists:!!plan,planEnabled:plan?.enabled===true});
   const row=shop.commerce!;
   const before=normalizeState(row.data as unknown as State);
   if(before.requests.includes(input.requestId))return {accepted:true,alreadyApplied:true,trackingToken:input.requestId};
