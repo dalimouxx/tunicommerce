@@ -8,7 +8,6 @@ import {normalizeState} from '../commerce/normalize';
 import {applyAction} from '../commerce/service';
 import {governors,type State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
-import {enforcePilotOrderCap} from './orders';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 
 export const publicCodCheckoutInput=z.object({
@@ -81,7 +80,6 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   // Random v4 checkout request ID doubles as an unguessable, bearer-only tracking token.
   // No customer address or phone is exposed by the tracking view.
   next.orders[0].publicReceiptId=input.requestId;
-  enforcePilotOrderCap(before,next);
   const quotas=await loadWorkspaceQuotas(workspace!,tx);
   const otherShops=await tx.shopCommerce.findMany({where:{
    shopId:{not:candidate.id},shop:{organization:{ownerId}}
