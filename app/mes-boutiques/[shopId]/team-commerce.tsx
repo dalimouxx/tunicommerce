@@ -1,9 +1,10 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import {contactChannels,contactOutcomes,contactLogNote,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
 type Section='products'|'orders'|'finance';
 type Item={id:string;name:string;sku:string;stock:number;price:number};
-type Order={id:string;reference:string;status:string;createdAt:string;customer?:{name:string;phone:string;city:string};total?:number;items:{name:string;quantity:number}[]};
+type Order={id:string;reference:string;status:string;createdAt:string;customer?:{name:string;phone:string;city:string};total?:number;items:{name:string;quantity:number}[];contactLog?:{at:string;label:string}[]};
 type Finance={delivered:number;deliveredGrossMillimes:number;codOutstandingMillimes:number};
 type Response={section:Section;products?:Item[];orders?:Order[];summary?:Finance;error?:string};
 const labels:{value:Section;label:string}[]=[
@@ -18,19 +19,33 @@ export default function TeamCommerce({shopId,role}:{shopId:string;role:string}){
  const [notice,setNotice]=useState('');
  const [busy,setBusy]=useState(false);
  const [stockQty,setStockQty]=useState<Record<string,string>>({});
+ const [channels,setChannels]=useState<Record<string,ContactChannel>>({});
+ const [outcomes,setOutcomes]=useState<Record<string,ContactOutcome>>({});
+ const pending=useRef<{fingerprint:string;requestId:string}|null>(null);
  const [revision,setRevision]=useState(0);
  const canAdjustStock=['OWNER','ADMIN','MANAGER','STOCK'].includes(role);
  const canConfirm=['OWNER','ADMIN','MANAGER','CALL_CENTER','DELIVERY_MANAGER'].includes(role);
- async function perform(action:'adjustStock'|'confirmOrder',payload:unknown){
+ const canLogContact=['OWNER','ADMIN','MANAGER','CALL_CENTER'].includes(role);
+ function recordContact(order:Order){
+  if(!window.confirm('Enregistrer uniquement un contact réellement effectué ? Aucun appel, WhatsApp ou SMS ne sera envoyé.'))return;
+  const channel=channels[order.id]||'Téléphone';
+  const outcome=outcomes[order.id]||'Sans réponse';
+  void perform('callNote',{id:order.id,note:contactLogNote(channel,outcome)});
+ }
+ async function perform(action:'adjustStock'|'confirmOrder'|'callNote',payload:unknown){
+  const fingerprint=JSON.stringify({action,payload});
+  const requestId=pending.current?.fingerprint===fingerprint?pending.current.requestId:crypto.randomUUID();
+  pending.current={fingerprint,requestId};
   setBusy(true);setNotice('');
   try{
    const response=await fetch('/api/v1/shops/'+encodeURIComponent(shopId)+'/team-actions',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action,payload,requestId:crypto.randomUUID()})
+    body:JSON.stringify({action,payload,requestId})
    });
    const result=await response.json() as {error?:string};
    if(!response.ok)throw new Error(result.error||'Opération refusée');
-   setNotice('Action enregistrée pour cette boutique.');
+   pending.current=null;
+   setNotice(action==='callNote'?'Tentative de contact manuelle enregistrée dans l’historique.':'Action enregistrée pour cette boutique.');
    setRevision(value=>value+1);
   }catch(e){setNotice(e instanceof Error?e.message:'Erreur réseau');}
   finally{setBusy(false);}
@@ -68,12 +83,20 @@ export default function TeamCommerce({shopId,role}:{shopId:string;role:string}){
     </table>{!data.products?.length&&<p>Aucun produit.</p>}
    </div>}
    {data.section==='orders'&&<div style={{overflowX:'auto'}}>
-    <table style={{width:'100%',textAlign:'left'}}><thead><tr><th>Commande</th><th>Statut</th><th>Articles</th><th>Client autorisé</th>{canConfirm&&<th>Action</th>}</tr></thead>
+    <table style={{width:'100%',textAlign:'left'}}><thead><tr><th>Commande</th><th>Statut</th><th>Articles</th><th>Client autorisé</th>{canConfirm&&<th>Action</th>}{canLogContact&&<th>Journal des contacts</th>}</tr></thead>
      <tbody>{data.orders?.map(order=><tr key={order.id}>
       <td>{order.reference}</td><td>{order.status}</td>
       <td>{order.items.map(item=>item.name+' × '+item.quantity).join(', ')}</td>
       <td>{order.customer?order.customer.name+' · '+order.customer.phone:'Données masquées'}</td>
       {canConfirm&&<td>{['TO_CONFIRM','NO_ANSWER','CALLBACK'].includes(order.status)&&<button type="button" disabled={busy} onClick={()=>void perform('confirmOrder',{id:order.id,status:'CONFIRMED'})}>Confirmer</button>}</td>}
+      {canLogContact&&<td style={{minWidth:230,padding:8}}>
+       {['TO_CONFIRM','NO_ANSWER','CALLBACK'].includes(order.status)&&<div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        <label>Canal<select aria-label={'Canal '+order.reference} value={channels[order.id]||'Téléphone'} onChange={event=>setChannels(previous=>({...previous,[order.id]:event.target.value as ContactChannel}))}>{contactChannels.map(channel=><option key={channel}>{channel}</option>)}</select></label>
+        <label>Résultat<select aria-label={'Résultat '+order.reference} value={outcomes[order.id]||'Sans réponse'} onChange={event=>setOutcomes(previous=>({...previous,[order.id]:event.target.value as ContactOutcome}))}>{contactOutcomes.map(outcome=><option key={outcome}>{outcome}</option>)}</select></label>
+        <button type="button" disabled={busy} onClick={()=>recordContact(order)}>Journaliser</button>
+       </div>}
+       {order.contactLog?.length?<details><summary>{order.contactLog.length} dernier(s) contact(s) manuel(s)</summary><ul>{order.contactLog.map((entry,i)=><li key={i}>{new Date(entry.at).toLocaleString('fr-TN')} · {entry.label}</li>)}</ul></details>:<small>Aucun contact déclaré</small>}
+      </td>}
      </tr>)}</tbody>
     </table>{!data.orders?.length&&<p>Aucune commande.</p>}
    </div>}

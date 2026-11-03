@@ -52,3 +52,17 @@ test('finance projection offers only totals and no customer details',()=>{
  assert.ok(!content.includes('22123456'));
  assert.ok(!content.includes('Acheteur sensible'));
 });
+
+test('contact notes are visible to authorized call agents but never to a viewer',()=>{
+ const order=sample();
+ const id=order.orders[0].id;
+ const next=applyAction(order,'note',{id,note:'Contact manuel · Téléphone · Sans réponse'});
+ const callCenter=projectTeamSection(next,'CALL_CENTER','orders')!;
+ const viewer=projectTeamSection(next,'VIEWER','orders')!;
+ const callText=JSON.stringify(callCenter);
+ const viewerText=JSON.stringify(viewer);
+ assert.ok(callText.includes('Téléphone · Sans réponse'));
+ assert.ok(!viewerText.includes('Téléphone · Sans réponse'));
+ assert.ok(!viewerText.includes('contactLog'));
+ assert.ok(!callText.includes('Adresse privée'));
+});
