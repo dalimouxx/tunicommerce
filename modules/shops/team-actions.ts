@@ -2,7 +2,6 @@ import {z} from 'zod';
 import {HttpError} from '../auth/http';
 import {writeIsolatedCommerce} from './aggregate-quotas';
 import {type ShopPermission} from './permissions';
-import {enforcePilotOrderCap} from './orders';
 import type {State,Status} from '../commerce/types';
 
 const id=z.string().uuid();
@@ -54,7 +53,6 @@ export async function performTeamAction(actorId:string,shopId:string,input:TeamW
   if(input.action==='callNote')validateCallNote(before,input);
   if(input.action==='adjustStock'&&before.products.length!==after.products.length)
    throw new HttpError(409,'Modification de catalogue interdite');
-  enforcePilotOrderCap(before,after);
  };
  return writeIsolatedCommerce(actorId,shopId,{
   action:mutationAction,payload:input.payload,requestId:input.requestId
