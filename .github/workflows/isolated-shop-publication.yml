@@ -1,0 +1,26 @@
+name: TuniCommerce isolated shop publication
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/publication.ts'
+      - 'app/vitrines/[slug]/page.tsx'
+      - 'app/api/v1/shops/[shopId]/publication/route.ts'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-publication.tsx'
+      - 'tests/isolated-shop-publication.test.ts'
+      - '.github/workflows/isolated-shop-publication.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-shop-publication.test.ts
+      - run: npm run typecheck
+      - run: npm run build

@@ -15,6 +15,7 @@ import ShopConfirmationDesk from './shop-confirmation-desk';
 import ShopCustomers from './shop-customers';
 import ShopExpenses from './shop-expenses';
 import ShopCodSettlements from './shop-cod-settlements';
+import ShopPublication from './shop-publication';
 import TeamCommerce from './team-commerce';
 import styles from '../shops.module.css';
 
@@ -129,6 +130,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    </section>}
    {isolated?.initialized&&<section className={styles.card}>
     <h2>Ma vitrine · Aperçu privé</h2>
+    <ShopPublication shopId={shopId} slug={shop.slug} initialPublished={shop.status==='PUBLISHED'}/>
     <p>Visualisez votre catalogue sans publier votre boutique ni accepter de commandes.</p>
     <div className={styles.actions}><Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}>Prévisualiser la boutique</Link></div>
    </section>}
