@@ -6,10 +6,12 @@ import {normalizeState} from '../../../modules/commerce/normalize';
 import {money,type State} from '../../../modules/commerce/types';
 import {commercialOverview,mayReadOwnCommercialOverview} from '../../../modules/shops/commercial-overview';
 import {isolatedShopFinanceOverview} from '../../../modules/shops/finance-overview';
+import {carrierCodReport} from '../../../modules/shops/carrier-cod-report';
 import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
 import ShopInventory from './shop-inventory';
 import ShopOrders from './shop-orders';
+import ShopConfirmationDesk from './shop-confirmation-desk';
 import ShopCustomers from './shop-customers';
 import ShopExpenses from './shop-expenses';
 import ShopCodSettlements from './shop-cod-settlements';
@@ -43,6 +45,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
  const summary=canRead&&workspace?commercialOverview(normalizeState(workspace.data as unknown as State)):
    isolated?.initialized?commercialOverview(isolated.state):null;
  const finance=isolated?.initialized?isolatedShopFinanceOverview(isolated.state):null;
+ const carrierRows=isolated?.initialized?carrierCodReport(isolated.state):null;
  const cards=summary?[
   ['Produits',String(summary.products)],
   ['Unités en stock',String(summary.stockUnits)],
@@ -106,7 +109,25 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      </div>)}
     </div>
    </section>}
-   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/></>}</>:
+   {carrierRows&&<section className={styles.card}>
+    <h2>Suivi COD par transporteur</h2>
+    <p>Répartition des commandes livrées par transporteur déclaré. Les encaissements sont enregistrés sur les commandes : ces montants ne prouvent pas que le transporteur détient les fonds. Un rapprochement bancaire ou avec son bordereau reste nécessaire.</p>
+    <div style={{overflowX:'auto'}}>
+     <table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
+      <thead><tr><th>Transporteur déclaré</th><th>Livraisons</th><th>Ventes livrées</th><th>COD encaissé</th><th>COD restant</th><th>Versements enregistrés</th></tr></thead>
+      <tbody>{carrierRows.map(row=><tr key={row.carrier} style={{borderTop:'1px solid #e0e6ee'}}>
+       <td style={{padding:10}}>{row.carrier}</td>
+       <td style={{padding:10}}>{row.deliveredOrders}</td>
+       <td style={{padding:10}}>{money(row.deliveredGrossMillimes)} TND</td>
+       <td style={{padding:10}}>{money(row.collectedMillimes)} TND</td>
+       <td style={{padding:10}}>{money(row.outstandingMillimes)} TND</td>
+       <td style={{padding:10}}>{row.recordedSettlements} · {money(row.settlementAmountsMillimes)} TND</td>
+      </tr>)}</tbody>
+     </table>
+     {carrierRows.length===0&&<p>Aucune commande livrée avec encaissement COD à suivre.</p>}
+    </div>
+   </section>}
+   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/></>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}

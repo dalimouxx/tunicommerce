@@ -16,6 +16,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
  const [cost,setCost]=useState('');
  const [openingStock,setOpeningStock]=useState('0');
  const [stockAdjust,setStockAdjust]=useState<Record<string,string>>({});
+ const lowStock=products.filter(p=>p.active&&p.stock<=p.threshold).sort((a,b)=>a.stock-b.stock);
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/inventory';
  useEffect(()=>{
   let active=true;
@@ -63,7 +64,13 @@ export default function ShopInventory({shopId}:{shopId:string}){
     <label>Stock initial<input required type="number" min="0" max="100000" step="1" value={openingStock} onChange={e=>setOpeningStock(e.target.value)} style={{display:'block',padding:10,width:110}}/></label>
     <button type="submit" disabled={busy||products.length>=20} style={{border:0,borderRadius:10,padding:'12px 16px',background:'#126c65',color:'white',fontWeight:700}}>Ajouter le produit</button>
    </form>
-   <div style={{overflowX:'auto'}}>
+   {lowStock.length>0&&<div style={{border:'1px solid #ead2a6',background:'#fff9ed',borderRadius:12,padding:14,marginBottom:16}}>
+    <strong>Alertes de stock · {lowStock.length} produit(s)</strong>
+    <p style={{margin:'8px 0'}}>Ces articles sont épuisés ou à leur seuil de réapprovisionnement.</p>
+    <ul>{lowStock.slice(0,10).map(p=><li key={p.id}>{p.name} ({p.sku}) : {p.stock} unité(s), seuil {p.threshold}</li>)}</ul>
+    {lowStock.length>10&&<p>Et {lowStock.length-10} autres articles à vérifier.</p>}
+   </div>}
+   <div style={{overflowX:'auto'}}> 
     <table style={{borderCollapse:'collapse',width:'100%',textAlign:'left'}}>
      <thead><tr><th>Référence</th><th>Produit</th><th>Prix</th><th>Stock</th><th>Ajustement</th></tr></thead>
      <tbody>{products.map(p=><tr key={p.id} style={{borderTop:'1px solid #e5ebee'}}>
