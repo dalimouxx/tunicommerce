@@ -23,5 +23,10 @@ test('manifest includes ready/shipped only and uses captured customer snapshot',
  assert.deepEqual(dispatchManifest(next),[]);
 });
 test('CSV escaping neutralizes spreadsheet formula injection and keeps UTF-8/3-digit TND',()=>{
- assert.equal(csvCell('=1+1'),"'\"=1+1\"".slice(1));
+ assert.equal(csvCell('=1+1'),JSON.stringify("'=1+1"));
+ assert.equal(csvCell('  +2'),JSON.stringify("'+2"));
+ const csv=dispatchManifestCsv([{reference:'=1+1',status:'READY',carrier:'Test',tracking:'',customer:'Client',phone:'22123456',city:'Gabès',address:'Rue du marché',items:'Article × 2',quantity:2,codMillimes:12345}]);
+ assert.ok(csv.startsWith('\uFEFF'));
+ assert.ok(csv.includes('12.345'));
+ assert.ok(csv.includes(JSON.stringify("'=1+1")));
 });
