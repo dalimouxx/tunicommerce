@@ -128,6 +128,32 @@ test('New tenant API is isolated and legacy commerce remains intact',async t=>{
    assert.equal(commerce.status,200);
    assert.deepEqual((await commerce.json()).state,(await legacy.json()).state);
   });
+
+  await t.test('A merchant cannot exceed maxShops by opening another organization',async()=>{
+   const workspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
+   const oldPlan=await prisma.subscriptionPlan.findUniqueOrThrow({where:{code:workspace.plan}});
+   const org=await prisma.organization.findFirstOrThrow({where:{ownerId:owner.id}});
+   assert.equal(await prisma.shop.count({where:{organization:{ownerId:owner.id}}}),2);
+   try{
+    await prisma.subscriptionPlan.update({where:{code:workspace.plan},data:{maxShops:2,enabled:true}});
+    const denied=await post('/api/v1/shops',{organizationId:org.id,name:'Troisième magasin',slug:'third-store-denied'},ownerCookie);
+    assert.equal(denied.status,409);
+    assert.match((await denied.json() as {error:string}).error,/Limite de boutiques/);
+    const secondOrg=await post('/api/v1/organizations',{name:'Seconde organisation'},ownerCookie);
+    assert.equal(secondOrg.status,201);
+    const secondOrgId=(await secondOrg.json() as {organization:{id:string}}).organization.id;
+    assert.equal((await post('/api/v1/shops',{organizationId:secondOrgId,name:'Autre magasin',slug:'another-shop-denied'},ownerCookie)).status,409);
+    await prisma.subscriptionPlan.update({where:{code:workspace.plan},data:{maxShops:3}});
+    const allowed=await post('/api/v1/shops',{organizationId:secondOrgId,name:'Autre magasin',slug:'another-shop-allowed'},ownerCookie);
+    assert.equal(allowed.status,201);
+    assert.equal(await prisma.shop.count({where:{organization:{ownerId:owner.id}}}),3);
+    assert.equal((await post('/api/v1/shops',{organizationId:org.id,name:'Encore une boutique',slug:'fourth-shop-denied'},ownerCookie)).status,409);
+    const legacy=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
+    assert.equal(legacy.id,workspace.id);
+   }finally{
+    await prisma.subscriptionPlan.update({where:{code:workspace.plan},data:{maxShops:oldPlan.maxShops,enabled:oldPlan.enabled}});
+   }
+  });
  }finally{
   child?.kill('SIGTERM');
   await prisma.$disconnect();
