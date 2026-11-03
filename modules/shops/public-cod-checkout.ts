@@ -14,7 +14,7 @@ import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 export const publicCodCheckoutInput=z.object({
  requestId:z.string().uuid(),
  name:z.string().trim().min(2).max(160),
- phone:z.string().regex(/^(\\+216)?[2459][0-9]{7}$/),
+ phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/),
  city:z.enum(governors as [string,...string[]]),
  address:z.string().trim().min(3).max(160),
  items:z.array(z.object({productId:z.string().min(1).max(160),quantity:z.number().int().min(1).max(10)}).strict()).min(1).max(15)
@@ -24,13 +24,6 @@ export function validatePublicCart(input:z.infer<typeof publicCodCheckoutInput>)
  const distinct=new Set(input.items.map(item=>item.productId));
  if(distinct.size!==input.items.length)throw new HttpError(400,'Articles en double dans le panier');
  if(input.items.reduce((total,item)=>total+item.quantity,0)>30)throw new HttpError(400,'Panier limité à 30 articles');
-}
-
-export function publicCheckoutReceipt(state:State,requestId:string){
- const requestIndex=state.requests.indexOf(requestId);
- // A successful new mutation always puts its order first. For a replay, return only
- // an acknowledgement: never infer a different customer's order by searching PII.
- return {accepted:true,alreadyApplied:requestIndex>=0};
 }
 
 /**
@@ -63,7 +56,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   const row=shop.commerce!;
   const before=normalizeState(row.data as unknown as State);
   if(before.requests.includes(input.requestId))return {accepted:true,alreadyApplied:true};
-  const phone=input.phone.replace(/^\\+216/,'');
+  const phone=input.phone.replace(/^\+216/,'');
   const recentOrder=before.orders.find(order=>
    order.customerSnapshot?.phone===phone&&
    Date.now()-Date.parse(order.createdAt)<60_000&&
