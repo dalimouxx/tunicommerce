@@ -4,6 +4,9 @@ import {getCurrentUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import {isOpen} from '../../modules/platform/public';
 import {shopAccess} from '../../modules/shops/navigation';
+import {countMerchantShopSlots} from '../../modules/shops/plan-limits';
+import {effectiveLimit} from '../../modules/subscriptions/validation';
+import {quotaOverview,subscriptionOverview} from '../../modules/subscriptions/overview';
 import styles from './shops.module.css';
 
 export const dynamic='force-dynamic';
@@ -29,7 +32,19 @@ export default async function MyShops(){
    orderBy:{createdAt:'desc'}
   })
  ]);
- const hasUnlinkedLegacy=legacy&&!memberships.some(m=>m.shop.legacyWorkspaceId===legacy.id);
+ const hasUnlinkedLegacy=!!legacy&&!memberships.some(m=>m.shop.legacyWorkspaceId===legacy.id);
+ // Owner-wide quotas must include shops from every organization, even if an
+ // unusual historic membership is missing; staff-only accounts see no owner quotas.
+ const ownerWorkspace=legacy?await prisma.workspace.findUnique({where:{id:legacy.id},select:{plan:true,subscriptionStatus:true,subscriptionEndsAt:true}}):null;
+ const [ownedShopCount,ownerPlan]=ownerWorkspace?await Promise.all([
+  prisma.shop.count({where:{organization:{ownerId:actor.userId}}}),
+  prisma.subscriptionPlan.findUnique({where:{code:ownerWorkspace.plan},select:{name:true,maxShops:true}})
+ ]):[null,null];
+ const capacity=ownerWorkspace&&ownedShopCount!==null?quotaOverview(
+  countMerchantShopSlots(ownedShopCount,hasUnlinkedLegacy),
+  effectiveLimit(ownerPlan?.maxShops??null,undefined)
+ ):null;
+ const subscription=ownerWorkspace?subscriptionOverview(ownerWorkspace.subscriptionStatus,ownerWorkspace.subscriptionEndsAt):null;
  return <main className={styles.shell}>
   <div className={styles.content}>
    <header className={styles.header}>
@@ -37,6 +52,12 @@ export default async function MyShops(){
     <p>Retrouvez les boutiques auxquelles votre compte a réellement accès. Les données de chaque marchand restent séparées.</p></div>
     <Link href={actor.role==='ADMIN'?'/admin':'/marchand'} className={styles.back}>Retour à mon espace</Link>
    </header>
+   {capacity&&subscription&&<section className={styles.card}>
+    <span className={styles.kicker}>CAPACITÉ DE VOTRE ABONNEMENT</span>
+    <h2>{ownerPlan?.name||ownerWorkspace?.plan||'Offre marchand'} · {capacity.used} boutique(s){capacity.limit===null?' · Sans limite':` / ${capacity.limit}`}</h2>
+    <p>{subscription.active?`Abonnement valide · ${subscription.daysRemaining} jour(s) restant(s)`:'Abonnement non actif ou échéance non configurée.'} Les boutiques de toutes vos organisations sont comptabilisées, même en brouillon. Les boutiques existantes restent accessibles selon vos permissions.</p>
+    <div className={styles.actions}><Link href="/mon-abonnement" className={styles.secondary}>Voir mon abonnement et mes quotas</Link></div>
+   </section>}
    {hasUnlinkedLegacy&&<section className={styles.card}>
     <span className={styles.kicker}>Boutique personnelle existante</span>
     <h2>Ma gestion commerciale</h2>
@@ -66,7 +87,7 @@ export default async function MyShops(){
      </div>
     </section>;
    })}</div>
-   <p className={styles.note}>Un accès équipe ne donne pas automatiquement accès à la caisse ou aux commandes d'une autre boutique. La gestion multi-boutique sera activée après mise en place des permissions et du stockage commercial par boutique.</p>
+   <p className={styles.note}>L'accès aux commandes et au stock dépend du rôle attribué pour chaque boutique. Les nouveaux espaces commerciaux sont isolés et peuvent proposer une gestion différente de l'espace historique.</p>
   </div>
  </main>;
 }
