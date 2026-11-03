@@ -5,6 +5,7 @@ import {prisma} from '../../../modules/storage/client';
 import {normalizeState} from '../../../modules/commerce/normalize';
 import {money,type State} from '../../../modules/commerce/types';
 import {commercialOverview,mayReadOwnCommercialOverview} from '../../../modules/shops/commercial-overview';
+import {isolatedShopFinanceOverview} from '../../../modules/shops/finance-overview';
 import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
 import ShopInventory from './shop-inventory';
@@ -39,6 +40,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
  const isolated=membership.role==='OWNER'&&!workspace?await readIsolatedCommerce(shopId,shop.name):null;
  const summary=canRead&&workspace?commercialOverview(normalizeState(workspace.data as unknown as State)):
    isolated?.initialized?commercialOverview(isolated.state):null;
+ const finance=isolated?.initialized?isolatedShopFinanceOverview(isolated.state):null;
  const cards=summary?[
   ['Produits',String(summary.products)],
   ['Unités en stock',String(summary.stockUnits)],
@@ -81,7 +83,28 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <div className={styles.actions}>{workspace&&<><Link className={styles.primary} href="/marchand">Accéder à ma gestion</Link>
     <Link className={styles.secondary} href="/mon-abonnement">Mon abonnement</Link></>}
     {!workspace&&<span>Stockage indépendant initialisé. Les fonctionnalités de gestion et les limites SaaS seront connectées dans les prochaines étapes.</span>}</div>
-   </section>{isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/></>}</>:
+   </section>
+   {finance&&<section className={styles.card}>
+    <h2>Finance Center · Boutique indépendante</h2>
+    <p>Vue préliminaire en lecture seule : marge opérationnelle estimée, hors fiscalité. Les frais de transport et remboursements doivent être rapprochés avant toute décision comptable.</p>
+    <div className={styles.grid}>
+     {([
+      ['Ventes livrées brutes',finance.deliveredGrossMillimes],
+      ['Avoirs enregistrés',finance.creditsMillimes],
+      ['Ventes livrées nettes des avoirs',finance.deliveredNetMillimes],
+      ['COD encaissé',finance.collectedCodMillimes],
+      ['COD restant',finance.outstandingCodMillimes],
+      ['Coût des articles vendus',finance.costOfGoodsMillimes],
+      ['Frais de livraison estimés',finance.estimatedDeliveryCostMillimes],
+      ['Dépenses enregistrées',finance.recordedExpensesMillimes],
+      ['Marge opérationnelle estimée',finance.estimatedOperatingMarginMillimes],
+      ['Remboursements à effectuer',finance.refundsRemainingMillimes]
+     ] as const).map(([label,value])=><div className={styles.card} key={label}>
+      <span className={styles.kicker}>{label}</span><h2>{money(value)} TND</h2>
+     </div>)}
+    </div>
+   </section>}
+   {isolated?.initialized&&<><ShopInventory shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCustomers shopId={shopId}/></>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
