@@ -46,7 +46,7 @@ export default async function IsolatedPublicStorefront({params}:{params:Promise<
      <p>{product.available?'Ajoutez cet article au panier ci-dessous.':'Article indisponible à la commande.'}</p>
     </article>)}
    </div>
-   {catalog.products.length>0&&<PublicCart slug={slug} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
+   {catalog.products.length>0&&<PublicCart slug={slug} shipping={catalog.shipping} zones={catalog.zones} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
    {catalog.products.length===0&&<section className={styles.card}><p>Aucun produit disponible pour le moment.</p></section>}
   </div>
  </main>;
