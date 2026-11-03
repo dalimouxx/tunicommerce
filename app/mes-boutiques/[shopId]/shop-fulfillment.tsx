@@ -57,6 +57,8 @@ export default function ShopFulfillment({shopId}:{shopId:string}){
  const queue=fulfillmentQueue(orders);
  return <section style={{background:'#fff',border:'1px solid #e0e6ee',borderRadius:18,padding:24,marginTop:16}}>
   <h2>Préparation, expédition et livraison</h2>
+  <p><a href={'/api/v1/shops/'+encodeURIComponent(shopId)+'/dispatch-manifest'}>Exporter le bordereau CSV des colis prêts et expédiés</a></p>
+  <p style={{fontSize:13,color:'#566477'}}>Export limité aux commandes de cette boutique et réservé au propriétaire. Il contient les adresses et téléphones des destinataires : conservez-le dans un emplacement sécurisé. Aucune transmission automatique à un transporteur.</p>
   <p style={{color:'#566477'}}>Seules les commandes de cette boutique sont affichées. Les transitions sont contrôlées par le serveur ; déclarer « Livrée » exige une confirmation manuelle.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement des commandes…</p>:<>
