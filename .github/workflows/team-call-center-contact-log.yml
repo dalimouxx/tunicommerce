@@ -1,0 +1,23 @@
+name: TuniCommerce team call-center manual contact log
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/team-read.ts'
+      - 'app/mes-boutiques/[shopId]/team-commerce.tsx'
+      - 'tests/shop-team-read.test.ts'
+      - '.github/workflows/team-call-center-contact-log.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/shop-team-read.test.ts tests/shop-team-actions.test.ts tests/isolated-call-center-contact-history.test.ts
+      - run: npm run typecheck
+      - run: npm run build
