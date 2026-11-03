@@ -4,6 +4,7 @@ on:
     paths:
       - 'modules/subscriptions/overview.ts'
       - 'app/api/v1/subscription/overview/route.ts'
+      - 'app/mon-abonnement/page.tsx'
       - 'tests/subscription-overview.test.ts'
       - '.github/workflows/subscription-overview.yml'
   workflow_dispatch:
