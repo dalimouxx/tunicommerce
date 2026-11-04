@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {confirmationQueue} from '../../../modules/shops/operational-queues';
+import {confirmationQueue,pageOperationalQueue} from '../../../modules/shops/operational-queues';
 import ShopManualMessages from './shop-manual-messages';
 import {contactChannels,contactOutcomes,contactHistory,contactLogNote,contactHistoryStats,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
@@ -9,6 +9,7 @@ type Order={id:string;reference:string;status:string;customerSnapshot?:{name:str
 export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/orders';
  const [orders,setOrders]=useState<Order[]>([]);
+ const [queuePage,setQueuePage]=useState(1);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState('');
  const [notice,setNotice]=useState('');
@@ -69,6 +70,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   finally{setBusy('');}
  }
  const toProcess=confirmationQueue(orders);
+ const displayQueue=pageOperationalQueue(toProcess,queuePage,30);
  const contactStats=contactHistoryStats(orders);
  const overdueCount=toProcess.filter(order=>order.priority==='OVERDUE').length;
  const scheduledCount=toProcess.filter(order=>order.priority==='SCHEDULED').length;
@@ -79,9 +81,14 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   {loading?<p>Chargement…</p>:<>
    <p>{toProcess.length} commande(s) dans la file · {overdueCount} rappel(s) à effectuer · {scheduledCount} rappel(s) à venir · {contactStats.attempts} tentative(s) manuelle(s) enregistrée(s).</p>
    <p>Les résultats ci-dessous sont saisis par les agents et ne constituent pas une preuve d’appel ou de message envoyé.</p>
-   <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
+   <nav aria-label="Pages du Call Center" style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
+    <button type="button" disabled={displayQueue.page===1||!!busy} onClick={()=>setQueuePage(n=>Math.max(1,n-1))}>Précédentes</button>
+    <span>Page {displayQueue.page}/{displayQueue.totalPages} · {displayQueue.total} commande(s)</span>
+    <button type="button" disabled={displayQueue.page>=displayQueue.totalPages||!!busy} onClick={()=>setQueuePage(n=>Math.min(n+1,displayQueue.totalPages))}>Suivantes</button>
+   </nav>
+   <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}> 
     <thead><tr><th>Commande</th><th>Client</th><th>Articles</th><th>Statut</th><th>Actions</th></tr></thead>
-    <tbody>{toProcess.slice(0,30).map(order=><tr key={order.id} style={{borderTop:'1px solid #e0e6ee'}}>
+    <tbody>{displayQueue.items.map(order=><tr key={order.id} style={{borderTop:'1px solid #e0e6ee'}}>
      <td style={{padding:10}}>{order.reference}</td>
      <td style={{padding:10}}>{order.customerSnapshot?order.customerSnapshot.name+' · '+order.customerSnapshot.phone:'Client non renseigné'}</td>
      <td style={{padding:10}}>{order.items.map(i=>i.name+' × '+i.quantity).join(', ')}</td>
@@ -103,7 +110,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
    </table></div>
    {toProcess.length===0&&<p>Aucune commande à confirmer.</p>}
    <ShopManualMessages orders={orders}/>
-   {toProcess.length>30&&<p>30 premières commandes affichées.</p>}
+   {toProcess.length>30&&<p>La pagination permet de traiter toutes les commandes, y compris les rappels anciens.</p>}
   </>}
  </section>;
 }

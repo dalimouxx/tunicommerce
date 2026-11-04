@@ -1,3 +1,4 @@
+import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {callCenterWorkload,suggestCallCenterAgent} from '../modules/shops/call-center-workload';
@@ -34,4 +35,14 @@ test('exclude inactive/non-agent members and no invented suggestion',()=>{
 test('stable tie-breaking chooses same agent regardless of input order',()=>{
  const orders=[] as {id:string;status:string;createdAt:string}[];
  assert.equal(suggestCallCenterAgent(orders,[agents[0],agents[1]],now),'a');
+});
+
+test('P2 Call Center processes every queue item across pages without silent cutoff',()=>{
+ const rows=Array.from({length:97},(_,i)=>({id:'order-'+i}));
+ const pages=[1,2,3,4].map(n=>pageOperationalQueue(rows,n,30));
+ assert.deepEqual(pages.map(p=>p.items.length),[30,30,30,7]);
+ assert.equal(new Set(pages.flatMap(p=>p.items.map(i=>i.id))).size,97);
+ assert.equal(pageOperationalQueue(rows,50,30).page,4);
+ assert.equal(pageOperationalQueue([],9,30).page,1);
+ assert.throws(()=>pageOperationalQueue(rows,1,0),/invalide/);
 });

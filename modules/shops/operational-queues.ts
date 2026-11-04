@@ -37,3 +37,12 @@ export function replenishmentQueue<T extends StockItem>(items:readonly T[]):Arra
   }))
   .sort((a,b)=>Number(b.outOfStock)-Number(a.outOfStock)||a.stock-b.stock||a.id.localeCompare(b.id));
 }
+
+/** Client-side paging for already authorized merchant records, with no hidden cutoff. */
+export function pageOperationalQueue<T>(records:readonly T[],requestedPage:number,pageSize=30){
+ if(!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>100)throw Error('Taille de page invalide');
+ const total=records.length,totalPages=Math.max(1,Math.ceil(total/pageSize));
+ const page=Number.isSafeInteger(requestedPage)&&requestedPage>=1?
+  Math.min(requestedPage,totalPages):1;
+ return {items:records.slice((page-1)*pageSize,page*pageSize),page,total,totalPages,pageSize};
+}

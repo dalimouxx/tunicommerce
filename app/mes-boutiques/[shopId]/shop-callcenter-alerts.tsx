@@ -79,7 +79,8 @@ export default function ShopCallCenterAlerts({shopId}:{shopId:string}){
   }catch{setStatus('Son indisponible sur ce navigateur.');}
  }
  return <section style={{border:'1px solid #d3e2ea',borderRadius:18,padding:20,marginTop:16,background:newOrders?'#fff8e5':'#f7fafb'}}>
-  <h2>Alertes du Call Center</h2>
+  <details>
+   <summary style={{fontWeight:700,cursor:'pointer'}}>Alertes commandes · {newOrders>0?newOrders+' nouvelle(s) à vérifier':'Surveillance active dans tous les espaces de la boutique'}</summary>
   <p role="status" aria-live="polite">{status}</p>
   {newOrders>0&&<p style={{fontWeight:700}}>À vérifier : {newOrders} nouvelle(s) commande(s) détectée(s) depuis l’ouverture de cette page.</p>}
   <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
@@ -88,5 +89,6 @@ export default function ShopCallCenterAlerts({shopId}:{shopId:string}){
    <button type="button" onClick={()=>window.location.reload()}>Actualiser les commandes</button>
   </div>
   <p style={{fontSize:13,color:'#657484'}}>Surveillance uniquement tant que la page est ouverte. Ce n’est pas une notification push mobile permanente. Aucun SMS, WhatsApp ou appel automatique n’est envoyé.</p>
+  </details>
  </section>;
 }
