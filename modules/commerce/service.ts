@@ -38,6 +38,15 @@ export function applyAction(input:State,action:string,payload:unknown):State{
   log('Thème de vitrine modifié · '+p.theme);
   return s;
  }
+ if(action==='setCouponActive'){
+  const p=z.object({id:z.string().uuid(),active:z.boolean()}).strict().parse(payload);
+  const coupon=s.coupons.find(c=>c.id===p.id);
+  if(!coupon)throw Error('Coupon introuvable');
+  if(coupon.active===p.active)throw Error('Coupon déjà dans cet état');
+  coupon.active=p.active;
+  log('Coupon '+coupon.code+' · '+(p.active?'réactivé':'désactivé'));
+  return s;
+ }
  if(action==='importProducts'){
   const input=catalogImportPayload.parse(payload);
   const known=new Set(s.products.map(product=>product.sku.trim().toUpperCase()));

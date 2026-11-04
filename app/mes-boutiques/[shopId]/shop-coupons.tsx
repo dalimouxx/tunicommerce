@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState,type FormEvent} from 'react';
+import {useEffect,useRef,useState,type FormEvent} from 'react';
 type Coupon={id:string;code:string;percent:number;used:number;limit:number;remaining:number;active:boolean};
 export default function ShopCoupons({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/coupons';
@@ -8,6 +8,7 @@ export default function ShopCoupons({shopId}:{shopId:string}){
  const [percent,setPercent]=useState('10');
  const [limit,setLimit]=useState('50');
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
+ const pending=useRef<Record<string,string>>({});
  useEffect(()=>{
   const controller=new AbortController();
   fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{
@@ -30,6 +31,20 @@ export default function ShopCoupons({shopId}:{shopId:string}){
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau');}
   finally{setBusy(false);}
  }
+ async function toggle(c:Coupon){
+  if(!window.confirm((c.active?'Désactiver':'Réactiver')+' le coupon '+c.code+' ?'))return;
+  const key=c.id+':'+String(!c.active),requestId=pending.current[key]||crypto.randomUUID();
+  pending.current[key]=requestId;setBusy(true);setNotice('');
+  try{
+   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'setCouponActive',requestId,payload:{id:c.id,active:!c.active}})});
+   const data=await response.json() as {coupons?:Coupon[];error?:string};
+   if(!response.ok)throw Error(data.error||'Modification refusée');
+   setCoupons(data.coupons||[]);delete pending.current[key];
+   setNotice('Statut du coupon modifié sans supprimer son historique.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau : réessayez sans changer de coupon.');}
+  finally{setBusy(false);}
+ }
  return <section style={{background:'white',border:'1px solid #dce6ed',padding:22,borderRadius:16,marginTop:16}}>
   <h2>Promotions · Codes de réduction</h2>
   <p>Créez des coupons avec un pourcentage et un nombre maximal d'utilisations. Les codes s'appliquent uniquement aux produits de cette boutique et sont vérifiés au serveur.</p>
@@ -42,11 +57,12 @@ export default function ShopCoupons({shopId}:{shopId:string}){
     <button type="submit" disabled={busy}>Créer mon code</button>
    </form>
    <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
-    <thead><tr><th>Code</th><th>Réduction</th><th>Utilisées</th><th>Restantes</th><th>Statut</th></tr></thead>
+    <thead><tr><th>Code</th><th>Réduction</th><th>Utilisées</th><th>Restantes</th><th>Statut</th><th>Action</th></tr></thead>
     <tbody>{coupons.map(c=><tr key={c.id} style={{borderTop:'1px solid #e3ebed'}}>
      <td style={{padding:9}}><strong>{c.code}</strong></td><td style={{padding:9}}>{c.percent}%</td>
      <td style={{padding:9}}>{c.used}/{c.limit}</td><td style={{padding:9}}>{c.remaining}</td>
-     <td style={{padding:9}}>{c.active&&c.remaining>0?'Utilisable':'Épuisé / inactif'}</td>
+     <td style={{padding:9}}>{c.active&&c.remaining>0?'Utilisable':c.active?'Épuisé':'Désactivé'}</td>
+     <td style={{padding:9}}><button type="button" disabled={busy||!c.active&&c.remaining===0} onClick={()=>void toggle(c)}>{c.active?'Désactiver':'Réactiver'}</button></td>
     </tr>)}</tbody></table>{coupons.length===0&&<p>Aucun coupon défini.</p>}</div>
   </>}
  </section>;
