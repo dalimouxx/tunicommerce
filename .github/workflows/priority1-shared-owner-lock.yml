@@ -7,6 +7,14 @@ on:
       - 'app/api/commerce/route.ts'
       - 'tests/priority1-legacy-quota-unit.test.ts'
       - 'tests/priority1-postgres-isolation.test.ts'
+      - 'modules/shops/public-cod-checkout.ts'
+      - 'modules/shops/plan-growth-policy.ts'
+      - 'modules/shops/isolated-commerce.ts'
+      - 'modules/subscriptions/quotas.ts'
+      - 'modules/commerce/service.ts'
+      - 'modules/commerce/normalize.ts'
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/**'
       - '.github/workflows/priority1-shared-owner-lock.yml'
   workflow_dispatch:
 jobs:
