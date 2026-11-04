@@ -49,6 +49,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   event.preventDefault();
   if(!selected.length){setNotice('Ajoutez au moins un produit.');return;}
   if(selected.reduce((n,p)=>n+p.quantity,0)>30){setNotice('Panier limité à 30 articles.');return;}
+  if(selected.length>15){setNotice('Panier limité à 15 références différentes.');return;}
   const id=requestId.current||crypto.randomUUID();requestId.current=id;
   setBusy(true);setNotice('');
   try{
@@ -84,6 +85,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
     onChange={e=>updateQuantity(p.id,Math.min(10,Math.max(0,Number.isFinite(Number(e.target.value))?Math.floor(Number(e.target.value)):0)))}
     style={{padding:8,width:72}}/>
   </label>)}
+  <p aria-live="polite">{selected.length} référence(s) · {selected.reduce((n,p)=>n+p.quantity,0)} unité(s). Maximum : 15 références et 30 unités.</p>
   <p>Sous-total : <strong>{amount(subtotal)} TND</strong> · livraison : {amount(delivery)} TND · total estimé : <strong>{amount(estimatedTotal)} TND</strong></p>
   <p>Les tarifs et les stocks sont revérifiés par le serveur lors de la commande. Aucun paiement n'est demandé en ligne.</p>
   {coupon.trim()&&<p>Le total estimé ci-dessus est affiché avant réduction. Le coupon sera validé et appliqué au montant final côté serveur.</p>}
@@ -94,7 +96,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
    <label>Gouvernorat<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v}>{v}</option>)}</select></label>
    <label>Adresse de livraison<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
    <label>Code promo (facultatif)<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder="Code communiqué par le marchand" style={{display:'block',padding:10,width:'100%'}}/></label>
-   <button type="submit" disabled={busy||selected.length===0} style={{padding:14,border:0,borderRadius:10,background:'#126c65',color:'white',fontWeight:700}}>Commander · payer à la livraison</button>
+   <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:'#126c65',color:'white',fontWeight:700}}>Commander · payer à la livraison</button>
   </form>
  </section>;
 }

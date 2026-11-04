@@ -8,6 +8,8 @@ export const metadata={robots:{index:false,follow:false}};
 const labels={
  STALLED_SHIPMENT:'Expéditions anciennes',
  HANDOFF_MISSING:'Bons de remise manquants',
+ DELIVERED_NO_HANDOFF:'Livraisons sans bon de remise',
+ COD_OVERDUE:'COD ancien non encaissé',
  COD_MISMATCH:'Écarts COD',
  CUSTOMER_REQUEST:'Demandes client à traiter',
  REFUND_DUE:'Remboursements dus'

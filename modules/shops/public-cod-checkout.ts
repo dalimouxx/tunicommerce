@@ -27,6 +27,27 @@ export function validatePublicCart(input:z.infer<typeof publicCodCheckoutInput>)
  if(input.items.reduce((total,item)=>total+item.quantity,0)>30)throw new HttpError(400,'Panier limité à 30 articles');
 }
 
+/** Rehydrate a public checkout after a lost response, even when request cache rotates.
+ * Prevent a reused request token from returning someone else's receipt details.
+ */
+export function publicCheckoutReplay(state:State,input:z.infer<typeof publicCodCheckoutInput>){
+ const order=state.orders.find(item=>item.publicReceiptId===input.requestId);
+ if(!order){
+  if(state.requests.includes(input.requestId))
+   throw new HttpError(409,'Reçu indisponible : contactez la boutique avec votre référence');
+  return null;
+ }
+ const buyer=order.customerSnapshot;
+ const canonical=(value:string)=>value.replace(/^\+216/,'');
+ const ordered=order.items.map(item=>item.productId+':'+item.quantity).sort().join('|');
+ const supplied=input.items.map(item=>item.productId+':'+item.quantity).sort().join('|');
+ if(!buyer||buyer.name!==input.name||canonical(buyer.phone)!==canonical(input.phone)||
+  buyer.city!==input.city||buyer.address!==input.address||ordered!==supplied)
+  throw new HttpError(409,'Cette référence de commande appartient à une autre demande');
+ return {accepted:true,alreadyApplied:true,reference:order.reference,
+  totalMillimes:order.total,trackingToken:input.requestId};
+}
+
 /**
  * Checkout uses the same owner-wide advisory lock and aggregate quotas as merchant
  * writes. No public request may mutate legacy Workspace commerce.
@@ -58,10 +79,11 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   assertPlanForNewCommerce({status:workspace?.subscriptionStatus||'',expiresAt:workspace?.subscriptionEndsAt||null,planExists:!!plan,planEnabled:plan?.enabled===true});
   const row=shop.commerce!;
   const before=normalizeState(row.data as unknown as State);
-  if(before.requests.includes(input.requestId))return {accepted:true,alreadyApplied:true,trackingToken:input.requestId};
+  const replay=publicCheckoutReplay(before,input);
+  if(replay)return replay;
   const phone=input.phone.replace(/^\+216/,'');
   const recentOrder=before.orders.find(order=>
-   order.customerSnapshot?.phone===phone&&
+   order.customerSnapshot?.phone?.replace(/^\+216/,'')===phone&&
    Date.now()-Date.parse(order.createdAt)<60_000&&
    ['TO_CONFIRM','NO_ANSWER','CALLBACK'].includes(order.status)
   );
@@ -74,7 +96,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   let next:State;
   try{
    next=applyAction(before,'createOrder',{
-    name:input.name,phone:input.phone,city:input.city,address:input.address,
+    name:input.name,phone:phone,city:input.city,address:input.address,
     source:'Boutique',items:input.items,coupon:input.coupon?.toUpperCase()
    });
   }catch(error){

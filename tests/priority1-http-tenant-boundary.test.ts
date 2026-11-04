@@ -153,6 +153,22 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal((await get('/api/v1/shops/'+a.id+'/dispatch-manifest?format=html',ownerA.cookie)).status,400);
   });
 
+  await t.test('P1/P3 COD audit requires shop owner and hides buyer PII from count-only metadata',async()=>{
+   const base='/api/v1/shops/'+a.id+'/cod-exceptions';
+   assert.equal((await get(base)).status,401);
+   assert.equal((await get(base,ownerB.cookie)).status,404);
+   assert.equal((await get(base,globalAdmin.cookie)).status,404);
+   assert.equal((await get(base,agentA.cookie)).status,403);
+   const response=await get(base+'?format=json&filter=ALL&page=1',ownerA.cookie);
+   assert.equal(response.status,200);
+   const summary=await response.text();
+   for(const value of ['22123456','55123456','Adresse privée','Acheteur privé'])
+    assert.equal(summary.includes(value),false);
+   assert.equal((await get(base+'?page=0',ownerA.cookie)).status,400);
+   assert.equal((await get(base+'?page=2',ownerA.cookie)).status,400);
+   assert.equal((await get(base+'?format=exe',ownerA.cookie)).status,400);
+  });
+
   await t.test('revoked employee loses access despite existing signed session',async()=>{
    await prisma.membership.update({where:{shopId_userId:{shopId:a.id,userId:viewer.id}},
     data:{active:false}});

@@ -1,5 +1,6 @@
 import type {State} from '../commerce/types';
 import {csvCell} from './dispatch-manifest';
+import {HttpError} from '../auth/http';
 
 export type CodAuditRow={
  reference:string;carrier:string;deliveredAt:string;ageDays:number|null;
@@ -10,9 +11,9 @@ export type CodAuditRow={
 };
 
 /** Read-only COD exception review: financial figures are still operator declarations. */
-export function codAuditRows(state:State,now=new Date()):CodAuditRow[]{
+function allCodAuditRows(state:State,now:Date):CodAuditRow[]{
  const reconciled=new Set((state.carrierReconciliations||[]).map(row=>row.statementId));
- return state.orders.filter(o=>o.status==='DELIVERED').slice(0,1000).map(order=>{
+ return state.orders.filter(o=>o.status==='DELIVERED').map(order=>{
   const statements=(state.carrierStatements||[]).filter(row=>row.orderId===order.id);
   const settlements=state.settlements.filter(row=>row.orderId===order.id);
   const declared=statements.reduce((sum,row)=>sum+row.amount,0);
@@ -39,6 +40,40 @@ export function codAuditRows(state:State,now=new Date()):CodAuditRow[]{
   const aNeeds=a.attention!=='Aucun ecart detecte',bNeeds=b.attention!=='Aucun ecart detecte';
   return Number(bNeeds)-Number(aNeeds)||(b.ageDays??-1)-(a.ageDays??-1)||a.reference.localeCompare(b.reference);
  });
+}
+
+/** Compatibility projection for older internal consumers, intentionally capped. */
+export function codAuditRows(state:State,now=new Date()):CodAuditRow[]{
+ return allCodAuditRows(state,now).slice(0,1000);
+}
+export type CodAuditFilter='ALL'|'ATTENTION'|'CLEAN';
+export type CodAuditQuery={page:number;filter:CodAuditFilter;format:'csv'|'json'};
+export const COD_AUDIT_PAGE_SIZE=100;
+export function parseCodAuditQuery(params:URLSearchParams):CodAuditQuery{
+ const allowed=new Set(['page','filter','format']);
+ for(const key of params.keys())
+  if(!allowed.has(key)||params.getAll(key).length!==1)
+   throw new HttpError(400,'Paramètres de contrôle COD invalides');
+ const page=params.get('page')||'1';
+ if(!/^[1-9][0-9]{0,3}$/.test(page))throw new HttpError(400,'Page COD invalide');
+ const filter=params.get('filter')||'ALL',format=params.get('format')||'csv';
+ if(!['ALL','ATTENTION','CLEAN'].includes(filter))throw new HttpError(400,'Filtre COD invalide');
+ if(!['csv','json'].includes(format))throw new HttpError(400,'Format COD invalide');
+ return {page:Number(page),filter:filter as CodAuditFilter,format:format as 'csv'|'json'};
+}
+/** All eligible COD orders are counted; only the selected bounded page is exposed. */
+export function codAuditPage(state:State,input:Pick<CodAuditQuery,'page'|'filter'>,now=new Date()){
+ const rows=allCodAuditRows(state,now);
+ const attentionCount=rows.filter(row=>row.attention!=='Aucun ecart detecte').length;
+ const filtered=rows.filter(row=>input.filter==='ALL'||
+  (input.filter==='ATTENTION'?row.attention!=='Aucun ecart detecte':row.attention==='Aucun ecart detecte'));
+ const total=filtered.length,totalPages=Math.max(1,Math.ceil(total/COD_AUDIT_PAGE_SIZE));
+ if(!Number.isSafeInteger(input.page)||input.page<1||input.page>totalPages)
+  throw new HttpError(400,'Page de contrôle COD introuvable');
+ const start=(input.page-1)*COD_AUDIT_PAGE_SIZE;
+ return {page:input.page,pageSize:COD_AUDIT_PAGE_SIZE,total,totalPages,attentionCount,
+  cleanCount:rows.length-attentionCount,filter:input.filter,
+  rows:filtered.slice(start,start+COD_AUDIT_PAGE_SIZE)};
 }
 export function codAuditCsv(rows:readonly CodAuditRow[]):string{
  const headers=['Commande','Transporteur','Dernier statut livre ISO','Age jours',

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
 import {applyAction} from '../modules/commerce/service';
-import {codAuditRows,codAuditCsv} from '../modules/shops/cod-exceptions';
+import {codAuditRows,codAuditPage,parseCodAuditQuery,codAuditCsv} from '../modules/shops/cod-exceptions';
 
 function fixture(){
  const state=initialState(false);
@@ -50,4 +50,31 @@ test('spreadsheet CSV sanitizes fields controlled by external carriers',()=>{
  state.orders[0].carrier='=HYPERLINK("bad")';
  const csv=codAuditCsv(codAuditRows(state));
  assert.ok(csv.includes('"\'=HYPERLINK(""bad"")"'));
+});
+
+test('P3 COD audit navigates beyond 1000 delivered orders and filters attention without PII',()=>{
+ const state=fixture();
+ const original=state.orders[0];
+ state.orders=Array.from({length:1205},(_,i)=>({...original,id:'COD-'+i,reference:'TC-'+i,
+  total:i%2?10000:20000,collected:i%2?10000:0}));
+ const first=codAuditPage(state,{page:1,filter:'ALL'});
+ const middle=codAuditPage(state,{page:10,filter:'ALL'});
+ const last=codAuditPage(state,{page:13,filter:'ALL'});
+ assert.deepEqual([first.rows.length,middle.rows.length,last.rows.length],[100,100,5]);
+ assert.deepEqual([first.total,first.totalPages,first.attentionCount],[1205,13,603]);
+ assert.equal(new Set([...first.rows,...middle.rows,...last.rows].map(x=>x.reference)).size,205);
+ assert.equal(codAuditPage(state,{page:1,filter:'ATTENTION'}).total,603);
+ assert.equal(codAuditPage(state,{page:1,filter:'CLEAN'}).total,602);
+ assert.equal(codAuditRows(state).length,1000); // older callers preserve behavior
+ assert.throws(()=>codAuditPage(state,{page:14,filter:'ALL'}),/introuvable/);
+ const text=JSON.stringify({total:first.total,attention:first.attentionCount});
+ for(const privateField of ['22123456','Rue privée','Nom secret'])assert.equal(text.includes(privateField),false);
+});
+test('P1/P3 COD export rejects unknown, ambiguous and overly large query arguments',()=>{
+ assert.deepEqual(parseCodAuditQuery(new URLSearchParams('page=2&filter=ATTENTION&format=json')),
+  {page:2,filter:'ATTENTION',format:'json'});
+ for(const invalid of ['page=0','page=-1','page=12345','format=xml','filter=PAID',
+  'filter=ALL&filter=CLEAN','page=1&page=2','redirect=https://evil.test']){
+  assert.throws(()=>parseCodAuditQuery(new URLSearchParams(invalid)));
+ }
 });

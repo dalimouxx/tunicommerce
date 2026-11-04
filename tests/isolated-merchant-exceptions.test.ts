@@ -39,3 +39,23 @@ test('refund due is never presented as actual cash sent',()=>{
  assert.equal(result.byKind.REFUND_DUE,1);
  assert.equal(result.items.find(x=>x.kind==='REFUND_DUE')?.amountMillimes,6500);
 });
+
+test('P3 livré : alertes bons manquants et COD ancien, sans preuve bancaire inventée',()=>{
+ const state=initialState(false);
+ state.orders=[{id:'delivered-1',reference:'TC-900',status:'DELIVERED',carrier:'Transport local',
+  total:45000,collected:15000,updatedAt:'2026-10-30T12:00:00Z',createdAt:'2026-10-29T12:00:00Z',
+  customerSnapshot:{name:'CLIENT SECRET',phone:'22123456',city:'Gabès',address:'RUE PRIVÉE'}} as never];
+ const report=merchantExceptionQueue(state,now);
+ assert.equal(report.byKind.DELIVERED_NO_HANDOFF,1);
+ assert.equal(report.byKind.COD_OVERDUE,1);
+ assert.equal(report.items.find(item=>item.kind==='COD_OVERDUE')?.amountMillimes,30000);
+ const copy=structuredClone(state);
+ copy.carrierHandoffs=[{id:'h1',orderId:'delivered-1',carrier:'Transport local',
+  tracking:'T1',proofReference:'BON-1234',at:'2026-10-30T12:00:00Z'}];
+ copy.orders[0].collected=45000;
+ const resolved=merchantExceptionQueue(copy,now);
+ assert.equal(resolved.byKind.DELIVERED_NO_HANDOFF,0);
+ assert.equal(resolved.byKind.COD_OVERDUE,0);
+ for(const secret of ['CLIENT SECRET','22123456','RUE PRIVÉE'])
+  assert.equal(JSON.stringify(report).includes(secret),false);
+});
