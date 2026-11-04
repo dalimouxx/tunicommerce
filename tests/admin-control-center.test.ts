@@ -124,7 +124,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    assert.equal(fullPage.status,200);
    const csv=await get('/api/admin/subscriptions/export?statut=valid&recherche=gabes',adminCookie);
    assert.equal(csv.status,200);
-   assert.match(csv.headers.get('content-type')||'',/text\\/csv/);
+   assert.ok((csv.headers.get('content-type')||'').includes('text/csv'));
    assert.match(csv.headers.get('cache-control')||'',/no-store/);
    assert.match(await csv.text(),/gabes@example.test/);
   });
