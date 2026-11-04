@@ -53,7 +53,7 @@ test('P4 audit insight counts more than 1000 delivered COD anomalies',()=>{
  const state=initialState(false);
  state.orders=Array.from({length:1103},(_,i)=>({
   id:'del-'+i,reference:'TC-'+i,status:'DELIVERED',carrier:'Transport',
-  total:15000,collected:0,createdAt:'2026-11-01T10:00:00Z',
+  total:15000,collected:0,items:[],createdAt:'2026-11-01T10:00:00Z',
   updatedAt:'2026-11-02T10:00:00Z',customerRequests:[]
  })) as never;
  const report=merchantInsights(state,now);
