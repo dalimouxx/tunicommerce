@@ -1,0 +1,29 @@
+name: TuniCommerce isolated customer request security
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/public-customer-request.ts'
+      - 'modules/shops/order-fulfillment.ts'
+      - 'app/api/v1/public/vitrines/**'
+      - 'app/vitrines/[slug]/suivi/**'
+      - 'tests/isolated-public-customer-request.test.ts'
+      - 'tests/priority1-http-tenant-boundary.test.ts'
+      - '.github/workflows/p23-isolated-customer-request.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-public-customer-request.test.ts
+      - run: npm run typecheck
+      - run: npm run build
