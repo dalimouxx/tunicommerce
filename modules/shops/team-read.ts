@@ -10,7 +10,7 @@ export function sectionPermission(section:TeamSection):ShopPermission{
 export function teamCanView(role:string,section:TeamSection){
  return canAccessShop(role,sectionPermission(section));
 }
-export function projectTeamSection(state:State,role:string,section:TeamSection){
+export function projectTeamSection(state:State,role:string,section:TeamSection,actorId?:string){
  if(!teamCanView(role,section))return null;
  if(section==='products')return {
   section,
@@ -23,9 +23,9 @@ export function projectTeamSection(state:State,role:string,section:TeamSection){
   const personalData=canAccessShop(role,'customers.read');
   return {
    section,
-   orders:state.orders.slice(0,100).map(o=>({
+   orders:state.orders.filter(o=>role!=='CALL_CENTER'||!actorId||!o.assignedAgentId||o.assignedAgentId===actorId).slice(0,100).map(o=>({
     id:o.id,reference:o.reference,status:o.status,
-    createdAt:o.createdAt,source:o.source,
+    createdAt:o.createdAt,source:o.source,assignedToMe:!!actorId&&o.assignedAgentId===actorId,
     items:o.items.map(item=>({name:item.name,quantity:item.quantity})),
     ...(canAccessShop(role,'orders.update')?{contactLog:contactHistory(o).slice(0,5)}:{}),
     // No pricing for users without finance rights; no buyer data without customers.read.

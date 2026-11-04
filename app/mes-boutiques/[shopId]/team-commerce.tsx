@@ -4,7 +4,7 @@ import {contactChannels,contactOutcomes,contactLogNote,type ContactChannel,type 
 
 type Section='products'|'orders'|'finance';
 type Item={id:string;name:string;sku:string;stock:number;price:number};
-type Order={id:string;reference:string;status:string;createdAt:string;customer?:{name:string;phone:string;city:string};total?:number;items:{name:string;quantity:number}[];contactLog?:{at:string;label:string}[]};
+type Order={id:string;reference:string;status:string;createdAt:string;customer?:{name:string;phone:string;city:string};total?:number;items:{name:string;quantity:number}[];assignedToMe?:boolean;contactLog?:{at:string;label:string}[]};
 type Finance={delivered:number;deliveredGrossMillimes:number;codOutstandingMillimes:number};
 type Response={section:Section;products?:Item[];orders?:Order[];summary?:Finance;error?:string};
 const labels:{value:Section;label:string}[]=[
@@ -85,7 +85,7 @@ export default function TeamCommerce({shopId,role}:{shopId:string;role:string}){
    {data.section==='orders'&&<div style={{overflowX:'auto'}}>
     <table style={{width:'100%',textAlign:'left'}}><thead><tr><th>Commande</th><th>Statut</th><th>Articles</th><th>Client autorisé</th>{canConfirm&&<th>Action</th>}{canLogContact&&<th>Journal des contacts</th>}</tr></thead>
      <tbody>{data.orders?.map(order=><tr key={order.id}>
-      <td>{order.reference}</td><td>{order.status}</td>
+      <td>{order.reference}{order.assignedToMe&&<small>Attribuée à moi</small>}</td><td>{order.status}</td>
       <td>{order.items.map(item=>item.name+' × '+item.quantity).join(', ')}</td>
       <td>{order.customer?order.customer.name+' · '+order.customer.phone:'Données masquées'}</td>
       {canConfirm&&<td>{['TO_CONFIRM','NO_ANSWER','CALLBACK'].includes(order.status)&&<button type="button" disabled={busy} onClick={()=>void perform('confirmOrder',{id:order.id,status:'CONFIRMED'})}>Confirmer</button>}</td>}

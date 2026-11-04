@@ -31,6 +31,20 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  let result=s;if(p.status==='ACCEPTED'&&request.type==='CANCEL')result=applyAction(s,'transition',{id:order.id,status:'CANCELLED'});
  const target=result.orders.find(o=>o.id===p.orderId)!.customerRequests!.find(r=>r.id===p.requestId)!;target.status=p.status;target.reply=p.reply;result.audit.unshift({id:id(),at:now,label:'Demande client '+p.status+' · '+order.reference});return result;
  }
+ if(action==='assignCallAgent'){
+  const p=z.object({id:str,agentId:z.string().uuid().nullable()}).strict().parse(payload);
+  const order=s.orders.find(order=>order.id===p.id);
+  if(!order)throw Error('Commande introuvable');
+  if(!['TO_CONFIRM','CALLBACK','NO_ANSWER'].includes(order.status))
+   throw Error('Attribution autorisée uniquement sur la file de confirmation');
+  if((order.assignedAgentId||null)===p.agentId)
+   throw Error('Cette commande possède déjà cette attribution');
+  order.assignedAgentId=p.agentId||undefined;
+  order.assignedAt=p.agentId?now:undefined;
+  order.events.push({at:now,label:p.agentId?'Commande attribuée à un agent':'Commande remise dans la file libre'});
+  log('Attribution Call Center · '+order.reference);
+  return s;
+ }
  if(action==='recordCarrierStatement'){
   const p=z.object({
    orderId:str,reference:str,amount:amount.refine(n=>n>0),
