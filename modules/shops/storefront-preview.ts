@@ -9,6 +9,9 @@ export function isolatedStorefrontPreview(state:State){
  const catalog=publicCatalog(state);
  return {
   theme:storefrontThemeSummary(state),
+  logoUrl:catalog.logoUrl,
+  bannerUrl:catalog.bannerUrl,
+  phone:catalog.phone,
   name:catalog.name,
   description:catalog.description,
   shipping:catalog.shipping,
