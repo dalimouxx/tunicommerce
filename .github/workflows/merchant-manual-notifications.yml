@@ -1,0 +1,24 @@
+name: TuniCommerce operator-assisted customer messaging
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/manual-messaging.ts'
+      - 'app/mes-boutiques/[shopId]/shop-manual-messages.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-confirmation-desk.tsx'
+      - 'tests/isolated-manual-messaging.test.ts'
+      - '.github/workflows/merchant-manual-notifications.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-manual-messaging.test.ts
+      - run: npm run typecheck
+      - run: npm run build
