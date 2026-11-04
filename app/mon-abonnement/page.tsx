@@ -10,18 +10,14 @@ import {subscriptionLabel} from '../../modules/platform/admin-overview';
 import {countMerchantShopSlots} from '../../modules/shops/plan-limits';
 import {countStaffSeats} from '../../modules/shops/member-limits';
 import {effectiveLimit} from '../../modules/subscriptions/validation';
-import {quotaOverview,subscriptionOverview} from '../../modules/subscriptions/overview';
+import {quotaOverview} from '../../modules/subscriptions/overview';
+import {ownerCommerceBillingSummary} from '../../modules/shops/merchant-billing-summary';
 import {enabledReceptionMethods} from '../../modules/billing/reception';
 import styles from './plan.module.css';
 import SubscriptionBilling,{type PaymentHistory,type PaymentOffer} from './subscription-billing';
 
 export const dynamic='force-dynamic';
 
-function tunisiaMonth(date:Date){
- return new Intl.DateTimeFormat('en-CA',{
-  timeZone:'Africa/Tunis',year:'numeric',month:'2-digit'
- }).format(date);
-}
 function capacity(used:number,cap:number|null){
  return cap===null?'Sans limite':used+' / '+cap;
 }
@@ -30,7 +26,7 @@ export default async function MySubscription(){
  if(!user)redirect('/login');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
- const [plan,quotas,photos,availablePlans,payments,methods,shopCount,staffMemberships,linkedShop]=await Promise.all([
+ const [plan,quotas,photos,availablePlans,payments,methods,shopCount,staffMemberships,linkedShop,isolatedStates]=await Promise.all([
   prisma.subscriptionPlan.findUnique({where:{code:workspace.plan}}),
   loadWorkspaceQuotas(workspace),
   prisma.productMedia.count({where:{workspaceId:workspace.id}}),
@@ -50,18 +46,20 @@ export default async function MySubscription(){
   enabledReceptionMethods(),
   prisma.shop.count({where:{organization:{ownerId:user.userId}}}),
   prisma.membership.findMany({where:{active:true,shop:{organization:{ownerId:user.userId}}},select:{userId:true}}),
-  prisma.shop.findUnique({where:{legacyWorkspaceId:workspace.id},select:{id:true}})
+  prisma.shop.findUnique({where:{legacyWorkspaceId:workspace.id},select:{id:true}}),
+  prisma.shopCommerce.findMany({where:{shop:{organization:{ownerId:user.userId}}},select:{data:true}})
  ]);
- const data=normalizeState(workspace.data as unknown as State);
- const month=tunisiaMonth(new Date());
- const monthlyOrders=data.orders.filter(o=>tunisiaMonth(new Date(o.createdAt))===month).length;
+ const commerceStates=[normalizeState(workspace.data as unknown as State),
+  ...isolatedStates.map(row=>normalizeState(row.data as unknown as State))];
+ const summary=ownerCommerceBillingSummary(commerceStates,quotas,
+  {status:workspace.subscriptionStatus,endsAt:workspace.subscriptionEndsAt});
  const used=[
-  {name:'Produits',amount:data.products.length,cap:quotas.maxProducts,Icon:Package},
-  {name:'Commandes du mois',amount:monthlyOrders,cap:quotas.maxOrdersPerMonth,Icon:ShoppingCart},
-  {name:'Photos produits',amount:photos,cap:quotas.maxPhotos,Icon:Images}
+  {name:'Produits · toutes boutiques',amount:summary.products.used,cap:quotas.maxProducts,Icon:Package},
+  {name:'Commandes du mois · toutes boutiques',amount:summary.orders.used,cap:quotas.maxOrdersPerMonth,Icon:ShoppingCart},
+  {name:'Photos · bibliothèque historique',amount:photos,cap:quotas.maxPhotos,Icon:Images}
  ];
  const label=subscriptionLabel(workspace.subscriptionStatus,workspace.subscriptionEndsAt);
- const status=subscriptionOverview(workspace.subscriptionStatus,workspace.subscriptionEndsAt);
+ const status=summary.subscription;
  const shops=quotaOverview(countMerchantShopSlots(shopCount,!linkedShop),effectiveLimit(plan?.maxShops??null,undefined));
  const collaborators=quotaOverview(countStaffSeats(staffMemberships.map(m=>m.userId),user.userId),effectiveLimit(plan?.maxMembers??null,undefined));
  return <main className={styles.shell}>
@@ -71,7 +69,7 @@ export default async function MySubscription(){
     <div>
      <span className={styles.eyebrow}>MON COMPTE · TUNICOMMERCE</span>
      <h1>Mon abonnement</h1>
-     <p>Consultez votre offre, sa validité et les limites réellement appliquées à votre boutique.</p>
+     <p>Consultez votre offre, sa validité et la consommation cumulée de toutes vos boutiques.</p>
     </div>
     <div className={styles.status}><ShieldCheck size={17}/>{label}</div>
    </header>
@@ -81,6 +79,7 @@ export default async function MySubscription(){
     <div><small>Durée de l'offre</small><strong>{plan?plan.durationDays+' jours':'Non définie'}</strong><span>Référence de tarification</span></div>
     <div><small>Échéance actuelle</small><strong>{workspace.subscriptionEndsAt?workspace.subscriptionEndsAt.toLocaleDateString('fr-TN'):'Non définie'}</strong><span>Gérée par l'administration</span></div>
    </div>
+   {summary.attention&&<section className={styles.card}><h2>Échéance ou restriction d'abonnement</h2><p role="alert">{summary.attention}</p><a href="#declarer-reglement">Consulter les démarches de renouvellement</a></section>}
    <section className={styles.card}>
     <h2><CalendarClock size={19}/> Abonnement et capacité multi-boutique</h2>
     <p>{status.active?`Abonnement valide · ${status.daysRemaining} jour(s) restant(s)`:'Abonnement non actif ou échéance non configurée. Les droits sont contrôlés par le serveur.'}</p>
@@ -94,7 +93,7 @@ export default async function MySubscription(){
     <p>Les limites s'appliquent à l'ensemble de vos organisations. Un collaborateur présent dans plusieurs boutiques n'occupe qu'une place. Cette vue ne renouvelle pas l'abonnement.</p>
    </section>
    <section className={styles.card}>
-    <h2><CalendarClock size={19}/> Utilisation de votre boutique</h2>
+    <h2><CalendarClock size={19}/> Consommation du compte marchand</h2>
     <div className={styles.usage}>
      {used.map(item=><div key={item.name}>
       <item.Icon size={19}/>
@@ -102,9 +101,9 @@ export default async function MySubscription(){
       {item.cap!==null&&<progress max={item.cap||1} value={Math.min(item.amount,item.cap||1)} aria-label={'Utilisation '+item.name}/>}
      </div>)}
     </div>
-    <p>Les nouvelles créations sont limitées selon l'offre. Les produits, commandes et fichiers déjà enregistrés sont conservés si un plafond diminue.</p>
+    <p>Les produits et commandes comprennent le commerce historique et les boutiques indépendantes du propriétaire. Les photos affichées ici concernent uniquement la bibliothèque historique. Les données existantes sont préservées si un plafond diminue.</p>
    </section>
-   <SubscriptionBilling
+   <div id="declarer-reglement"><SubscriptionBilling
     methods={methods}
     plans={availablePlans satisfies PaymentOffer[]}
     history={payments.map(p=>({
@@ -114,7 +113,7 @@ export default async function MySubscription(){
      createdAt:p.createdAt.toISOString(),
      decidedAt:p.decidedAt?.toISOString()||null
     })) satisfies PaymentHistory[]}
-   />
+   /></div>
    <section className={styles.card}>
     <h2>Renouvellement et contrôle</h2>
     <p>Les déclarations sont examinées par l'administration. Seule sa validation prolonge l’abonnement ; aucune carte bancaire n'est débitée automatiquement.</p>
