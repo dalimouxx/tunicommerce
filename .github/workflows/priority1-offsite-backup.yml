@@ -55,7 +55,7 @@ jobs:
             | docker run --rm -i postgres:18 pg_restore --list > "$manifest"
           grep -q 'TABLE' "$manifest"
           object_key="tunicommerce/neon/$(date -u +%Y/%m/%d)/$(date -u +%Y%m%dT%H%M%SZ)-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.dump.gpg"
-          checksum="$(sha256sum "$encrypted" | cut -d\x27 \x27 -f1)"
+          checksum="$(sha256sum "$encrypted" | cut -c1-64)"
           test "${#checksum}" -eq 64
           aws --endpoint-url "$P1_S3_ENDPOINT" s3 cp "$encrypted" \
             --metadata "sha256=$checksum" \
