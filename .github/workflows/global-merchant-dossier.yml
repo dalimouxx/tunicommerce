@@ -1,0 +1,24 @@
+name: TuniCommerce global merchant account dossier
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/merchant-dossier.ts'
+      - 'app/admin/marchands/[ownerId]/page.tsx'
+      - 'components/admin-merchant-directory.tsx'
+      - 'tests/merchant-dossier.test.ts'
+      - '.github/workflows/global-merchant-dossier.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/merchant-dossier.test.ts
+      - run: npm run typecheck
+      - run: npm run build
