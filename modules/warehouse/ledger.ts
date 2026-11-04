@@ -17,27 +17,50 @@ export function bootstrapWarehouses(state:State){
  state.stockTransfers=[];
 }
 export function applyWarehouseMovement(state:State,productId:string,change:number){
- if(!(state.warehouses||[]).length||change===0)return;
+ if(!(state.warehouses||[]).length||change===0)return [] as {warehouseId:string;quantity:number}[];
  const product=state.products.find(p=>p.id===productId);
  if(!product)throw Error('Produit introuvable');
  const balances=state.warehouseBalances??(state.warehouseBalances=[]);
+ const allocations:{warehouseId:string;quantity:number}[]=[];
  const actual=balances.filter(b=>b.productId===productId).reduce((sum,b)=>sum+b.quantity,0);
  if(actual!==product.stock)throw Error('Incohérence entre stock global et emplacements. Audit requis.');
  if(change>0){
   let main=balances.find(b=>b.productId===productId&&b.warehouseId==='primary');
   if(!main){main={productId,warehouseId:'primary',quantity:0};balances.push(main);}
   main.quantity+=change;
+  allocations.push({warehouseId:'primary',quantity:change});
  }else{
   let needed=-change;
   const sources=balances.filter(b=>b.productId===productId&&b.quantity>0)
    .sort((a,b)=>Number(b.warehouseId==='primary')-Number(a.warehouseId==='primary')||a.warehouseId.localeCompare(b.warehouseId));
   for(const balance of sources){
    const taken=Math.min(needed,balance.quantity);balance.quantity-=taken;needed-=taken;
+   if(taken>0)allocations.push({warehouseId:balance.warehouseId,quantity:taken});
    if(!needed)break;
   }
   if(needed)throw Error('Stock indisponible dans les emplacements');
  }
  state.warehouseBalances=balances.filter(b=>b.quantity>0);
+ return allocations;
+}
+/** Releases an unshipped order's stock into its original pick bins, not the main warehouse. */
+export function releaseOrderWarehousePicks(state:State,orderId:string,productId:string,quantity:number,at:string){
+ const picks=(state.warehousePicks||[]).filter(p=>p.orderId===orderId&&p.productId===productId&&!p.returnedAt);
+ if(!picks.length)return applyWarehouseMovement(state,productId,quantity);
+ if(picks.reduce((sum,p)=>sum+p.quantity,0)!==quantity)throw Error('Réservation des dépôts incohérente, annulation à contrôler');
+ const product=state.products.find(x=>x.id===productId);
+ if(!product)throw Error('Produit introuvable');
+ const balances=state.warehouseBalances??(state.warehouseBalances=[]);
+ const total=balances.filter(b=>b.productId===productId).reduce((sum,b)=>sum+b.quantity,0);
+ if(total!==product.stock)throw Error('Incohérence entre stock global et emplacements. Audit requis.');
+ for(const pick of picks){
+  if(!state.warehouses?.some(w=>w.id===pick.warehouseId))throw Error('Dépôt d’origine introuvable');
+  let balance=balances.find(b=>b.productId===productId&&b.warehouseId===pick.warehouseId);
+  if(!balance){balance={productId,warehouseId:pick.warehouseId,quantity:0};balances.push(balance);}
+  balance.quantity+=pick.quantity;
+  pick.returnedAt=at;
+ }
+ return picks.map(p=>({warehouseId:p.warehouseId,quantity:p.quantity}));
 }
 export function applyWarehouseOperation(state:State,action:string,payload:unknown){
  const now=new Date().toISOString();
@@ -92,6 +115,9 @@ export function warehouseOverview(state:State){
   initialized:locations.length>0,locations:locations.map(x=>({...x})),
   products:state.products.slice(0,500).map(p=>({id:p.id,name:p.name,sku:p.sku,total:p.stock,
    byLocation:balances.filter(b=>b.productId===p.id&&b.quantity>0).map(b=>({...b}))})),
+  picks:(state.warehousePicks||[]).filter(p=>!p.returnedAt&&state.orders.some(o=>o.id===p.orderId&&['TO_CONFIRM','CONFIRMED','PREPARING','READY'].includes(o.status)))
+   .slice(-100).map(p=>({id:p.id,reference:state.orders.find(o=>o.id===p.orderId)?.reference||'Commande',
+    productId:p.productId,warehouseId:p.warehouseId,quantity:p.quantity,at:p.at})),
   transfers:(state.stockTransfers||[]).slice(0,50).map(x=>({...x})),
   inconsistencies:inconsistencies.slice(0,50)
  };
