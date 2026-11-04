@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {confirmationQueue} from '../../../modules/shops/operational-queues';
+import ShopManualMessages from './shop-manual-messages';
 import {contactChannels,contactOutcomes,contactHistory,contactLogNote,contactHistoryStats,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
 type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[]};
@@ -101,6 +102,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
     </tr>)}</tbody>
    </table></div>
    {toProcess.length===0&&<p>Aucune commande à confirmer.</p>}
+   <ShopManualMessages orders={orders}/>
    {toProcess.length>30&&<p>30 premières commandes affichées.</p>}
   </>}
  </section>;
