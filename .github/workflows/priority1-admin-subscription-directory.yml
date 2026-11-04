@@ -1,0 +1,25 @@
+name: TuniCommerce P1 complete admin subscriptions
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/subscription-directory.ts'
+      - 'app/admin/abonnements/**'
+      - 'app/api/admin/subscriptions/export/**'
+      - 'tests/subscription-directory.test.ts'
+      - '.github/workflows/priority1-admin-subscription-directory.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/subscription-directory.test.ts tests/billing-csv-export.test.ts
+      - run: npm run typecheck
+      - run: npm run build

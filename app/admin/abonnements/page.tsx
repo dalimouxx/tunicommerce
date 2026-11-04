@@ -27,6 +27,7 @@ export default async function Abonnements({
    <div className={styles.stat}><span><ShieldAlert size={17}/> Abonnements expirés</span><strong>{stats.expired}</strong><small>Essai ou abonnement au-delà de sa date</small></div>
    <div className={styles.stat}><span><Receipt size={17}/> Boutiques publiques</span><strong>{stats.publicShops}</strong><small>Publiées avec abonnement valide</small></div>
   </div>
+  <div className={styles.metricsInline}><Link href="/admin/abonnements/complet" className={styles.primary}>Voir tous les abonnements · recherche et export paginés</Link><span>La liste rapide ci-dessous affiche au maximum 200 boutiques ; utilisez le répertoire complet pour les autres.</span></div>
   <AdminSubscriptions shops={shops} total={stats.workspaces} initialFilter={statut||'all'}/>
   <div className={styles.metricsInline}><ShieldAlert size={18}/><span><strong>Gestion manuelle :</strong> une modification d'abonnement met à jour l'accès public à la boutique ; elle ne facture pas le marchand et n'envoie pas de notifications de paiement.</span></div>
  </>;
