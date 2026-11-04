@@ -13,13 +13,26 @@ export type CodAuditRow={
 /** Read-only COD exception review: financial figures are still operator declarations. */
 function allCodAuditRows(state:State,now:Date):CodAuditRow[]{
  const reconciled=new Set((state.carrierReconciliations||[]).map(row=>row.statementId));
+ // Aggregate once per order instead of scanning every statement, settlement and
+ // return for every delivered order (quadratic work at large merchant scale).
+ const declaredByOrder=new Map<string,number>();
+ const registeredByOrder=new Map<string,number>();
+ const matchedByOrder=new Map<string,number>();
+ const creditsByOrder=new Map<string,number>();
+ for(const row of state.carrierStatements||[]){
+  declaredByOrder.set(row.orderId,(declaredByOrder.get(row.orderId)||0)+row.amount);
+  if(reconciled.has(row.id))
+   matchedByOrder.set(row.orderId,(matchedByOrder.get(row.orderId)||0)+row.amount);
+ }
+ for(const row of state.settlements)
+  registeredByOrder.set(row.orderId,(registeredByOrder.get(row.orderId)||0)+row.amount);
+ for(const row of state.returns||[])
+  creditsByOrder.set(row.orderId,(creditsByOrder.get(row.orderId)||0)+row.credit);
  return state.orders.filter(o=>o.status==='DELIVERED').map(order=>{
-  const statements=(state.carrierStatements||[]).filter(row=>row.orderId===order.id);
-  const settlements=state.settlements.filter(row=>row.orderId===order.id);
-  const declared=statements.reduce((sum,row)=>sum+row.amount,0);
-  const registered=settlements.reduce((sum,row)=>sum+row.amount,0);
-  const matched=statements.filter(row=>reconciled.has(row.id)).reduce((sum,row)=>sum+row.amount,0);
-  const credits=(state.returns||[]).filter(row=>row.orderId===order.id).reduce((sum,row)=>sum+row.credit,0);
+  const declared=declaredByOrder.get(order.id)||0;
+  const registered=registeredByOrder.get(order.id)||0;
+  const matched=matchedByOrder.get(order.id)||0;
+  const credits=creditsByOrder.get(order.id)||0;
   const last=Date.parse(order.updatedAt);
   const ageDays=Number.isFinite(last)?Math.max(0,Math.floor((now.getTime()-last)/86400000)):null;
   const issues:string[]=[];

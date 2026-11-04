@@ -78,3 +78,31 @@ test('P1/P3 COD export rejects unknown, ambiguous and overly large query argumen
   assert.throws(()=>parseCodAuditQuery(new URLSearchParams(invalid)));
  }
 });
+
+test('P3 indexed COD audit handles thousands of shipments, statements, settlements and returns',()=>{
+ const state=initialState(false);
+ const seed=fixture().orders[0];
+ state.orders=Array.from({length:2405},(_,i)=>({...seed,id:'audit-'+i,
+  reference:'TC-LARGE-'+i,total:18000,collected:9000,
+  updatedAt:'2026-10-30T12:00:00Z',status:'DELIVERED'}));
+ state.carrierStatements=Array.from({length:2405},(_,i)=>({
+  id:'st-'+i,orderId:'audit-'+i,reference:'BORD-'+i,amount:9000,date:'2026-11-01'
+ })) as never;
+ state.settlements=Array.from({length:2405},(_,i)=>({
+  id:'pay-'+i,orderId:'audit-'+i,reference:'PAY-'+i,amount:9000,at:'2026-11-02T12:00:00Z'
+ })) as never;
+ state.returns=Array.from({length:2405},(_,i)=>({
+  id:'return-'+i,orderId:'audit-'+i,reference:'RET-'+i,credit:1000,refunded:0,
+  createdAt:'2026-11-03T12:00:00Z'
+ })) as never;
+ const report=codAuditPage(state,{page:25,filter:'ALL'},new Date('2026-11-04T12:00:00Z'));
+ assert.equal(report.total,2405);
+ assert.equal(report.totalPages,25);
+ assert.equal(report.rows.length,5);
+ assert.equal(report.rows.every(row=>row.declaredMillimes===9000),true);
+ assert.equal(report.rows.every(row=>row.registeredCodMillimes===9000),true);
+ assert.equal(report.rows.every(row=>row.declaredMinusRegisteredMillimes===0),true);
+ assert.equal(report.rows.every(row=>row.returnCreditsMillimes===1000),true);
+ assert.equal(report.rows.every(row=>row.attention.includes('Avoirs')),true);
+ assert.equal(JSON.stringify(report).includes('22123456'),false);
+});
