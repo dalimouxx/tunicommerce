@@ -37,3 +37,17 @@ Le plan Free actuel est saturé de branches. **Ne supprimer aucune branche ou sn
 8. Retirer le mode maintenance après validation métier et revue de logs. Programmer la prochaine restauration d'essai sur un environnement séparé.
 
 **Objectifs suggérés, pas garanties actuelles :** RPO ≤ 24 h, RTO ≤ 4 h pour le pilote, sous réserve de ressources, de données sauvegardées et de tests réellement exécutés.
+
+## Mise à disposition du mécanisme hors site (4 novembre 2026)
+
+Le dépôt dispose à présent des workflows `priority1-offsite-backup.yml` et
+`priority1-offsite-restore-drill.yml` pour une sauvegarde chiffrée indépendante,
+puis une restauration dans PostgreSQL jetable. Leurs commandes ne lancent
+**aucune restauration sur Neon**. Consulter
+`docs/priority1-offsite-backup.md` pour les secrets, validations, limites
+et procédures d'activation.
+
+**Statut : préparation technique seulement**, aucun compartiment externe,
+secret de sauvegarde ni activation de calendrier ne sont confirmés. Les
+10 branches Neon demeurent intactes. Le blocage P1 n'est levé
+qu'après une sauvegarde réelle et un essai de restauration indépendant.

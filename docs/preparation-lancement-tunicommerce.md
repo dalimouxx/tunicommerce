@@ -38,3 +38,16 @@ Ce document accompagne les livraisons progressives de `dalimouxx/tunicommerce`. 
 - Le Commerce Copilot génératif, les scores de confiance automatisés, l'éditeur visuel drag-and-drop ou les domaines personnalisés.
 
 **Décision de lancement :** ne passer de `pilotage` à `commercial` qu'après preuve documentaire de ces contrôles. Le propriétaire choisit les partenaires, les coûts et les modalités de sauvegarde ; aucun service tiers ne doit être activé implicitement.
+
+## Ajout au protocole P1 — sauvegardes hors site et supervision des accès
+
+- Les workflows `priority1-offsite-backup.yml` et
+  `priority1-offsite-restore-drill.yml` sont prêts à être configurés avec
+  un espace S3 privé compatible. Leur présence n'atteste d'aucune sauvegarde
+  externe fonctionnelle. Voir `docs/priority1-offsite-backup.md`.
+- Le monitoring deux fois par jour vérifie désormais également trois
+  frontières HTTP anonymes de la plateforme (admin, exports, commerce privé).
+  Ce contrôle ne remplace pas les vérifications en session d'un marchand.
+- Les conditions commerciales restent **bloquées** en l'absence de
+  restauration d'une vraie copie hors site, d'accord sur les prestataires
+  externes et de validation des obligations légales et opérationnelles.

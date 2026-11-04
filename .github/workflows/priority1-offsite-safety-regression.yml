@@ -1,0 +1,25 @@
+name: TuniCommerce P1 offsite backup safety regression
+on:
+  pull_request:
+    paths:
+      - 'scripts/priority1-backup-config.mjs'
+      - 'scripts/priority1-public-security-smoke.mjs'
+      - 'tests/priority1-backup-config.test.mjs'
+      - 'tests/priority1-public-security-smoke.test.mjs'
+      - '.github/workflows/priority1-offsite-*.yml'
+      - 'docs/priority1-offsite-backup.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check scripts/priority1-backup-config.mjs
+      - run: node --check scripts/priority1-public-security-smoke.mjs
+      - run: node --test tests/priority1-backup-config.test.mjs tests/priority1-public-security-smoke.test.mjs
