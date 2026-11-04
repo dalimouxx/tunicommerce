@@ -51,7 +51,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     {catalog.logoUrl&&<img src={catalog.logoUrl} alt={'Logo '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:76,height:76,objectFit:'contain',borderRadius:16,background:theme.surface,padding:8}}/>}
     <h1>{catalog.name||shop.name}</h1>
     <p>{catalog.description||'Découvrez nos produits.'}</p>
-    {catalog.phone&&<p>Contact marchand : {catalog.phone}</p>
+    {catalog.phone&&<p>Contact marchand : {catalog.phone}</p>}
    </div></header>
    {catalog.bannerUrl&&<div style={{overflow:'hidden',borderRadius:16,marginBottom:18}}><img src={catalog.bannerUrl} alt={'Bannière de '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',maxHeight:320,objectFit:'cover',display:'block'}}/></div>}
    <section className={styles.card} style={{background:theme.surface,color:theme.foreground,borderColor:theme.accent}}>
