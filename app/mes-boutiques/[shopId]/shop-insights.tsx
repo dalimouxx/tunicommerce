@@ -1,9 +1,11 @@
 'use client';
 import {useEffect,useState} from 'react';
-type Insight={id:string;title:string;description:string;priority:'high'|'medium'|'info';metric:number;unit:string};
+import {merchantWorkspaceHash,type MerchantWorkspaceTab} from '../../../modules/shops/workspace-tabs';
+type Insight={id:string;title:string;description:string;priority:'high'|'medium'|'info';metric:number;unit:string;targetTab:MerchantWorkspaceTab;actionLabel:string};
 type Result={generatedAt?:string;mode?:string;insights?:Insight[];summary?:{
  ordersLast30Days:number;cancellationRatePercent:number;awaitingConfirmation:number;
  overdueCallbacks:number;lowStockProducts:number;outstandingCodMillimes:number;estimatedMarginMillimes:number;
+ pendingCustomerRequests:number;missingHandoffs:number;refundsDueMillimes:number;
 };error?:string};
 const tnd=(value:number)=>(value/1000).toFixed(3);
 export default function ShopInsights({shopId}:{shopId:string}){
@@ -30,6 +32,8 @@ export default function ShopInsights({shopId}:{shopId:string}){
     <p><strong>{result.summary.ordersLast30Days}</strong> commandes en 30 jours</p>
     <p><strong>{result.summary.awaitingConfirmation}</strong> confirmations en attente</p>
     <p><strong>{result.summary.cancellationRatePercent}%</strong> annulations</p>
+    <p><strong>{result.summary.pendingCustomerRequests}</strong> demande(s) client en attente</p>
+    <p><strong>{result.summary.missingHandoffs}</strong> colis sans bon déclaré</p>
     <p><strong>{tnd(result.summary.outstandingCodMillimes)} TND</strong> COD non enregistré</p>
     <p><strong>{tnd(result.summary.estimatedMarginMillimes)} TND</strong> marge opérationnelle estimée</p>
    </div>}
@@ -40,6 +44,7 @@ export default function ShopInsights({shopId}:{shopId:string}){
     }}>
      <strong>{item.title}</strong><p>{item.description}</p>
      <small>Indicateur : {item.unit==='millimes'?tnd(item.metric)+' TND':item.metric+' '+item.unit}</small>
+     <p><a href={merchantWorkspaceHash(item.targetTab)} style={{fontWeight:700,color:'#126c65',textDecoration:'underline'}}>{item.actionLabel}</a></p>
     </article>)}
    </div>
    <p style={{fontSize:12,color:'#657585'}}>Analyses sur cette boutique uniquement, sans contact externe ni transmission de ses commandes à un modèle tiers.</p>
