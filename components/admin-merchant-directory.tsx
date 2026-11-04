@@ -39,8 +39,8 @@ export default function AdminMerchantDirectory({merchants,total}:{merchants:Merc
     <td>{new Date(m.createdAt).toLocaleDateString('fr-TN')}</td>
     <td>{m.shopName||'À créer'}<small>{m.slug||'Aucun lien public'}</small></td>
     <td><span className={m.linked?styles.success:styles.waiting}>{m.linked?'Reliée':m.workspaceId?'À relier':'Sans boutique'}</span><small>{m.teamShops} boutique(s) dans les organisations</small></td>
-    <td>{m.workspaceId?<Link href={'/admin/boutiques/'+m.workspaceId} className={styles.action}>Fiche boutique <ArrowUpRight size={14}/></Link>:
-     <span className={styles.notReady}>Création nécessaire</span>}</td>
+    <td><Link href={'/admin/marchands/'+encodeURIComponent(m.id)} className={styles.action}>Dossier marchand <ArrowUpRight size={14}/></Link>
+     {m.workspaceId&&<Link href={'/admin/boutiques/'+m.workspaceId} className={styles.action}>Boutique historique <ArrowUpRight size={14}/></Link>}</td>
    </tr>)}</tbody>
   </table></div>
   {visible.length===0&&<div className={styles.empty}><Users size={28}/><strong>Aucun marchand correspondant</strong><p>Essayez une autre recherche.</p></div>}
