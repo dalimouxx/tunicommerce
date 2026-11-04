@@ -1,0 +1,22 @@
+name: TuniCommerce wave 2 cross-module regression
+on:
+  pull_request:
+    paths:
+      - 'tests/wave2-cross-module-regression.test.ts'
+      - 'docs/recette-pilote-vague-2.md'
+      - '.github/workflows/wave2-cross-module-regression.yml'
+  workflow_dispatch:
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/wave2-cross-module-regression.test.ts
+      - run: npm run typecheck
+      - run: npm run build
