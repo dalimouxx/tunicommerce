@@ -3,8 +3,9 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 
 type Location={id:string;code:string;name:string;active:boolean};
 type Product={id:string;sku:string;name:string;total:number;byLocation:{warehouseId:string;quantity:number}[]};
+type Pick={id:string;reference:string;productId:string;warehouseId:string;quantity:number;at:string};
 type Transfer={id:string;productId:string;fromId:string;toId:string;quantity:number;reference:string;at:string};
-type Result={initialized?:boolean;locations?:Location[];products?:Product[];transfers?:Transfer[];
+type Result={initialized?:boolean;locations?:Location[];products?:Product[];transfers?:Transfer[];picks?:Pick[];
  inconsistencies?:string[];alreadyApplied?:boolean;error?:string};
 export default function ShopWarehouses({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/warehouses';
@@ -93,6 +94,10 @@ export default function ShopWarehouses({shopId}:{shopId:string}){
      <td style={{padding:9}}>{p.sku} · {p.name}</td><td style={{padding:9}}>{p.total}</td>
      {active.map(x=><td key={x.id} style={{padding:9}}>{p.byLocation.find(b=>b.warehouseId===x.id)?.quantity||0}</td>)}
     </tr>)}</tbody></table></div>
+   <h3>Préparation des commandes · Emplacements à prélever</h3>
+   <p>Provenance réelle des unités réservées. Les commandes créées avant l’activation du suivi des prélèvements peuvent ne pas apparaître ici.</p>
+   <ul>{(data.picks||[]).map(p=><li key={p.id}>{p.reference} · {products.find(x=>x.id===p.productId)?.sku||'Article'} · {p.quantity} unité(s) à préparer depuis <strong>{locations.find(x=>x.id===p.warehouseId)?.name||'Dépôt inconnu'}</strong></li>)}</ul>
+   {(data.picks||[]).length===0&&<p>Aucune préparation répartie par dépôt.</p>}
    <h3>Derniers transferts</h3>
    <ul>{(data.transfers||[]).map(x=><li key={x.id}>{x.reference} · {products.find(p=>p.id===x.productId)?.sku||'Article'} · {x.quantity} unité(s) · {locations.find(l=>l.id===x.fromId)?.code} → {locations.find(l=>l.id===x.toId)?.code} · {new Date(x.at).toLocaleString('fr-TN')}</li>)}</ul>
    {products.length>=500&&<p>Seuls les 500 premiers articles sont affichés. Les opérations serveur restent vérifiées.</p>}
