@@ -1,0 +1,67 @@
+name: TuniCommerce P1 isolated offsite restore drill
+on:
+  workflow_dispatch:
+    inputs:
+      backup_object_key:
+        description: 'Encrypted object key from a successful backup run'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  restore-isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: restore_user
+          POSTGRES_PASSWORD: disposable_only
+          POSTGRES_DB: tunicommerce_restore_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U restore_user -d tunicommerce_restore_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      P1_BACKUP_OBJECT_KEY: ${{ inputs.backup_object_key }}
+      P1_BACKUP_PASSPHRASE: ${{ secrets.P1_BACKUP_PASSPHRASE }}
+      P1_S3_ENDPOINT: ${{ secrets.P1_S3_ENDPOINT }}
+      P1_S3_BUCKET: ${{ secrets.P1_S3_BUCKET }}
+      P1_S3_REGION: ${{ secrets.P1_S3_REGION }}
+      P1_S3_ACCESS_KEY_ID: ${{ secrets.P1_S3_ACCESS_KEY_ID }}
+      P1_S3_SECRET_ACCESS_KEY: ${{ secrets.P1_S3_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.P1_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.P1_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.P1_S3_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate private storage and exact restore-object key
+        run: node scripts/priority1-backup-config.mjs --restore
+      - name: Restore encrypted offsite backup ONLY into disposable PostgreSQL
+        shell: bash
+        env:
+          POSTGRES_CID: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          command -v gpg >/dev/null
+          command -v aws >/dev/null
+          encrypted="$RUNNER_TEMP/tunicommerce-private-restore.dump.gpg"
+          trap 'rm -f "$encrypted"' EXIT
+          aws --endpoint-url "$P1_S3_ENDPOINT" s3 cp \
+            "s3://$P1_S3_BUCKET/$P1_BACKUP_OBJECT_KEY" "$encrypted" --only-show-errors
+          test -s "$encrypted"
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 \
+            --decrypt "$encrypted" 3< <(printf '%s' "$P1_BACKUP_PASSPHRASE") \
+            | docker exec -i "$POSTGRES_CID" pg_restore -U restore_user \
+                --no-owner --no-privileges --exit-on-error -d tunicommerce_restore_test
+          answer="$(docker exec "$POSTGRES_CID" psql -U restore_user -d tunicommerce_restore_test \
+            -Atqc "SELECT CASE WHEN to_regclass('public.\\\"User\\\"') IS NOT NULL AND to_regclass('public.\\\"Workspace\\\"') IS NOT NULL AND to_regclass('public.\\\"Shop\\\"') IS NOT NULL AND to_regclass('public.\\\"ShopCommerce\\\"') IS NOT NULL THEN 'ok' ELSE 'missing' END")"
+          test "$answer" = ok
+          echo "Real encrypted dump restored into disposable local PostgreSQL; required tables verified."
+          echo "Source Neon database was never used as the restore destination."

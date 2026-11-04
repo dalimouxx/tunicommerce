@@ -3,7 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/priority1-live-health.mjs'
+      - 'scripts/priority1-public-security-smoke.mjs'
       - 'tests/priority1-live-health.test.mjs'
+      - 'tests/priority1-public-security-smoke.test.mjs'
       - 'docs/priority1-monitoring.md'
       - '.github/workflows/priority1-render-health-monitor.yml'
   schedule:
@@ -19,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/priority1-live-health.test.mjs
+      - run: node --test tests/priority1-live-health.test.mjs tests/priority1-public-security-smoke.test.mjs
   live-health:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -31,3 +33,5 @@ jobs:
           node-version: '22'
       - name: Check Render web service and underlying Neon database response
         run: node scripts/priority1-live-health.mjs
+      - name: Verify production anonymous access boundaries (read-only)
+        run: node scripts/priority1-public-security-smoke.mjs
