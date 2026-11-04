@@ -47,7 +47,7 @@ test('P3 printable dispatch includes all READY/SHIPPED orders across multiple bo
  const state=initialState(false);
  const dummy={id:'dummy',reference:'TC-DUMMY',status:'READY',total:12000,carrier:'',
   tracking:'',customerId:'missing',customerSnapshot:{name:'Client privé',phone:'22123456',city:'Gabès',address:'Rue confidentielle'},
-  items:[{name:'Article',variant:'Noir',quantity:1}]} as never;
+  items:[{name:'Article',variant:'Noir',quantity:1}]};
  state.orders=Array.from({length:96},(_,i)=>({...dummy,id:'print-'+i,
   reference:'TC-'+i,status:i%2===0?'READY':'SHIPPED'})) as never;
  const first=dispatchPrintPage(state,{page:1,status:'ALL'});
