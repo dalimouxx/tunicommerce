@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
-import {commerceIntegrity,mergeCommerceIntegrity} from '../modules/platform/commerce-integrity';
+import {commerceIntegrity,mergeCommerceIntegrity,parseIntegrityPage,integrityTotalPages} from '../modules/platform/commerce-integrity';
 
 test('integrity detector summarizes stock and duplicate tokens without PII',()=>{
  const s=initialState(false);
@@ -36,4 +36,17 @@ test('legacy shops without warehouse ledger are not flagged for missing allocati
  assert.equal(summary.problems,0);
  assert.equal(summary.checkedWarehouseLedger,false);
  assert.equal(mergeCommerceIntegrity([s,s]).checkedShops,2);
+});
+
+test('P1 global integrity navigation covers every shop page and rejects ambiguous selectors',()=>{
+ assert.equal(parseIntegrityPage({}),1);
+ assert.equal(parseIntegrityPage({page:'2'}),2);
+ assert.equal(integrityTotalPages(0),1);
+ assert.equal(integrityTotalPages(100),1);
+ assert.equal(integrityTotalPages(101),2);
+ assert.equal(integrityTotalPages(213),3);
+ for(const input of [{page:'0'},{page:'10000'},{page:['1','2']},
+  {page:''},{page:'-1'},{page:'1',token:'any'}])
+  assert.throws(()=>parseIntegrityPage(input));
+ assert.throws(()=>integrityTotalPages(-1));
 });

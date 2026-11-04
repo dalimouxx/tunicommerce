@@ -50,3 +50,17 @@ export function mergeCommerceIntegrity(states:readonly State[]){
   }))
  };
 }
+
+/** Admin-only page selection. Never treat one sample as a full audit. */
+export const INTEGRITY_PAGE_SIZE=100;
+export function parseIntegrityPage(raw:Record<string,string|string[]|undefined>):number{
+ for(const key of Object.keys(raw))if(key!=='page')throw Error('Paramètre de fiabilité inconnu');
+ const value=raw.page??'1';
+ if(typeof value!=='string'||!/^[1-9][0-9]{0,3}$/.test(value))
+  throw Error('Page de fiabilité invalide');
+ return Number(value);
+}
+export function integrityTotalPages(total:number):number{
+ if(!Number.isSafeInteger(total)||total<0)throw Error('Nombre de boutiques invalide');
+ return Math.max(1,Math.ceil(total/INTEGRITY_PAGE_SIZE));
+}
