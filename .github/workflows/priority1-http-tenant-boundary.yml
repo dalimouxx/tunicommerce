@@ -3,6 +3,19 @@ on:
   pull_request:
     paths:
       - 'tests/priority1-http-tenant-boundary.test.ts'
+      - 'modules/shops/permissions.ts'
+      - 'modules/shops/team-read.ts'
+      - 'modules/shops/team-actions.ts'
+      - 'modules/shops/aggregate-quotas.ts'
+      - 'modules/shops/isolated-commerce.ts'
+      - 'modules/shops/public-cod-checkout.ts'
+      - 'app/api/v1/shops/**'
+      - 'modules/auth/**'
+      - 'modules/commerce/**'
+      - 'modules/storage/**'
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/**'
+      - 'scripts/start.mjs'
       - '.github/workflows/priority1-http-tenant-boundary.yml'
   workflow_dispatch:
 jobs:

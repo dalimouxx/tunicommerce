@@ -4,6 +4,11 @@ on:
     paths:
       - 'tests/priority1-backup-drill.test.ts'
       - 'docs/priority1-neon-recovery-runbook.md'
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/**'
+      - 'scripts/migrate.mjs'
+      - 'modules/commerce/normalize.ts'
+      - 'modules/commerce/service.ts'
       - '.github/workflows/priority1-backup-restore-drill.yml'
   workflow_dispatch:
 jobs:
