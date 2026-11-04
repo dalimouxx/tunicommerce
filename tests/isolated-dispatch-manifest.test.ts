@@ -61,7 +61,7 @@ test('P1/P3 export : parsing strict et formules CSV avec préfixes Unicode neutr
   assert.throws(()=>parseDispatchManifestQuery(new URLSearchParams(invalid)));
  }
  assert.equal(csvCell('\u200b=SUM(A1:A2)'),JSON.stringify("'=SUM(A1:A2)"));
- assert.equal(csvCell('\u202e+HYPERLINK(\"bad\")'),JSON.stringify("'+HYPERLINK(\"bad\")"));
+ assert.equal(csvCell('\u202e+HYPERLINK("bad")'),`"'+HYPERLINK(""bad"")"`);
  assert.equal(csvCell('\ufeff@danger'),JSON.stringify("'@danger"));
  assert.equal(csvCell('champ\r\nmultiligne'),JSON.stringify('champ  multiligne'));
 });
