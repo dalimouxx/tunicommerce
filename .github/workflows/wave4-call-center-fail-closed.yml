@@ -1,0 +1,22 @@
+name: TuniCommerce Call Center fail-closed security
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/team-read.ts'
+      - 'tests/isolated-call-center-fail-closed.test.ts'
+      - '.github/workflows/wave4-call-center-fail-closed.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-call-center-fail-closed.test.ts tests/isolated-call-center-assignment.test.ts
+      - run: npm run typecheck
+      - run: npm run build
