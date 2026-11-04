@@ -8,6 +8,7 @@ import ShopCoupons from './shop-coupons';
 import ShopCallCenterAlerts from './shop-callcenter-alerts';
 import ShopAgentAssignment from './shop-agent-assignment';
 import ShopConfirmationDesk from './shop-confirmation-desk';
+import ShopCustomerRequests from './shop-customer-requests';
 import ShopCarrierConfig from './shop-carrier-config';
 import ShopFulfillment from './shop-fulfillment';
 import ShopCarrierHandoffs from './shop-carrier-handoffs';
@@ -47,7 +48,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
    <p>{current.description}</p>
    {active==='orders'&&<ShopOrders shopId={shopId}/>}
    {active==='catalog'&&<><ShopInventory shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/></>}
-   {active==='callcenter'&&<><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/></>}
+   {active==='callcenter'&&<><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomerRequests shopId={shopId}/></>}
    {active==='delivery'&&<><ShopCarrierConfig shopId={shopId}/><ShopFulfillment shopId={shopId}/><ShopCarrierHandoffs shopId={shopId}/></>}
    {active==='finance'&&<><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/><ShopCarrierStatements shopId={shopId}/><ShopCodMatching shopId={shopId}/><ShopReturns shopId={shopId}/></>}
    {active==='growth'&&<><ShopCustomers shopId={shopId}/><ShopInsights shopId={shopId}/><ShopStorefrontThemes shopId={shopId}/></>}

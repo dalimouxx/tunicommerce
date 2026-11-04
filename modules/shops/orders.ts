@@ -9,7 +9,7 @@ import {assertCommerceQuotas,quotasForOwner} from '../subscriptions/quotas';
 import {requireIsolatedOwner} from './isolated-commerce';
 
 export const orderMutation=z.object({
- action:z.enum(['createOrder','transition','note']),
+ action:z.enum(['createOrder','transition','note','resolveCustomerRequest']),
  payload:z.unknown(),
  requestId:z.string().uuid()
 }).strict();

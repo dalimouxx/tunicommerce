@@ -204,6 +204,32 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
     assert.equal(html.includes(secret),false);
   });
 
+  await t.test('P1/P2 owner can decide buyer request, while other merchants and agents are denied',async()=>{
+   const current=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.id}});
+   const {normalizeState}=await import('../modules/commerce/normalize');
+   const state=normalizeState(current.data as never);
+   const pending=state.orders.flatMap(order=>(order.customerRequests||[])
+    .filter(request=>request.status==='PENDING').map(request=>({order,request})));
+   assert.equal(pending.length,1);
+   const body={action:'resolveCustomerRequest',requestId:randomUUID(),
+    payload:{orderId:pending[0].order.id,requestId:pending[0].request.id,
+     status:'REJECTED',reply:'Merci de contacter le service client'}};
+   const endpoint='/api/v1/shops/'+a.id+'/orders';
+   assert.equal((await post(endpoint,body)).status,401);
+   assert.equal((await post(endpoint,body,ownerB.cookie)).status,404);
+   assert.equal((await post(endpoint,body,globalAdmin.cookie)).status,404);
+   assert.equal((await post(endpoint,body,agentA.cookie)).status,403);
+   const approved=await post(endpoint,body,ownerA.cookie);
+   assert.equal(approved.status,200);
+   const replay=await post(endpoint,body,ownerA.cookie);
+   assert.equal(replay.status,200);
+   assert.equal((await replay.json() as {alreadyApplied:boolean}).alreadyApplied,true);
+   const after=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.id}});
+   const updated=normalizeState(after.data as never);
+   assert.equal(updated.orders.find(o=>o.id===pending[0].order.id)?.customerRequests?.[0]?.status,'REJECTED');
+   assert.equal(updated.orders.find(o=>o.id===pending[0].order.id)?.status,'READY');
+  });
+
   await t.test('revoked employee loses access despite existing signed session',async()=>{
    await prisma.membership.update({where:{shopId_userId:{shopId:a.id,userId:viewer.id}},
     data:{active:false}});
