@@ -13,8 +13,6 @@ export const dynamic='force-dynamic';
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params;
- const query=await searchParams;
- const productToAdd=typeof query.produit==='string'?query.produit:undefined;
  const shop=await prisma.shop.findUnique({where:{slug},select:{name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},organization:{select:{owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}}});
  const subscription=shop?.organization.owner.workspace;
@@ -30,6 +28,8 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 
 export default async function IsolatedPublicStorefront({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{produit?:string}>}){
  const {slug}=await params;
+ const query=await searchParams;
+ const productToAdd=typeof query.produit==='string'?query.produit:undefined;
  const shop=await prisma.shop.findUnique({where:{slug},select:{
   name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},
