@@ -31,7 +31,7 @@ export async function GET(req:Request,context:Context){
   });
   if(!commerce)return respond({error:'Boutique pas encore initialisée'},409);
   const state=normalizeState(commerce.data as unknown as State);
-  const projected=projectTeamSection(state,membership.role,section as TeamSection);
+  const projected=projectTeamSection(state,membership.role,section as TeamSection,actor.userId);
   if(!projected)throw new HttpError(403,'Rubrique interdite');
   return respond({...projected,version:commerce.version});
  }catch(error){
