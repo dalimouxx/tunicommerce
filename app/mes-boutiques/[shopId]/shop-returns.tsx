@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
+import {pageOperationalQueue} from '../../../modules/shops/operational-queues';
 
 type Item={productId:string;name:string;quantity:number;returned:number};
 type Order={id:string;reference:string;items:Item[]};
@@ -11,6 +12,8 @@ export default function ShopReturns({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/returns';
  const [orders,setOrders]=useState<Order[]>([]);
  const [returns,setReturns]=useState<Return[]>([]);
+ const [onlyDue,setOnlyDue]=useState(false);
+ const [page,setPage]=useState(1);
  const [orderId,setOrderId]=useState('');
  const [productId,setProductId]=useState('');
  const [quantity,setQuantity]=useState('1');
@@ -28,6 +31,7 @@ export default function ShopReturns({shopId}:{shopId:string}){
  const availableItems=order?.items.filter(i=>i.quantity>i.returned)||[];
  const selectedItem=availableItems.find(i=>i.productId===productId);
  const refundable=returns.filter(r=>r.credit>r.refunded);
+ const visibleReturns=pageOperationalQueue(onlyDue?refundable:returns,page,40);
  const selectedRefund=refundable.find(r=>r.id===refundId);
  const clearRequest=()=>{pending.current=null;};
  useEffect(()=>{
@@ -106,9 +110,20 @@ export default function ShopReturns({shopId}:{shopId:string}){
     <label>Référence justificative<input required maxLength={160} value={refundReference} onChange={e=>{setRefundReference(e.target.value);clearRequest();}} style={{display:'block',padding:9}}/></label>
     <button type="submit" disabled={busy||!selectedRefund} style={{padding:12}}>Enregistrer le remboursement</button>
    </form>
+   <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',margin:'14px 0'}}>
+    <label><input type="checkbox" checked={onlyDue}
+     onChange={e=>{setOnlyDue(e.target.checked);setPage(1);}}/>
+     Afficher uniquement les avoirs avec remboursement restant</label>
+    <span>{visibleReturns.total} retour(s) correspondant(s)</span>
+   </div>
+   <nav aria-label="Pages des retours" style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
+    <button type="button" disabled={visibleReturns.page===1||busy} onClick={()=>setPage(n=>Math.max(1,n-1))}>Retours précédents</button>
+    <span>Page {visibleReturns.page}/{visibleReturns.totalPages}</span>
+    <button type="button" disabled={visibleReturns.page>=visibleReturns.totalPages||busy} onClick={()=>setPage(n=>Math.min(n+1,visibleReturns.totalPages))}>Retours suivants</button>
+   </nav>
    <div style={{overflowX:'auto'}}><table style={{borderCollapse:'collapse',width:'100%',textAlign:'left'}}>
     <thead><tr><th>Avoir</th><th>Motif</th><th>Quantité</th><th>Crédit</th><th>Remboursé</th><th>Solde</th></tr></thead>
-    <tbody>{returns.map(r=><tr key={r.id} style={{borderTop:'1px solid #dfe6ed'}}>
+    <tbody>{visibleReturns.items.map(r=><tr key={r.id} style={{borderTop:'1px solid #dfe6ed'}}>
      <td style={{padding:8}}>{r.reference}</td><td style={{padding:8}}>{r.reason}</td>
      <td style={{padding:8}}>{r.quantity}</td><td style={{padding:8}}>{money(r.credit)} TND</td>
      <td style={{padding:8}}>{money(r.refunded)} TND</td><td style={{padding:8}}>{money(r.credit-r.refunded)} TND</td>

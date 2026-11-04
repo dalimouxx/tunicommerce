@@ -1,3 +1,4 @@
+import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
@@ -24,4 +25,11 @@ test('product limits use plan and optional workspace override rather than a fixe
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,next,{...basic,maxProducts:100}));
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,next,{...basic,maxProducts:null}));
  assert.equal(next.products.length,21);
+});
+
+test('P2 catalog pagination preserves all 155 products and last page',()=>{
+ const products=Array.from({length:155},(_,i)=>({sku:'SKU-'+i,name:'Article '+i}));
+ const pages=Array.from({length:4},(_,i)=>pageOperationalQueue(products,i+1,40));
+ assert.deepEqual(pages.map(p=>p.items.length),[40,40,40,35]);
+ assert.equal(new Set(pages.flatMap(p=>p.items.map(x=>x.sku))).size,155);
 });
