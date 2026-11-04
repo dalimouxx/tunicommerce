@@ -1,6 +1,6 @@
 # TuniCommerce — Contrôle léger de disponibilité (P1)
 
-Le workflow GitHub Actions `priority1-render-health-monitor.yml` vérifie **deux fois par jour**, à 07h17 et 19h17 UTC, le point public `https://tunicommerce-test.onrender.com/api/health`.
+Le workflow GitHub Actions `priority1-render-health-monitor.yml` vérifie **quatre fois par jour**, à 01h17, 07h17, 13h17 et 19h17 UTC, le point public `https://tunicommerce-test.onrender.com/api/health`.
 
 L'endpoint existe déjà dans TuniCommerce et effectue un `SELECT 1` sur sa base PostgreSQL : un code 200 et `{"server":"ok","database":"ok"}` sont requis. Les réponses 503, erreurs réseau et réponses non conformes échouent. Le script réessaie jusqu'à 7 fois, car les instances Render gratuites peuvent démarrer à froid.
 
@@ -16,3 +16,9 @@ GET anonyme `/api/commerce` et `/api/admin/subscriptions/export` doivent répond
 utilisateur, commande ou donnée privée n'est employée. Cette surveillance
 complète les tests HTTP sur PostgreSQL jetable, mais ne remplace pas une recette
 connectée avec des comptes de démonstration distincts.
+
+## Durcissement P1
+
+- Surveillance anonyme read-only élargie aux trois API privées de boutique : commandes, export transport et export audit COD. Le contrôle doit échouer si une de ces API devient accessible sans session.
+- En-têtes `Cache-Control: private, no-store` et `X-Robots-Tag` appliqués aussi aux nouvelles routes de suivi privé et aux API marchandes.
+- Ces tests ne constituent pas des tests métiers authentifiés et ne remplacent pas des alertes externes 24/7.

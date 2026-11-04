@@ -4,6 +4,9 @@ export const PUBLIC_ORIGIN='https://tunicommerce-test.onrender.com';
 const paths=[
  {path:'/api/commerce',kind:'api'},
  {path:'/api/admin/subscriptions/export',kind:'api'},
+ {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/orders',kind:'api'},
+ {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/dispatch-manifest',kind:'api'},
+ {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/cod-exceptions',kind:'api'},
  {path:'/admin',kind:'redirect'}
 ];
 

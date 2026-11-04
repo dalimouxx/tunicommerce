@@ -79,3 +79,7 @@ Retirer ou passer à `false` `P1_OFFSITE_BACKUP_ENABLED` suspend
 les futures sauvegardes. Cela ne supprime aucun objet déjà sauvegardé.
 En cas de perte d'une clé, la révoquer puis configurer un nouveau secret ;
 ne jamais coller les secrets dans une issue, une pull request ou une conversation.
+
+## Vérification supplémentaire de l'objet chiffré
+
+Le workflow de sauvegarde calcule maintenant SHA-256 du fichier **chiffré** avant l'upload et enregistre cette empreinte dans les métadonnées privées de l'objet. Après transfert, il compare taille et empreinte des métadonnées exposées par l'espace S3. Cela détecte des anomalies de métadonnées et de transfert, **mais pas une altération silencieuse des octets distants** si seuls les en-têtes restent intacts. Le véritable test indépendant reste le téléchargement, déchiffrement et la restauration du dump sur un PostgreSQL jetable. Certains fournisseurs S3 compatibles peuvent refuser les métadonnées personnalisées : valider le fournisseur en environnement de test avant l'activation.
