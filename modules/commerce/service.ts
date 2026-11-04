@@ -66,6 +66,23 @@ export function applyAction(input:State,action:string,payload:unknown):State{
   log('Bordereau déclaré '+p.reference+' · '+order.reference);
   return s;
  }
+ if(action==='recordCarrierHandoff'){
+  const p=z.object({orderId:z.string().uuid(),
+   proofReference:z.string().trim().min(6).max(160)
+  }).strict().parse(payload);
+  const order=s.orders.find(row=>row.id===p.orderId);
+  if(!order||order.status!=='SHIPPED')throw Error('Remise déclarable uniquement pour une commande expédiée');
+  if(!order.tracking.trim()||!order.carrier.trim())throw Error('Transporteur ou numéro de suivi manquant');
+  const records=s.carrierHandoffs||[];
+  if(records.some(row=>row.orderId===order.id))throw Error('Une remise est déjà enregistrée pour cette commande');
+  records.unshift({id:id(),orderId:order.id,carrier:order.carrier,tracking:order.tracking,
+   proofReference:p.proofReference,at:now});
+  s.carrierHandoffs=records;
+  order.events.push({at:now,label:'Remise au transporteur déclarée · '+p.proofReference});
+  log('Déclaration remise colis '+order.reference);
+  // An internal declaration is not a carrier API acknowledgement or proof of COD payment.
+  return s;
+ }
  if(action==='reconcileCarrierStatement'){
   const p=z.object({
    statementId:z.string().uuid(),settlementId:z.string().uuid(),
