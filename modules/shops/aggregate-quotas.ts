@@ -5,7 +5,7 @@ import {HttpError} from '../auth/http';
 import {normalizeState} from '../commerce/normalize';
 import {applyAction} from '../commerce/service';
 import type {State} from '../commerce/types';
-import {assertCommerceQuotas,quotasForOwner,type EnforcedQuotas} from '../subscriptions/quotas';
+import {assertCommerceQuotas,loadWorkspaceQuotas,type EnforcedQuotas} from '../subscriptions/quotas';
 import {requireIsolatedOwner} from './isolated-commerce';
 import {canAccessShop,type ShopPermission} from './permissions';
 import {assertPlanForNewCommerce,isCommerceGrowth} from './plan-growth-policy';
@@ -37,8 +37,8 @@ export function assertMerchantAggregateQuotas(
 type Mutation={action:string;payload?:unknown;requestId:string};
 /**
  * A per-owner transaction advisory lock serializes writes to all NEW ShopCommerce records
- * initiated by this service. Legacy Workspace writes use their existing code path and are
- * not serialized by this lock; this remaining integration must be solved before launch.
+ * initiated by this service and legacy Workspace mutations. Both paths must lock
+ * the same owner id before reading quotas and inventory snapshots.
  */
 export async function writeIsolatedCommerce(
  userId:string,shopId:string,input:Mutation,
@@ -50,9 +50,11 @@ export async function writeIsolatedCommerce(
  const shop=permission?await prisma.shop.findUnique({where:{id:shopId},select:{organization:{select:{ownerId:true}}}}):null;
  if(permission&&!shop)throw new HttpError(404,'Boutique introuvable');
  const billingOwnerId=permission?shop!.organization.ownerId:userId;
- const quotas=await quotasForOwner(billingOwnerId);
  return prisma.$transaction(async tx=>{
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${billingOwnerId}))`;
+  const ownerWorkspace=await tx.workspace.findUnique({where:{ownerId:billingOwnerId},select:{id:true,plan:true}});
+  if(!ownerWorkspace)throw new HttpError(404,'Boutique introuvable');
+  const quotas=await loadWorkspaceQuotas(ownerWorkspace,tx);
   const membership=await tx.membership.findUnique({
    where:{shopId_userId:{shopId,userId}},
    select:{active:true,role:true,shop:{select:{legacyWorkspaceId:true}}}
