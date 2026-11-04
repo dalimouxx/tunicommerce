@@ -147,8 +147,8 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal(downloaded.headers.get('x-export-total-rows'),'1');
    assert.ok(downloaded.headers.get('cache-control')?.includes('no-store'));
    const csv=await downloaded.text();
-   assert.ok(csv.includes('Adresse privée'));
-   assert.equal(csv.includes('Adresse privée '+b.id),false);
+   assert.ok(csv.includes('Autre adresse privée'));
+   assert.equal(csv.includes('Adresse privée p1-'+mark+'-bravo'),false);
    assert.equal((await get('/api/v1/shops/'+a.id+'/dispatch-manifest?page=2',ownerA.cookie)).status,400);
    assert.equal((await get('/api/v1/shops/'+a.id+'/dispatch-manifest?format=html',ownerA.cookie)).status,400);
   });
