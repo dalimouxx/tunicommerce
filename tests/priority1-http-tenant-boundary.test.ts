@@ -230,6 +230,22 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal(updated.orders.find(o=>o.id===pending[0].order.id)?.status,'READY');
   });
 
+  await t.test('P1/P3 shipment handoff pages remain isolated and private',async()=>{
+   const path='/api/v1/shops/'+a.id+'/carrier-handoffs';
+   assert.equal((await get(path)).status,401);
+   assert.equal((await get(path,ownerB.cookie)).status,404);
+   assert.equal((await get(path,globalAdmin.cookie)).status,404);
+   assert.equal((await get(path,agentA.cookie)).status,403);
+   const result=await get(path+'?pendingPage=1&receiptsPage=1',ownerA.cookie);
+   assert.equal(result.status,200);
+   const json=await result.text();
+   for(const secret of ['22123456','Adresse privée','Acheteur privé'])
+    assert.equal(json.includes(secret),false);
+   for(const invalid of ['pendingPage=0','pendingPage=2','receiptsPage=2',
+    'pendingPage=1&pendingPage=1','sort=private'])
+    assert.equal((await get(path+'?'+invalid,ownerA.cookie)).status,400);
+  });
+
   await t.test('revoked employee loses access despite existing signed session',async()=>{
    await prisma.membership.update({where:{shopId_userId:{shopId:a.id,userId:viewer.id}},
     data:{active:false}});

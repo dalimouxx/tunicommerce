@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
 import {applyAction} from '../modules/commerce/service';
 import {normalizeState} from '../modules/commerce/normalize';
-import {carrierHandoffInput,carrierHandoffOverview} from '../modules/shops/carrier-handoffs';
+import {carrierHandoffInput,carrierHandoffOverview,parseHandoffPages,HANDOFF_PAGE_SIZE} from '../modules/shops/carrier-handoffs';
 
 function fixture(){
  const state=initialState(false);
@@ -37,4 +37,37 @@ test('handoff schema is strict and old states normalize without deleting history
  const old=initialState(false);
  delete old.carrierHandoffs;
  assert.deepEqual(normalizeState(old).carrierHandoffs,[]);
+});
+
+test('P3 supports all handoffs across independent bounded pending and history pages',()=>{
+ const s=initialState(false);
+ const date='2026-11-04T10:00:00Z';
+ s.orders=Array.from({length:123},(_,index)=>({
+  id:'order-'+index,reference:'TC-'+index,status:'SHIPPED',
+  carrier:'Livreur test',tracking:'TEST-'+index,createdAt:date,
+  customerSnapshot:{name:'Client confidentiel',phone:'22123456',address:'Adresse privée'}
+ })) as never;
+ s.carrierHandoffs=Array.from({length:77},(_,index)=>({
+  id:'receipt-'+index,orderId:'order-'+index,carrier:'Livreur test',tracking:'TEST-'+index,
+  proofReference:'BON-'+index+'-TEST',at:date
+ }));
+ const report=carrierHandoffOverview(s);
+ assert.equal(report.pageSize,HANDOFF_PAGE_SIZE);
+ assert.deepEqual([report.pendingCount,report.totalRecorded,report.pendingTotalPages,report.receiptsTotalPages],[46,77,2,2]);
+ const last=carrierHandoffOverview(s,{pendingPage:2,receiptsPage:2});
+ assert.deepEqual([report.pending.length,last.pending.length,report.receipts.length,last.receipts.length],[40,6,40,37]);
+ assert.equal(new Set([...report.pending,...last.pending].map(row=>row.id)).size,46);
+ assert.equal(new Set([...report.receipts,...last.receipts].map(row=>row.id)).size,77);
+ assert.equal(JSON.stringify(last).includes('22123456'),false);
+ assert.equal(JSON.stringify(report).includes('Adresse privée'),false);
+ assert.throws(()=>carrierHandoffOverview(s,{pendingPage:3,receiptsPage:1}),/introuvable/);
+});
+test('P1/P3 handoff pages reject duplicate, unexpected and ambiguous query parameters',()=>{
+ assert.deepEqual(parseHandoffPages(new URLSearchParams('pendingPage=2&receiptsPage=3')),
+  {pendingPage:2,receiptsPage:3});
+ for(const params of ['pendingPage=0','pendingPage=-1','pendingPage=10000',
+  'receiptsPage=1&receiptsPage=2','pendingPage=1&pendingPage=1',
+  'redirect=https://evil.example','receiptsPage=abc']){
+  assert.throws(()=>parseHandoffPages(new URLSearchParams(params)));
+ }
 });
