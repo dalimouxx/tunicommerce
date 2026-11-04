@@ -1,0 +1,28 @@
+name: TuniCommerce merchant workspace navigation
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/workspace-tabs.ts'
+      - 'app/mes-boutiques/[shopId]/merchant-shop-workspace.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/mes-boutiques/shops.module.css'
+      - 'tests/merchant-workspace-tabs.test.ts'
+      - '.github/workflows/p2-merchant-workspace-tabs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  workspace-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/merchant-workspace-tabs.test.ts
+      - run: npm run typecheck
+      - run: npm run build
