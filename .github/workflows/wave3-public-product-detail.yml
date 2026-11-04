@@ -1,0 +1,25 @@
+name: TuniCommerce isolated public product detail and SEO
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/public-product-detail.ts'
+      - 'app/vitrines/[slug]/produit/[productId]/page.tsx'
+      - 'app/vitrines/[slug]/page.tsx'
+      - 'app/vitrines/[slug]/public-cart.tsx'
+      - 'tests/isolated-public-product-detail.test.ts'
+      - '.github/workflows/wave3-public-product-detail.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-public-product-detail.test.ts
+      - run: npm run typecheck
+      - run: npm run build

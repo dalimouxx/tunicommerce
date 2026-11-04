@@ -1,4 +1,5 @@
 import {notFound} from 'next/navigation';
+import Link from 'next/link';
 import type {Metadata} from 'next';
 import PublicCart from './public-cart';
 import {prisma} from '../../../modules/storage/client';
@@ -25,8 +26,10 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 }
 
 
-export default async function IsolatedPublicStorefront({params}:{params:Promise<{slug:string}>}){
+export default async function IsolatedPublicStorefront({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{produit?:string}>}){
  const {slug}=await params;
+ const query=await searchParams;
+ const productToAdd=typeof query.produit==='string'?query.produit:undefined;
  const shop=await prisma.shop.findUnique({where:{slug},select:{
   name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},
@@ -61,9 +64,10 @@ export default async function IsolatedPublicStorefront({params}:{params:Promise<
      <p><strong>{money(product.price)} TND</strong></p>
      <p>{product.available?'Disponible':'Rupture de stock'}</p>
      <p>{product.available?'Ajoutez cet article au panier ci-dessous.':'Article indisponible à la commande.'}</p>
+     <Link href={'/vitrines/'+encodeURIComponent(slug)+'/produit/'+encodeURIComponent(product.id)} style={{color:theme.accent}}>Voir la fiche produit</Link>
     </article>)}
    </div>
-   {catalog.products.length>0&&<PublicCart slug={slug} shipping={catalog.shipping} zones={catalog.zones} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
+   {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd} shipping={catalog.shipping} zones={catalog.zones} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
    {catalog.products.length===0&&<section className={styles.card} style={{background:theme.surface,color:theme.foreground}}><p>Aucun produit disponible pour le moment.</p></section>}
   </div>
  </main>;
