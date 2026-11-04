@@ -78,6 +78,7 @@ test('real PostgreSQL: legacy and isolated public checkouts share owner plan quo
    normalizeState(afterShop.data as never).orders.length,1);
  }finally{
   // Only disposable CI database, not Neon.
+  if(ownerId)await prisma.organization.deleteMany({where:{ownerId}});
   if(ownerId)await prisma.user.deleteMany({where:{id:ownerId}});
   if(planCode)await prisma.subscriptionPlan.deleteMany({where:{code:planCode}});
   await prisma.$disconnect();
