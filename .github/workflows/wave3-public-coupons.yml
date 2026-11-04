@@ -1,0 +1,27 @@
+name: TuniCommerce isolated public COD coupon promotions
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/merchant-coupons.ts'
+      - 'modules/shops/public-cod-checkout.ts'
+      - 'app/api/v1/shops/[shopId]/coupons/route.ts'
+      - 'app/mes-boutiques/[shopId]/shop-coupons.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/vitrines/[slug]/public-cart.tsx'
+      - 'tests/isolated-public-coupons.test.ts'
+      - '.github/workflows/wave3-public-coupons.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-public-coupons.test.ts tests/isolated-public-cod-checkout.test.ts
+      - run: npm run typecheck
+      - run: npm run build
