@@ -45,9 +45,13 @@ Ce document accompagne les livraisons progressives de `dalimouxx/tunicommerce`. 
   `priority1-offsite-restore-drill.yml` sont prêts à être configurés avec
   un espace S3 privé compatible. Leur présence n'atteste d'aucune sauvegarde
   externe fonctionnelle. Voir `docs/priority1-offsite-backup.md`.
-- Le monitoring deux fois par jour vérifie désormais également trois
+- Le monitoring quatre fois par jour vérifie désormais également six
   frontières HTTP anonymes de la plateforme (admin, exports, commerce privé).
   Ce contrôle ne remplace pas les vérifications en session d'un marchand.
 - Les conditions commerciales restent **bloquées** en l'absence de
   restauration d'une vraie copie hors site, d'accord sur les prestataires
   externes et de validation des obligations légales et opérationnelles.
+
+## Porte finale P5
+
+Le workflow manuel `p5-commercial-launch-gate.yml` exige sept attestations de contrôle et **échoue par défaut**. Aucune déclaration ne vaut preuve sans validation indépendante. Lire `docs/p5-pilot-go-no-go.md`.
