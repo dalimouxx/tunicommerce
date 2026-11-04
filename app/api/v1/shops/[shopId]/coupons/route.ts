@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {getCurrentUser} from '../../../../../../modules/auth/session';
 import {HttpError,assertSameOrigin,readJson,respond} from '../../../../../../modules/auth/http';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../../../modules/shops/isolated-commerce';
-import {couponMutation,merchantCouponsView,createMerchantCoupon} from '../../../../../../modules/shops/merchant-coupons';
+import {couponMutation,merchantCouponsView,performMerchantCouponAction} from '../../../../../../modules/shops/merchant-coupons';
 export const dynamic='force-dynamic';
 type Context={params:Promise<{shopId:string}>};
 export async function GET(_request:Request,context:Context){
@@ -24,7 +24,7 @@ export async function POST(request:Request,context:Context){
   const actor=await getCurrentUser();if(!actor)return respond({error:'Connexion requise'},401);
   const input=couponMutation.parse(await readJson(request,3000));
   const {shopId}=await context.params;
-  const result=await createMerchantCoupon(actor.userId,shopId,input);
+  const result=await performMerchantCouponAction(actor.userId,shopId,input);
   return respond({...merchantCouponsView(result.state),alreadyApplied:result.alreadyApplied});
  }catch(error){
   if(error instanceof HttpError)return respond({error:error.message},error.status);
