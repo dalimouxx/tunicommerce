@@ -27,3 +27,12 @@
 .workspacePanel{border-top:1px solid #e0e8ed;padding-top:16px;min-width:0}
 .workspacePanel>h3{font-size:21px;margin:0 0 7px}
 @media(max-width:680px){.workspaceShell{padding:12px;border-radius:14px}.workspaceNavigation{margin-left:-3px;margin-right:-3px}.workspaceTab,.workspaceTabActive{padding:12px}.workspacePanel{overflow-wrap:anywhere}}
+
+/* P2: concise keyboard navigation and stable mobile workspace selector */
+.workspaceDeepLink{display:inline-block;margin-left:8px;color:#126c65;text-decoration:underline;text-underline-offset:3px;font-weight:700}
+.workspaceNavigation{scroll-padding:12px;overscroll-behavior-x:contain}
+.workspaceTabActive{box-shadow:inset 0 0 0 1px #fff7}
+@media(max-width:680px){
+ .workspaceNavigation{position:sticky;top:0;z-index:3;background:#fff;padding:9px 3px 12px;border-bottom:1px solid #e3e9ee}
+ .workspaceDeepLink{display:block;margin:8px 0 0}
+}

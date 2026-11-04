@@ -10,3 +10,12 @@ export type MerchantWorkspaceTab=(typeof merchantWorkspaceTabs)[number]['id'];
 export function isMerchantWorkspaceTab(value:string):value is MerchantWorkspaceTab{
  return merchantWorkspaceTabs.some(tab=>tab.id===value);
 }
+
+/** A hash fragment is navigation state only; never includes an order ID or buyer PII. */
+export function merchantWorkspaceHash(value:MerchantWorkspaceTab):string{
+ return '#espace='+value;
+}
+export function parseMerchantWorkspaceHash(hash:string):MerchantWorkspaceTab|null{
+ const match=/^#espace=([a-z]+)$/.exec(hash);
+ return match&&isMerchantWorkspaceTab(match[1])?match[1]:null;
+}

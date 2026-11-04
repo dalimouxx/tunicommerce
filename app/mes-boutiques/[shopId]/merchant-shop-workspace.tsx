@@ -1,6 +1,6 @@
 'use client';
-import {useState} from 'react';
-import {merchantWorkspaceTabs,type MerchantWorkspaceTab} from '../../../modules/shops/workspace-tabs';
+import {useEffect,useState} from 'react';
+import {merchantWorkspaceTabs,merchantWorkspaceHash,parseMerchantWorkspaceHash,type MerchantWorkspaceTab} from '../../../modules/shops/workspace-tabs';
 import ShopOrders from './shop-orders';
 import ShopInventory from './shop-inventory';
 import ShopWarehouses from './shop-warehouses';
@@ -29,23 +29,34 @@ import styles from '../shops.module.css';
 export default function MerchantShopWorkspace({shopId}:{shopId:string}){
  const [active,setActive]=useState<MerchantWorkspaceTab>('orders');
  const current=merchantWorkspaceTabs.find(tab=>tab.id===active)!;
+ useEffect(()=>{
+  const sync=()=>setActive(parseMerchantWorkspaceHash(window.location.hash)||'orders');
+  sync();window.addEventListener('hashchange',sync);
+  return()=>window.removeEventListener('hashchange',sync);
+ },[]);
+ function selectWorkspace(tab:MerchantWorkspaceTab){
+  setActive(tab);
+  window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+merchantWorkspaceHash(tab));
+ }
  return <section aria-label="Espaces de gestion de ma boutique" className={styles.workspaceShell}>
   <header className={styles.workspaceHeader}>
    <h2>Gestion de ma boutique</h2>
    <p>Choisissez un espace de travail. Les autres boutiques et l'administration globale restent indépendantes.</p>
   </header>
-  <nav aria-label="Modules de gestion" className={styles.workspaceNavigation}>
-   {merchantWorkspaceTabs.map(tab=><button key={tab.id} type="button"
-    aria-current={tab.id===active?'page':undefined}
+  <nav role="tablist" aria-label="Modules de gestion" className={styles.workspaceNavigation}>
+   {merchantWorkspaceTabs.map(tab=><button key={tab.id} type="button" role="tab"
+    id={'espace-'+tab.id}
+    aria-controls="contenu-espace-marchand"
+    aria-selected={tab.id===active}
     aria-label={tab.label}
     className={tab.id===active?styles.workspaceTabActive:styles.workspaceTab}
-    onClick={()=>setActive(tab.id)}>
+    onClick={()=>selectWorkspace(tab.id)}>
     {tab.label}
    </button>)}
   </nav>
-  <div className={styles.workspacePanel}>
+  <div id="contenu-espace-marchand" role="tabpanel" aria-labelledby={"espace-"+active} className={styles.workspacePanel}>
    <h3>{current.label}</h3>
-   <p>{current.description}</p>
+   <p>{current.description} <a className={styles.workspaceDeepLink} href={merchantWorkspaceHash(active)}>Lien direct vers cet espace</a></p>
    {active==='orders'&&<ShopOrders shopId={shopId}/>}
    {active==='catalog'&&<><ShopInventory shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/></>}
    {active==='callcenter'&&<><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomerRequests shopId={shopId}/></>}
