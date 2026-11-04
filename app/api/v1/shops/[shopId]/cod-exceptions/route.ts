@@ -26,7 +26,10 @@ export async function GET(request:Request,context:{params:Promise<{shopId:string
    'Content-Type':'text/csv; charset=utf-8',
    'Content-Disposition':'attachment; filename="audit-cod-tunicommerce-'+query.filter.toLowerCase()+'-p'+query.page+'.csv"',
    'Cache-Control':'private, no-store',
-   'X-Content-Type-Options':'nosniff'
+   'X-Content-Type-Options':'nosniff',
+   'X-Export-Page':String(summary.page),
+   'X-Export-Total-Pages':String(summary.totalPages),
+   'X-Export-Total-Rows':String(summary.total)
   }});
  }catch(error){
   if(error instanceof HttpError)return Response.json({error:error.message},{status:error.status,headers:{'Cache-Control':'no-store'}});
