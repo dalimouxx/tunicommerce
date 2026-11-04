@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
-import {replenishmentQueue} from '../../../modules/shops/operational-queues';
+import {replenishmentQueue,pageOperationalQueue} from '../../../modules/shops/operational-queues';
 import {productEditPayload,merchantInventoryCsv,type CatalogEdit} from '../../../modules/shops/catalog-operations';
 
 type Product={id:string;sku:string;name:string;category:string;variant:string;price:number;cost:number;stock:number;threshold:number;color:string;active:boolean};
@@ -9,6 +9,9 @@ const toMillimes=(value:string)=>Math.round(Number(value)*1000);
 
 export default function ShopInventory({shopId}:{shopId:string}){
  const [products,setProducts]=useState<Product[]>([]);
+ const [search,setSearch]=useState('');
+ const [onlyLowStock,setOnlyLowStock]=useState(false);
+ const [page,setPage]=useState(1);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
@@ -21,6 +24,10 @@ export default function ShopInventory({shopId}:{shopId:string}){
  const [editing,setEditing]=useState('');
  const [edit,setEdit]=useState<CatalogEdit>({name:'',sku:'',category:'',variant:'',price:'0',cost:'0',threshold:'0'});
  const lowStock=replenishmentQueue(products);
+ const needle=search.trim().toLocaleLowerCase('fr');
+ const filteredProducts=products.filter(p=>(!onlyLowStock||(p.active&&p.stock<=p.threshold))&&
+  (!needle||[p.name,p.sku,p.category,p.variant].join(' ').toLocaleLowerCase('fr').includes(needle)));
+ const visibleProducts=pageOperationalQueue(filteredProducts,page,40);
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/inventory';
  useEffect(()=>{
   let active=true;
@@ -110,12 +117,25 @@ export default function ShopInventory({shopId}:{shopId:string}){
     <strong>Alertes de stock · {lowStock.length} produit(s)</strong>
     <p style={{margin:'8px 0'}}>Ces articles sont épuisés ou à leur seuil de réapprovisionnement. Les quantités proposées sont indicatives pour dépasser le seuil, sans commande fournisseur automatique.</p>
     <ul>{lowStock.slice(0,10).map(p=><li key={p.id}>{p.name} ({p.sku}) : {p.stock} unité(s), seuil {p.threshold} · {p.outOfStock?'RUPTURE · ':''}réapprovisionnement minimum suggéré : {p.suggestedMinimum}</li>)}</ul>
-    {lowStock.length>10&&<p>Et {lowStock.length-10} autres articles à vérifier.</p>}
+    {lowStock.length>10&&<p>Et {lowStock.length-10} autres articles à vérifier. <button type="button" onClick={()=>{setOnlyLowStock(true);setSearch('');setPage(1);}}>Voir toutes les ruptures et alertes</button></p>}
    </div>}
-   <div style={{overflowX:'auto'}}> 
+   <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',margin:'14px 0'}}>
+    <label>Rechercher un produit<input type="search" value={search} maxLength={100}
+     onChange={e=>{setSearch(e.target.value);setPage(1);}}
+     placeholder="Nom, SKU, catégorie" style={{display:'block',padding:9}}/></label>
+    <label><input type="checkbox" checked={onlyLowStock}
+     onChange={e=>{setOnlyLowStock(e.target.checked);setPage(1);}}/> Uniquement ruptures et seuils de stock</label>
+    <span aria-live="polite">{filteredProducts.length} produit(s) trouvé(s)</span>
+   </div>
+   <nav aria-label="Pages du catalogue" style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
+    <button type="button" disabled={visibleProducts.page===1||busy} onClick={()=>setPage(n=>Math.max(1,n-1))}>Précédents</button>
+    <span>Page {visibleProducts.page}/{visibleProducts.totalPages}</span>
+    <button type="button" disabled={visibleProducts.page>=visibleProducts.totalPages||busy} onClick={()=>setPage(n=>Math.min(n+1,visibleProducts.totalPages))}>Suivants</button>
+   </nav>
+   <div style={{overflowX:'auto'}}>
     <table style={{borderCollapse:'collapse',width:'100%',textAlign:'left'}}>
      <thead><tr><th>Référence</th><th>Produit</th><th>Prix</th><th>Stock</th><th>Ajustement</th><th>Catalogue</th></tr></thead>
-     <tbody>{products.map(p=><tr key={p.id} style={{borderTop:'1px solid #e5ebee'}}>
+     <tbody>{visibleProducts.items.map(p=><tr key={p.id} style={{borderTop:'1px solid #e5ebee'}}>
       <td style={{padding:12}}>{p.sku}</td><td style={{padding:12}}>{p.name}</td>
       <td style={{padding:12}}>{toTnd(p.price)} TND</td><td style={{padding:12}}>{p.stock}</td>
       <td style={{padding:12}}><form onSubmit={e=>{e.preventDefault();const qty=Number(stockAdjust[p.id]);if(Number.isSafeInteger(qty)&&qty!==0)void mutate('stock',{id:p.id,quantity:qty,reason:'Ajustement manuel du stock'});}} style={{display:'flex',gap:8}}>
@@ -125,7 +145,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
       <td style={{padding:12}}><button type="button" disabled={busy} onClick={()=>openEdit(p)}>Modifier</button></td>
      </tr>)}</tbody>
     </table>
-    {products.length===0&&<p>Aucun produit. Ajoutez le premier article de cette boutique.</p>}
+    {products.length===0?<p>Aucun produit. Ajoutez le premier article de cette boutique.</p>:visibleProducts.total===0?<p>Aucun article ne correspond aux filtres.</p>:null}
    </div>
   </>}
  </section>;

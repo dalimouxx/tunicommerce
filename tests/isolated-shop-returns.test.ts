@@ -1,3 +1,4 @@
+import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
@@ -44,4 +45,16 @@ test('strict mutations reject unallowed extra attributes',()=>{
  assert.equal(isolatedReturnMutation.safeParse(input).success,true);
  assert.equal(isolatedReturnMutation.safeParse({...input,payload:{...input.payload,admin:true}}).success,false);
  assert.equal(isolatedReturnMutation.safeParse({...input,action:'reset'}).success,false);
+});
+
+test('P2 full return history and outstanding refund filter remain pageable',()=>{
+ const returns=Array.from({length:123},(_,i)=>({
+  reference:'RET-'+i,credit:12000,refunded:i%2?12000:0
+ }));
+ const due=returns.filter(r=>r.credit>r.refunded);
+ const page=pageOperationalQueue(returns,4,40);
+ assert.equal(page.items.length,3);
+ assert.equal(page.total,123);
+ assert.equal(pageOperationalQueue(due,2,40).items.length,22);
+ assert.equal(pageOperationalQueue(due,3,40).page,2);
 });
