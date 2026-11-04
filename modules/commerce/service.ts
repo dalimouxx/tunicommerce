@@ -9,7 +9,7 @@ import {applyInvoice} from '../invoices/service';
 import {updateCart} from '../cart/service';
 import {initialState} from './seed';
 import {catalogImportPayload} from './catalog-import';
-import {applyWarehouseMovement,applyWarehouseOperation} from '../warehouse/ledger';
+import {applyWarehouseMovement,applyWarehouseOperation,releaseOrderWarehousePicks} from '../warehouse/ledger';
 import {transitions,labels,governors,type State,type Status} from './types';
 const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0).max(1000000000);const qty=z.number().int().min(1).max(10000);
 const schemas={
@@ -26,7 +26,21 @@ const schemas={
 export function applyAction(input:State,action:string,payload:unknown):State{
  const s=normalizeState(structuredClone(input)),now=new Date().toISOString();const id=()=>crypto.randomUUID();
  const log=(label:string)=>s.audit.unshift({id:id(),at:now,label});
- const move=(productId:string,quantity:number,label:string,orderId?:string)=>{const p=s.products.find(p=>p.id===productId);if(!p)throw Error('Produit introuvable');if(p.stock+quantity<0)throw Error('Stock insuffisant : '+p.name);applyWarehouseMovement(s,productId,quantity);p.stock+=quantity;s.movements.unshift({id:id(),productId,quantity,label,at:now,orderId});};
+ const move=(productId:string,quantity:number,label:string,orderId?:string)=>{
+ const p=s.products.find(x=>x.id===productId);if(!p)throw Error('Produit introuvable');
+ if(p.stock+quantity<0)throw Error('Stock insuffisant : '+p.name);
+ const allocation=orderId&&quantity>0&&label==='Annulation · Stock libéré'
+  ?releaseOrderWarehousePicks(s,orderId,productId,quantity,now)
+  :applyWarehouseMovement(s,productId,quantity);
+ p.stock+=quantity;
+ if(orderId&&quantity<0&&label==='Réservation commande'&&allocation.length){
+  s.warehousePicks??=[];
+  for(const entry of allocation)s.warehousePicks.push({
+   id:id(),orderId,productId,warehouseId:entry.warehouseId,quantity:entry.quantity,at:now
+  });
+ }
+ s.movements.unshift({id:id(),productId,quantity,label,at:now,orderId});
+};
  if(action==='resolveCustomerRequest'){
  const p=z.object({orderId:str,requestId:z.string().uuid(),status:z.enum(['ACCEPTED','REJECTED']),reply:z.string().trim().min(3).max(500)}).parse(payload);
  const order=s.orders.find(o=>o.id===p.orderId);const request=order?.customerRequests?.find(r=>r.id===p.requestId);if(!order||!request||request.status!=='PENDING')throw Error('Demande introuvable ou déjà traitée');
