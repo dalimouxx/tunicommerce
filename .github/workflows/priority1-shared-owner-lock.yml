@@ -5,6 +5,8 @@ on:
       - 'modules/shops/legacy-safe-writes.ts'
       - 'modules/shops/aggregate-quotas.ts'
       - 'app/api/commerce/route.ts'
+      - 'app/api/boutiques/[slug]/checkout/route.ts'
+      - 'modules/shops/legacy-public-checkout.ts'
       - 'tests/priority1-legacy-quota-unit.test.ts'
       - 'tests/priority1-postgres-isolation.test.ts'
       - 'modules/shops/public-cod-checkout.ts'
