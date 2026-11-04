@@ -56,6 +56,18 @@ jobs:
           aws --endpoint-url "$P1_S3_ENDPOINT" s3 cp \
             "s3://$P1_S3_BUCKET/$P1_BACKUP_OBJECT_KEY" "$encrypted" --only-show-errors
           test -s "$encrypted"
+          # HEAD metadata alone never proves the downloaded bytes. Compare actual
+          # ciphertext bytes before attempting to decrypt or restore any records.
+          expected_size="$(aws --endpoint-url "$P1_S3_ENDPOINT" s3api head-object \
+            --bucket "$P1_S3_BUCKET" --key "$P1_BACKUP_OBJECT_KEY" \
+            --query ContentLength --output text)"
+          test "$expected_size" = "$(stat -c %s "$encrypted")"
+          expected_digest="$(aws --endpoint-url "$P1_S3_ENDPOINT" s3api head-object \
+            --bucket "$P1_S3_BUCKET" --key "$P1_BACKUP_OBJECT_KEY" \
+            --query Metadata.sha256 --output text)"
+          P1_ENCRYPTED_BACKUP_PATH="$encrypted" \
+            P1_ENCRYPTED_BACKUP_SHA256="$expected_digest" \
+            node scripts/priority1-verify-object.mjs
           gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 \
             --decrypt "$encrypted" 3< <(printf '%s' "$P1_BACKUP_PASSPHRASE") \
             | docker exec -i "$POSTGRES_CID" pg_restore -U restore_user \

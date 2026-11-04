@@ -83,3 +83,9 @@ ne jamais coller les secrets dans une issue, une pull request ou une conversatio
 ## Vérification supplémentaire de l'objet chiffré
 
 Le workflow de sauvegarde calcule maintenant SHA-256 du fichier **chiffré** avant l'upload et enregistre cette empreinte dans les métadonnées privées de l'objet. Après transfert, il compare taille et empreinte des métadonnées exposées par l'espace S3. Cela détecte des anomalies de métadonnées et de transfert, **mais pas une altération silencieuse des octets distants** si seuls les en-têtes restent intacts. Le véritable test indépendant reste le téléchargement, déchiffrement et la restauration du dump sur un PostgreSQL jetable. Certains fournisseurs S3 compatibles peuvent refuser les métadonnées personnalisées : valider le fournisseur en environnement de test avant l'activation.
+
+## Vérification du contenu téléchargé lors de la restauration
+
+Le test `priority1-offsite-restore-drill.yml` utilise maintenant la **taille et l'empreinte SHA-256 calculée sur le fichier chiffré téléchargé**. Il les compare aux métadonnées du stockage S3 avant tout déchiffrement ou écriture sur la base de restauration jetable. La vérification fonctionne en flux, sans charger le fichier complet en mémoire ni publier le dump dans les artefacts GitHub. Une absence d'empreinte, une métadonnée mal formée ou une différence entre empreintes fait échouer le travail. Les sauvegardes plus anciennes dépourvues de métadonnées ne passent pas ce protocole.
+
+Cela valide l'intégrité du téléchargement relativement aux métadonnées enregistrées ; les fournisseurs et les administrateurs du compartiment doivent toujours être considérés dans le modèle de menace. **Le travail n'est jamais exécuté sans les secrets et le stockage explicitement configurés.** Aucune restauration sur Neon n'a lieu.

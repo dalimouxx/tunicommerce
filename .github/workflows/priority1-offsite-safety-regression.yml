@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/priority1-backup-config.mjs'
+      - 'scripts/priority1-verify-object.mjs'
+      - 'tests/priority1-verify-object.test.mjs'
       - 'scripts/priority1-public-security-smoke.mjs'
       - 'tests/priority1-backup-config.test.mjs'
       - 'tests/priority1-public-security-smoke.test.mjs'
@@ -33,7 +35,8 @@ jobs:
           node-version: '22'
       - run: node --check scripts/priority1-backup-config.mjs
       - run: node --check scripts/priority1-public-security-smoke.mjs
-      - run: node --test tests/priority1-backup-config.test.mjs tests/priority1-public-security-smoke.test.mjs
+      - run: node --check scripts/priority1-verify-object.mjs
+      - run: node --test tests/priority1-backup-config.test.mjs tests/priority1-public-security-smoke.test.mjs tests/priority1-verify-object.test.mjs
       - name: Verify real PG18 → GPG → restore round trip with dummy data
         shell: bash
         env:
