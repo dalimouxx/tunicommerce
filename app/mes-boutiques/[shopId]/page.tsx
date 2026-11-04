@@ -105,6 +105,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    </section>
    {finance&&<section className={styles.card}>
     <h2>Finance Center · Boutique indépendante</h2>
+    <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/analyse-produits'}>Voir les marges par produit et les origines des commandes livrées</Link></p>
     <p>Vue préliminaire en lecture seule : marge opérationnelle estimée, hors fiscalité. Les frais de transport et remboursements doivent être rapprochés avant toute décision comptable.</p>
     <div className={styles.grid}>
      {([
