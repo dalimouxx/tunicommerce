@@ -23,7 +23,7 @@ export function projectTeamSection(state:State,role:string,section:TeamSection,a
   const personalData=canAccessShop(role,'customers.read');
   return {
    section,
-   orders:state.orders.filter(o=>role!=='CALL_CENTER'||!actorId||!o.assignedAgentId||o.assignedAgentId===actorId).slice(0,100).map(o=>({
+   orders:state.orders.filter(o=>role!=='CALL_CENTER'||(!!actorId&&(!o.assignedAgentId||o.assignedAgentId===actorId))).slice(0,100).map(o=>({
     id:o.id,reference:o.reference,status:o.status,
     createdAt:o.createdAt,source:o.source,assignedToMe:!!actorId&&o.assignedAgentId===actorId,
     items:o.items.map(item=>({name:item.name,quantity:item.quantity})),
