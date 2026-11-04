@@ -7,8 +7,8 @@ type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
 const amount=(v:number)=>(v/1000).toFixed(3);
 
-export default function PublicCart({slug,products,shipping,zones}:{slug:string;products:Product[];shipping:number;zones:Zone[]}){
- const [quantities,setQuantities]=useState<Record<string,number>>({});
+export default function PublicCart({slug,products,shipping,zones,initialProductId}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string}){
+ const [quantities,setQuantities]=useState<Record<string,number>>(()=>initialProductId&&products.some(p=>p.id===initialProductId&&p.available)?{[initialProductId]:1}:{});
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
  const [city,setCity]=useState('Tunis');
