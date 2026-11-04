@@ -1,0 +1,42 @@
+name: TuniCommerce P5 commercial launch go-no-go
+on:
+  pull_request:
+    paths:
+      - 'scripts/p5-commercial-readiness.mjs'
+      - 'tests/p5-commercial-readiness.test.mjs'
+      - 'docs/p5-pilot-go-no-go.md'
+      - '.github/workflows/p5-commercial-launch-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check scripts/p5-commercial-readiness.mjs
+      - run: node --test tests/p5-commercial-readiness.test.mjs
+  prelaunch-attestations:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      P5_BACKUP_RESTORE_VERIFIED: ${{ vars.P5_BACKUP_RESTORE_VERIFIED }}
+      P5_TENANT_BOUNDARIES_VERIFIED: ${{ vars.P5_TENANT_BOUNDARIES_VERIFIED }}
+      P5_MOBILE_COD_E2E_VERIFIED: ${{ vars.P5_MOBILE_COD_E2E_VERIFIED }}
+      P5_DELIVERY_COD_PROOFS_VERIFIED: ${{ vars.P5_DELIVERY_COD_PROOFS_VERIFIED }}
+      P5_EXTERNAL_PROVIDER_SCOPE_VERIFIED: ${{ vars.P5_EXTERNAL_PROVIDER_SCOPE_VERIFIED }}
+      P5_LEGAL_FISCAL_APPROVED: ${{ vars.P5_LEGAL_FISCAL_APPROVED }}
+      P5_OBSERVABILITY_SUPPORT_READY: ${{ vars.P5_OBSERVABILITY_SUPPORT_READY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail closed unless all commercial gates are explicitly attested
+        run: node scripts/p5-commercial-readiness.mjs
