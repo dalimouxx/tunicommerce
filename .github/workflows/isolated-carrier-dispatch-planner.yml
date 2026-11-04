@@ -1,0 +1,28 @@
+name: TuniCommerce isolated carrier planning and labels
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/carrier-dispatch-planner.ts'
+      - 'modules/shops/carrier-configuration.ts'
+      - 'app/api/v1/shops/[shopId]/carriers/route.ts'
+      - 'app/mes-boutiques/[shopId]/bordereaux/**'
+      - 'app/mes-boutiques/[shopId]/shop-fulfillment.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-carrier-config.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'tests/isolated-carrier-dispatch-planning.test.ts'
+      - '.github/workflows/isolated-carrier-dispatch-planner.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-carrier-dispatch-planning.test.ts
+      - run: npm run typecheck
+      - run: npm run build
