@@ -30,8 +30,6 @@ test('assignment persists in isolated order and can be cleared with audit',()=>{
  assert.equal((projectTeamSection(state,'CALL_CENTER','orders',other) as {orders:unknown[]}).orders.length,1);
 });
 test('employees cannot confirm or annotate another agents assignment',()=>{
- const state=applyAction(fixture(),'assignCallAgent',{id:fixture().orders[0]?.id,agentId:agent});
- // Use the same order ID from the state under test.
  const assigned=fixture();
  const next=applyAction(assigned,'assignCallAgent',{id:assigned.orders[0].id,agentId:agent});
  const confirm=teamWriteInput.parse({action:'confirmOrder',requestId:crypto.randomUUID(),
