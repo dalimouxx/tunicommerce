@@ -5,15 +5,16 @@ import {csvRow} from '../modules/billing/csv-export';
 const now=new Date('2026-11-04T10:00:00Z');
 test('subscription directory filters are exhaustive and mutually exclusive',()=>{
  const get=(statut:string)=>subscriptionDirectoryQuery({statut},now).where;
- assert.deepEqual(get('valid').AND?.[0],{
+ const first=(statut:string)=>{const and=get(statut).AND;if(!Array.isArray(and))throw Error('Expected AND array');return and[0];};
+ assert.deepEqual(first('valid'),{
   subscriptionStatus:{in:['ACTIVE','TRIAL']},
   subscriptionEndsAt:{gt:new Date('2026-11-11T10:00:00.000Z')}
  });
- assert.deepEqual(get('expiring').AND?.[0],{
+ assert.deepEqual(first('expiring'),{
   subscriptionStatus:{in:['ACTIVE','TRIAL']},
   subscriptionEndsAt:{gt:now,lte:new Date('2026-11-11T10:00:00.000Z')}
  });
- assert.deepEqual(get('suspended').AND?.[0],{subscriptionStatus:{in:['SUSPENDED','CANCELLED']}});
+ assert.deepEqual(first('suspended'),{subscriptionStatus:{in:['SUSPENDED','CANCELLED']}});
  assert.ok(JSON.stringify(get('expired')).includes('notIn'));
 });
 test('query and pagination cannot create an unbounded export or expensive offset',()=>{
