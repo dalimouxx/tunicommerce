@@ -48,9 +48,12 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   <div className={styles.content}>
    <header className={styles.header}><div>
     <span className={styles.eyebrow} style={{color:theme.accent}}>BOUTIQUE PUBLIQUE · CATALOGUE</span>
+    {catalog.logoUrl&&<img src={catalog.logoUrl} alt={'Logo '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:76,height:76,objectFit:'contain',borderRadius:16,background:theme.surface,padding:8}}/>}
     <h1>{catalog.name||shop.name}</h1>
     <p>{catalog.description||'Découvrez nos produits.'}</p>
+    {catalog.phone&&<p>Contact marchand : {catalog.phone}</p>
    </div></header>
+   {catalog.bannerUrl&&<div style={{overflow:'hidden',borderRadius:16,marginBottom:18}}><img src={catalog.bannerUrl} alt={'Bannière de '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',maxHeight:320,objectFit:'cover',display:'block'}}/></div>}
    <section className={styles.card} style={{background:theme.surface,color:theme.foreground,borderColor:theme.accent}}>
     <h2>Catalogue</h2>
     <p>Prix en dinars tunisiens. Commande avec paiement à la livraison uniquement. Le marchand confirmera la commande avant préparation.</p>
