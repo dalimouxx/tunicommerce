@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {prisma} from '../../../modules/storage/client';
-import {billingBucket,billingBuckets} from '../../../modules/platform/saas-billing-health';
+import {billingBucket} from '../../../modules/platform/saas-billing-health';
 import {toTnd} from '../../../modules/billing/validation';
 import styles from '../platform.module.css';
 
@@ -9,11 +9,26 @@ export const dynamic='force-dynamic';
 export default async function SaasBillingCommandCenter(){
  const now=new Date();
  const since=new Date(now.getTime()-30*86400000);
- const [accounts,approved30d,pending,approvedAll,latest]=await Promise.all([
+ const inSevenDays=new Date(now.getTime()+7*86400000);
+ const activeStatuses=['ACTIVE','TRIAL'];
+ const stoppedStatuses=['SUSPENDED','CANCELLED'];
+ const [totalAccounts,validAccounts,dueSoonAccounts,suspendedAccounts,attention,approved30d,pending,approvedAll,latest]=await Promise.all([
+  prisma.workspace.count(),
+  prisma.workspace.count({where:{subscriptionStatus:{in:activeStatuses},subscriptionEndsAt:{gt:inSevenDays}}}),
+  prisma.workspace.count({where:{subscriptionStatus:{in:activeStatuses},subscriptionEndsAt:{gt:now,lte:inSevenDays}}}),
+  prisma.workspace.count({where:{subscriptionStatus:{in:stoppedStatuses}}}),
   prisma.workspace.findMany({
-   select:{id:true,plan:true,subscriptionStatus:true,subscriptionEndsAt:true,
-    owner:{select:{name:true,email:true}},shop:{select:{id:true}}},
-   orderBy:{updatedAt:'desc'},take:2000
+   where:{AND:[
+    {subscriptionStatus:{notIn:stoppedStatuses}},
+    {OR:[
+     {subscriptionStatus:{notIn:activeStatuses}},
+     {subscriptionEndsAt:null},
+     {subscriptionEndsAt:{lte:inSevenDays}}
+    ]}
+   ]},
+   select:{id:true,plan:true,subscriptionStatus:true,subscriptionEndsAt:true,owner:{select:{name:true,email:true}}},
+   orderBy:[{subscriptionEndsAt:'asc'},{id:'asc'}],
+   take:50
   }),
   prisma.subscriptionPayment.aggregate({where:{status:'APPROVED',decidedAt:{gte:since}},_count:{_all:true},_sum:{priceMillimes:true}}),
   prisma.subscriptionPayment.aggregate({where:{status:'PENDING'},_count:{_all:true},_sum:{priceMillimes:true}}),
@@ -22,10 +37,13 @@ export default async function SaasBillingCommandCenter(){
    select:{id:true,reference:true,planCode:true,priceMillimes:true,decidedAt:true,
     workspace:{select:{owner:{select:{name:true,email:true}}}}}})
  ]);
- const buckets=billingBuckets(accounts.map(row=>({status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt})),now);
- const attention=accounts.filter(row=>['DUE_SOON','EXPIRED'].includes(billingBucket({
-  status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt
- },now))).sort((a,b)=>(a.subscriptionEndsAt?.getTime()||0)-(b.subscriptionEndsAt?.getTime()||0)).slice(0,50);
+ // SQL counts cover all workspaces; no 2,000-account snapshot that masks expiring subscriptions.
+ const buckets={
+  VALID:validAccounts,
+  DUE_SOON:dueSoonAccounts,
+  SUSPENDED:suspendedAccounts,
+  EXPIRED:Math.max(0,totalAccounts-validAccounts-dueSoonAccounts-suspendedAccounts)
+ };
  return <div>
   <div className={styles.head}><div><span className={styles.eyebrow}>SUPERVISION FINANCIÈRE · SAAS</span>
    <h1>Centre financier des abonnements</h1>
@@ -61,7 +79,7 @@ export default async function SaasBillingCommandCenter(){
     </tr>)}</tbody>
    </table></div>
    {!attention.length&&<p>Aucune échéance à traiter dans les comptes examinés.</p>}
-   <p>Liste des 50 premières échéances parmi les 2 000 derniers comptes chargés. Les chiffres ne constituent pas une comptabilité bancaire.</p>
+   <p>Liste des 50 premières échéances sur l'ensemble des comptes. Les compteurs sont calculés directement dans PostgreSQL et ne constituent pas une comptabilité bancaire.</p>
   </section>
   <section className={styles.panel}>
    <div className={styles.panelHead}><div><h2>Derniers règlements approuvés</h2>
