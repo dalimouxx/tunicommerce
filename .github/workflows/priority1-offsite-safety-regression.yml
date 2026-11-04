@@ -14,7 +14,18 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: disposable_test_only
+          POSTGRES_DB: tuni_crypto_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test_user -d tuni_crypto_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,3 +34,25 @@ jobs:
       - run: node --check scripts/priority1-backup-config.mjs
       - run: node --check scripts/priority1-public-security-smoke.mjs
       - run: node --test tests/priority1-backup-config.test.mjs tests/priority1-public-security-smoke.test.mjs
+      - name: Verify real PG18 → GPG → restore round trip with dummy data
+        shell: bash
+        env:
+          POSTGRES_CID: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          umask 077
+          secret="fake_test_only_password_32_characters_2026"
+          encrypted="$RUNNER_TEMP/fake-test-only.dump.gpg"
+          trap 'rm -f "$encrypted"' EXIT
+          docker exec "$POSTGRES_CID" psql -U test_user -d tuni_crypto_test -v ON_ERROR_STOP=1 -c "CREATE TABLE p1_dummy (code text NOT NULL); INSERT INTO p1_dummy VALUES ('no_real_customer_data');"
+          docker exec "$POSTGRES_CID" pg_dump -U test_user -d tuni_crypto_test --format=custom --no-owner --no-acl \
+            | gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-fd 3 \
+              --symmetric --cipher-algo AES256 --s2k-digest-algo SHA512 \
+              --output "$encrypted" 3< <(printf '%s' "$secret")
+          test -s "$encrypted"
+          docker exec "$POSTGRES_CID" createdb -U test_user tuni_restored_test
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 --decrypt "$encrypted" \
+            3< <(printf '%s' "$secret") | docker exec -i "$POSTGRES_CID" \
+              pg_restore -U test_user -d tuni_restored_test --no-owner --no-privileges --exit-on-error
+          result="$(docker exec "$POSTGRES_CID" psql -U test_user -d tuni_restored_test -Atqc 'SELECT code FROM p1_dummy')"
+          test "$result" = "no_real_customer_data"
