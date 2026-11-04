@@ -25,7 +25,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_test?schema=public
       TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_test?schema=public
-      POSTGRES_CID: ${{ job.services.postgres.id }}
       APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
@@ -39,11 +38,15 @@ jobs:
       - name: Seed test data with tenant relations and a COD order
         run: P1_BACKUP_PHASE=seed node --import tsx --test tests/priority1-backup-drill.test.ts
       - name: Create an ephemeral SQL backup (never upload as artifact)
+        env:
+          POSTGRES_CID: ${{ job.services.postgres.id }}
         run: |
           set -euo pipefail
           docker exec "$POSTGRES_CID" pg_dump -U test_user -d tunicommerce_test --format=custom --no-owner --no-acl > "$RUNNER_TEMP/p1-test-backup.dump"
           test -s "$RUNNER_TEMP/p1-test-backup.dump"
       - name: Restore to a second independent disposable test database
+        env:
+          POSTGRES_CID: ${{ job.services.postgres.id }}
         run: |
           set -euo pipefail
           docker exec "$POSTGRES_CID" createdb -U test_user tunicommerce_restore_test
