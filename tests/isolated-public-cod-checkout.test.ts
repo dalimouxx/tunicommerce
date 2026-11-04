@@ -38,14 +38,15 @@ test('P1/P2 checkout retried after a lost response returns the original receipt'
   address:'Avenue centrale',source:'Boutique',items:[{productId:'article',quantity:1}]});
  accepted.orders[0].publicReceiptId=valid.requestId;
  accepted.requests=[]; // request cache has rotated
- const result=publicCheckoutReplay(accepted,valid);
+ const payload=publicCodCheckoutInput.parse(valid);
+ const result=publicCheckoutReplay(accepted,payload);
  assert.deepEqual(result,{accepted:true,alreadyApplied:true,reference:accepted.orders[0].reference,
   totalMillimes:accepted.orders[0].total,trackingToken:valid.requestId});
- assert.equal(publicCheckoutReplay(accepted,{...valid,requestId:crypto.randomUUID()}),null);
+ assert.equal(publicCheckoutReplay(accepted,{...payload,requestId:crypto.randomUUID()}),null);
  assert.throws(()=>publicCheckoutReplay(accepted,{...valid,name:'Autre personne'}),/autre demande/);
  assert.throws(()=>publicCheckoutReplay(accepted,{...valid,items:[{productId:'article',quantity:2}]}),/autre demande/);
  assert.equal(publicCheckoutReplay(accepted,{...valid,phone:'+21622123456'})?.alreadyApplied,true);
  const legacy=initialState(false);
  legacy.requests=[valid.requestId];
- assert.throws(()=>publicCheckoutReplay(legacy,valid),/Reçu indisponible/);
+ assert.throws(()=>publicCheckoutReplay(legacy,payload),/Reçu indisponible/);
 });
