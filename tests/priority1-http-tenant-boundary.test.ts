@@ -169,6 +169,41 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal((await get(base+'?format=exe',ownerA.cookie)).status,400);
   });
 
+  await t.test('P2/P3 private tracking bearer request is idempotent, same-origin and shop-scoped',async()=>{
+   const current=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.id}});
+   const {normalizeState}=await import('../modules/commerce/normalize');
+   const state=normalizeState(current.data as never);
+   const order=state.orders[0];
+   const token=randomUUID();
+   order.publicReceiptId=token;
+   await prisma.shopCommerce.update({where:{shopId:a.id},
+    data:{data:state as unknown as Prisma.InputJsonValue}});
+   const alpha='p1-'+mark+'-alpha',bravo='p1-'+mark+'-bravo';
+   const path='/api/v1/public/vitrines/'+alpha+'/suivi/'+token+'/requests';
+   const request={id:randomUUID(),type:'CANCEL',reason:'Je souhaite modifier la commande'};
+   assert.equal((await post(path,request,undefined,'https://another.example')).status,403);
+   assert.equal((await post('/api/v1/public/vitrines/'+bravo+'/suivi/'+token+'/requests',request)).status,404);
+   const created=await post(path,request);
+   assert.equal(created.status,201);
+   assert.equal((await created.json() as {accepted:boolean}).accepted,true);
+   const replay=await post(path,request);
+   assert.equal(replay.status,200);
+   assert.equal((await replay.json() as {alreadyApplied:boolean}).alreadyApplied,true);
+   const changed=await post(path,{...request,reason:'Différent'});
+   assert.equal(changed.status,409);
+   const refreshed=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.id}});
+   const after=normalizeState(refreshed.data as never);
+   assert.equal(after.orders.find(o=>o.id===order.id)?.customerRequests?.length,1);
+   assert.equal(after.orders.find(o=>o.id===order.id)?.status,'READY');
+   const pageResponse=await get('/vitrines/'+alpha+'/suivi/'+token);
+   assert.equal(pageResponse.status,200);
+   assert.equal(pageResponse.headers.get('referrer-policy'),'no-referrer');
+   assert.ok(pageResponse.headers.get('cache-control')?.includes('no-store'));
+   const html=await pageResponse.text();
+   for(const secret of ['22123456','Adresse privée','Je souhaite modifier la commande'])
+    assert.equal(html.includes(secret),false);
+  });
+
   await t.test('revoked employee loses access despite existing signed session',async()=>{
    await prisma.membership.update({where:{shopId_userId:{shopId:a.id,userId:viewer.id}},
     data:{active:false}});

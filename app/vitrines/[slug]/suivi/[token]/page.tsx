@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CustomerRequestForm from './customer-request-form';
 import {notFound} from 'next/navigation';
 import {prisma} from '../../../../../modules/storage/client';
 import {normalizeState} from '../../../../../modules/commerce/normalize';
@@ -37,5 +38,15 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
    <p>Le statut est mis à jour par la boutique. Pour consulter les dernières modifications, actualisez cette page.</p>
    <p>Conservez ce lien confidentiel : toute personne le possédant peut consulter le statut de la commande.</p>
   </section>
+  <section className={styles.card}>
+   <h2>Mes demandes</h2>
+   {order.requests.length===0?<p>Aucune demande envoyée pour cette commande.</p>:
+    <ul>{order.requests.map(request=><li key={request.id}>
+     {request.type==='CANCEL'?'Annulation':'Retour'} · {request.status==='PENDING'?'En attente':request.status==='ACCEPTED'?'Acceptée':'Refusée'}
+     · {new Date(request.at).toLocaleDateString('fr-TN')}
+    </li>)}</ul>}
+   <p>Le traitement d’une demande reste manuel : les statuts de livraison, stocks et encaissements ne changent pas automatiquement.</p>
+  </section>
+  <CustomerRequestForm slug={slug} token={token} canCancel={order.canCancel} canReturn={order.canReturn}/>
  </div></main>;
 }
