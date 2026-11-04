@@ -59,10 +59,11 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
   assert.equal(ready,true,'Next production server ready');
 
   await t.test('Global admin routes and actions are not public',async()=>{
-   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/journal','/admin/gestion-boutiques'])
+   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/abonnements/complet','/admin/journal','/admin/gestion-boutiques'])
     assert.equal((await get(path)).status,307,path);
    assert.equal((await get('/admin/boutiques/00000000-0000-4000-8000-000000000000')).status,307);
    assert.equal((await post('/api/admin/shops',{action:'link',id:'00000000-0000-4000-8000-000000000000'})).status,401);
+   assert.equal((await get('/api/admin/subscriptions/export')).status,401);
   });
 
   const setup=await post('/api/auth/setup',{
@@ -82,6 +83,8 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    assert.ok(markup.includes('Marchands'));
    assert.equal((await get('/admin/marchands',adminCookie)).status,200);
    assert.equal((await get('/admin/abonnements',adminCookie)).status,200);
+   assert.equal((await get('/admin/abonnements/complet',adminCookie)).status,200);
+   assert.equal((await get('/api/admin/subscriptions/export',adminCookie)).status,200);
    assert.equal((await get('/admin/journal',adminCookie)).status,200);
    assert.equal((await get('/admin/gestion-boutiques',adminCookie)).status,200);
   });
@@ -117,6 +120,13 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    assert.ok(merchantsPage.includes('Marchand Gabès'));
    const plansPage=await (await get('/admin/abonnements',adminCookie)).text();
    assert.ok(plansPage.includes('Galerie Gabès'));
+   const fullPage=await get('/admin/abonnements/complet?statut=valid&recherche=gabes',adminCookie);
+   assert.equal(fullPage.status,200);
+   const csv=await get('/api/admin/subscriptions/export?statut=valid&recherche=gabes',adminCookie);
+   assert.equal(csv.status,200);
+   assert.match(csv.headers.get('content-type')||'',/text\\/csv/);
+   assert.match(csv.headers.get('cache-control')||'',/no-store/);
+   assert.match(await csv.text(),/gabes@example.test/);
   });
 
   let merchantCookie='';
@@ -124,8 +134,9 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    const login=await post('/api/auth/login',{email:'gabes@example.test',password});
    assert.equal(login.status,200);
    merchantCookie=login.headers.get('set-cookie')!.split(';')[0];
-   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/journal','/admin/gestion-boutiques','/admin/boutiques/'+merchantWorkspaceId])
+   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/abonnements/complet','/admin/journal','/admin/gestion-boutiques','/admin/boutiques/'+merchantWorkspaceId])
     assert.equal((await get(path,merchantCookie)).status,307,path);
+   assert.equal((await get('/api/admin/subscriptions/export',merchantCookie)).status,403);
    assert.equal((await post('/api/admin/shops',{action:'update',id:merchantWorkspaceId,...config('galerie-gabes')},merchantCookie)).status,403);
    assert.equal((await post('/api/admin/shops',{action:'link',id:merchantWorkspaceId},merchantCookie)).status,403);
    assert.equal((await post('/api/admin/shops',{action:'link',id:merchantWorkspaceId},adminCookie,'https://wrong-origin.test')).status,403);
