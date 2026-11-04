@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
 import {applyAction} from '../modules/commerce/service';
-import {eligibleCarriers,dispatchPrintRows} from '../modules/shops/carrier-dispatch-planner';
+import {eligibleCarriers,dispatchPrintRows,dispatchPrintPage,parseDispatchPrintQuery} from '../modules/shops/carrier-dispatch-planner';
 import {carrierConfigurationInput} from '../modules/shops/carrier-configuration';
 
 test('only active and destination-compatible carriers appear, cheapest first',()=>{
@@ -41,4 +41,33 @@ test('carrier registry rejects duplicate regions and invalid amounts',()=>{
  assert.equal(carrierConfigurationInput.safeParse(valid).success,true);
  assert.equal(carrierConfigurationInput.safeParse({...valid,payload:{...valid.payload,governorates:['Gabès','Gabès']}}).success,false);
  assert.equal(carrierConfigurationInput.safeParse({...valid,payload:{...valid.payload,deliveryCost:-1}}).success,false);
+});
+
+test('P3 printable dispatch includes all READY/SHIPPED orders across multiple bounded pages',()=>{
+ const state=initialState(false);
+ const dummy={id:'dummy',reference:'TC-DUMMY',status:'READY',total:12000,carrier:'',
+  tracking:'',customerId:'missing',customerSnapshot:{name:'Client privé',phone:'22123456',city:'Gabès',address:'Rue confidentielle'},
+  items:[{name:'Article',variant:'Noir',quantity:1}]};
+ state.orders=Array.from({length:96},(_,i)=>({...dummy,id:'print-'+i,
+  reference:'TC-'+i,status:i%2===0?'READY':'SHIPPED'})) as never;
+ const first=dispatchPrintPage(state,{page:1,status:'ALL'});
+ const second=dispatchPrintPage(state,{page:2,status:'ALL'});
+ const third=dispatchPrintPage(state,{page:3,status:'ALL'});
+ assert.deepEqual([first.rows.length,second.rows.length,third.rows.length],[40,40,16]);
+ assert.deepEqual([first.total,first.totalPages],[96,3]);
+ assert.equal(new Set([...first.rows,...second.rows,...third.rows].map(row=>row.reference)).size,96);
+ assert.equal(dispatchPrintRows(state).length,40);
+ const ready=dispatchPrintPage(state,{page:2,status:'READY'});
+ assert.equal(ready.total,48);
+ assert.equal(ready.rows.length,8);
+ assert.equal(ready.rows.every(row=>row.status==='READY'),true);
+ assert.equal(ready.rows[0].address,'Rue confidentielle');
+ assert.throws(()=>dispatchPrintPage(state,{page:4,status:'ALL'}),/introuvable/);
+});
+test('P1/P3 printable dispatch query refuses duplicated, oversized and unknown values',()=>{
+ assert.deepEqual(parseDispatchPrintQuery({page:'2',status:'SHIPPED'}),{page:2,status:'SHIPPED'});
+ for(const invalid of [{page:'0'},{page:'10000'},{page:'-1'},
+  {status:'DELIVERED'},{status:['ALL','READY']},{page:['1','2']},
+  {status:'ALL',redirect:'evil'}])
+  assert.throws(()=>parseDispatchPrintQuery(invalid));
 });
