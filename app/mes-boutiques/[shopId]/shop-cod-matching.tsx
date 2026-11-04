@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
+import ShopCodAuditExport from './shop-cod-audit-export';
 
 type Statement={id:string;orderId:string;orderReference:string;reference:string;
  amountMillimes:number;manuallyMatched:boolean;proofReference:string|null};
@@ -68,7 +69,7 @@ export default function ShopCodMatching({shopId}:{shopId:string}){
  }
  return <section style={{background:'white',border:'1px solid #d5e2e9',borderRadius:16,padding:24,marginTop:16}}>
   <h2>Rapprochement COD manuel · Contrôle croisé</h2>
-  <p><a href={'/api/v1/shops/'+encodeURIComponent(shopId)+'/cod-exceptions'}>Exporter le contrôle COD : écarts, ancienneté des commandes livrées et pièces rapprochées (CSV)</a></p>
+  <ShopCodAuditExport shopId={shopId}/>
   <p style={{fontSize:13,color:'#536579'}}>Export privé, réservé au propriétaire de cette boutique. Les dates reposent sur la dernière transition de statut enregistrée ; les montants ne constituent pas une certification bancaire ou comptable.</p>
   <p>Associez un bordereau du transporteur à un versement COD déjà enregistré <strong>pour la même commande et le même montant</strong>.
    Chaque document n'est rapprochable qu'une fois. Cette opération est un contrôle administratif : elle ne certifie pas que la banque a reçu des fonds et n'augmente jamais le COD encaissé.</p>

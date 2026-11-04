@@ -1,6 +1,6 @@
 import type {State} from '../commerce/types';
 import {codAuditRows} from './cod-exceptions';
-export type MerchantExceptionKind='STALLED_SHIPMENT'|'HANDOFF_MISSING'|'COD_MISMATCH'|'CUSTOMER_REQUEST'|'REFUND_DUE';
+export type MerchantExceptionKind='STALLED_SHIPMENT'|'HANDOFF_MISSING'|'DELIVERED_NO_HANDOFF'|'COD_OVERDUE'|'COD_MISMATCH'|'CUSTOMER_REQUEST'|'REFUND_DUE';
 export type MerchantException={id:string;orderReference:string;kind:MerchantExceptionKind;
  priority:'HIGH'|'MEDIUM';title:string;detail:string;ageDays:number|null;amountMillimes?:number};
 const DAY_MS=86400000;
@@ -20,6 +20,15 @@ export function merchantExceptionQueue(state:State,now=new Date()){
   if(order.status==='SHIPPED'&&!handedOff.has(order.id)&&days!==null&&days>=1)
    push({id:'handoff:'+order.id,orderReference:order.reference,kind:'HANDOFF_MISSING',priority:'MEDIUM',
     title:'Bon de remise manquant',detail:'Aucune remise physique au transporteur n’a été déclarée dans TuniCommerce.',ageDays:days});
+  if(order.status==='DELIVERED'&&!handedOff.has(order.id)&&days!==null&&days>=1)
+   push({id:'delivered-proof:'+order.id,orderReference:order.reference,kind:'DELIVERED_NO_HANDOFF',priority:'MEDIUM',
+    title:'Livraison sans bon de remise enregistré',
+    detail:'Le statut livré a été saisi manuellement, mais aucune remise physique au transporteur n’est documentée dans TuniCommerce.',ageDays:days});
+  if(order.status==='DELIVERED'&&days!==null&&days>=3&&order.total>order.collected)
+   push({id:'cod-overdue:'+order.id,orderReference:order.reference,kind:'COD_OVERDUE',priority:'HIGH',
+    title:'COD livré et non intégralement déclaré encaissé',
+    detail:'Une livraison de plus de trois jours présente un solde COD à vérifier avec les justificatifs.',
+    ageDays:days,amountMillimes:Math.max(0,order.total-order.collected)});
   for(const req of order.customerRequests||[]){
    if(req.status!=='PENDING')continue;
    push({id:'request:'+req.id,orderReference:order.reference,kind:'CUSTOMER_REQUEST',priority:'HIGH',
@@ -43,7 +52,7 @@ export function merchantExceptionQueue(state:State,now=new Date()){
    detail:'L’avoir enregistré comporte un solde non remboursé. Vérifiez le dossier et le paiement réel.',
    amountMillimes:remaining,ageDays:age(ret.createdAt,now)});
  }
- const kinds=['STALLED_SHIPMENT','HANDOFF_MISSING','COD_MISMATCH','CUSTOMER_REQUEST','REFUND_DUE'] as const;
+ const kinds=['STALLED_SHIPMENT','HANDOFF_MISSING','DELIVERED_NO_HANDOFF','COD_OVERDUE','COD_MISMATCH','CUSTOMER_REQUEST','REFUND_DUE'] as const;
  issues.sort((a,b)=>Number(b.priority==='HIGH')-Number(a.priority==='HIGH')||
   (b.ageDays??-1)-(a.ageDays??-1)||a.id.localeCompare(b.id));
  return {
