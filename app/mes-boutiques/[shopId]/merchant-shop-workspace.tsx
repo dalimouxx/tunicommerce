@@ -42,7 +42,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
     {tab.label}
    </button>)}
   </nav>
-  <div className={styles.workspacePanel} aria-live="polite">
+  <div className={styles.workspacePanel}>
    <h3>{current.label}</h3>
    <p>{current.description}</p>
    {active==='orders'&&<ShopOrders shopId={shopId}/>}
