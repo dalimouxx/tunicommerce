@@ -1,0 +1,29 @@
+name: TuniCommerce isolated public themes
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/storefront-themes.ts'
+      - 'modules/shops/storefront-preview.ts'
+      - 'modules/commerce/types.ts'
+      - 'modules/commerce/service.ts'
+      - 'app/api/v1/shops/[shopId]/storefront-theme/route.ts'
+      - 'app/mes-boutiques/[shopId]/shop-storefront-themes.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'app/vitrines/[slug]/page.tsx'
+      - 'tests/isolated-storefront-themes.test.ts'
+      - '.github/workflows/wave3-storefront-themes.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-storefront-themes.test.ts
+      - run: npm run typecheck
+      - run: npm run build
