@@ -23,6 +23,7 @@ export default function ShopFulfillment({shopId}:{shopId:string}){
  const [tracking,setTracking]=useState<Record<string,string>>({});
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
+ const [page,setPage]=useState(1);
  const [notice,setNotice]=useState('');
  const pending=useRef<Record<string,Request>>({});
  useEffect(()=>{
@@ -66,6 +67,8 @@ export default function ShopFulfillment({shopId}:{shopId:string}){
   finally{setBusy(false);}
  }
  const queue=fulfillmentQueue(orders);
+ const pageSize=30,totalPages=Math.max(1,Math.ceil(queue.length/pageSize));
+ const currentPage=Math.min(page,totalPages);
  return <section style={{background:'#fff',border:'1px solid #e0e6ee',borderRadius:18,padding:24,marginTop:16}}>
   <h2>Préparation, expédition et livraison</h2>
   <ShopDispatchExports shopId={shopId}/>
@@ -74,10 +77,15 @@ export default function ShopFulfillment({shopId}:{shopId:string}){
   <p style={{color:'#566477'}}>Seules les commandes de cette boutique sont affichées. Les transitions sont contrôlées par le serveur ; déclarer « Livrée » exige une confirmation manuelle.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement des commandes…</p>:<>
-   <p>{queue.length} commande(s) à préparer, expédier ou clôturer.</p>
+   <p>{queue.length} commande(s) à préparer, expédier ou clôturer. Page {currentPage}/{totalPages}.</p>
+   <div style={{display:'flex',gap:12,alignItems:'center',margin:'12px 0',flexWrap:'wrap'}}>
+    <button type="button" disabled={currentPage===1||busy} onClick={()=>setPage(n=>Math.max(1,n-1))}>Précédente</button>
+    <span>Page {currentPage} / {totalPages}</span>
+    <button type="button" disabled={currentPage>=totalPages||busy} onClick={()=>setPage(n=>Math.min(totalPages,n+1))}>Suivante</button>
+   </div>
    <div style={{overflowX:'auto'}}><table style={{borderCollapse:'collapse',textAlign:'left',width:'100%'}}>
     <thead><tr><th>Commande et client</th><th>Articles à préparer</th><th>État</th><th>Action</th></tr></thead>
-    <tbody>{queue.slice(0,30).map(order=><tr key={order.id} style={{borderTop:'1px solid #e5ebee'}}>
+    <tbody>{queue.slice((currentPage-1)*pageSize,currentPage*pageSize).map(order=><tr key={order.id} style={{borderTop:'1px solid #e5ebee'}}>
      <td style={{padding:10}}><strong>{order.reference}</strong>
       <p>{order.customerSnapshot?.name||'Client'} · {order.customerSnapshot?.phone||'Numéro indisponible'}</p>
       <p>{order.customerSnapshot?.city||''} · {order.customerSnapshot?.address||''}</p>
@@ -105,7 +113,7 @@ export default function ShopFulfillment({shopId}:{shopId:string}){
     </tr>)}</tbody>
    </table></div>
    {queue.length===0&&<p>Aucune commande en préparation ou en livraison.</p>}
-   {queue.length>30&&<p>Seules les 30 premières commandes sont affichées.</p>}
+   {queue.length>pageSize&&<p>Utilisez les pages ci-dessus pour traiter toutes les commandes, sans limite silencieuse.</p>}
   </>}
  </section>;
 }
