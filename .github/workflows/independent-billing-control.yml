@@ -1,0 +1,25 @@
+name: TuniCommerce independent billing management
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/independent-billing-control.ts'
+      - 'app/api/admin/independent-shop-billing/route.ts'
+      - 'app/admin/boutiques-independantes/independent-billing-actions.tsx'
+      - 'app/admin/boutiques-independantes/page.tsx'
+      - 'tests/independent-billing-control.test.ts'
+      - '.github/workflows/independent-billing-control.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/independent-billing-control.test.ts
+      - run: npm run typecheck
+      - run: npm run build

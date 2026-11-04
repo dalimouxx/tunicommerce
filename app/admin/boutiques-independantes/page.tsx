@@ -3,6 +3,7 @@ import {redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
 import {independentShopAdminSummary,independentShopPublicAccess} from '../../../modules/platform/independent-shop-admin';
+import IndependentBillingActions from './independent-billing-actions';
 import styles from '../platform.module.css';
 
 export const dynamic='force-dynamic';
@@ -10,18 +11,19 @@ export default async function IndependentShopAdmin(){
  const actor=await getCurrentUser();
  if(!actor)redirect('/login');
  if(actor.role!=='ADMIN')redirect('/marchand');
- const records=await prisma.shop.findMany({
+ const [records,enabledPlans]=await Promise.all([prisma.shop.findMany({
   where:{legacyWorkspaceId:null},
   select:{
    id:true,name:true,slug:true,status:true,commerce:{select:{shopId:true}},
    organization:{select:{name:true,owner:{select:{name:true,email:true,workspace:{select:{
-    plan:true,subscriptionStatus:true,subscriptionEndsAt:true
+    id:true,plan:true,subscriptionStatus:true,subscriptionEndsAt:true
    }}}}}}
   },orderBy:{createdAt:'desc'},take:200
- });
+ }),prisma.subscriptionPlan.findMany({where:{enabled:true},select:{code:true},orderBy:{code:'asc'}})]);
  const shops=records.map(row=>({
   id:row.id,name:row.name,slug:row.slug,status:row.status,initialized:!!row.commerce,
   organization:row.organization.name,owner:row.organization.owner.name,email:row.organization.owner.email,
+  workspaceId:row.organization.owner.workspace?.id||null,
   plan:row.organization.owner.workspace?.plan||null,
   subscriptionStatus:row.organization.owner.workspace?.subscriptionStatus||null,
   subscriptionEndsAt:row.organization.owner.workspace?.subscriptionEndsAt||null
@@ -46,7 +48,7 @@ export default async function IndependentShopAdmin(){
    <p>Les chiffres portent uniquement sur les 200 boutiques indépendantes les plus récentes. L'accès public exige un statut publié, un commerce initialisé et un abonnement marchand actif à date.</p>
    <div style={{overflowX:'auto',background:'white',borderRadius:14,border:'1px solid #dce5eb'}}>
     <table style={{width:'100%',borderCollapse:'collapse',textAlign:'left'}}>
-     <thead><tr><th>Boutique</th><th>Organisation et propriétaire</th><th>Offre</th><th>Publication</th><th>Commerce</th><th>Accès public</th></tr></thead>
+     <thead><tr><th>Boutique</th><th>Organisation et propriétaire</th><th>Offre</th><th>Publication</th><th>Commerce</th><th>Accès public</th><th>Gestion abonnement</th></tr></thead>
      <tbody>{shops.map(shop=><tr key={shop.id} style={{borderTop:'1px solid #e5ebf0'}}>
       <td style={{padding:12}}><strong>{shop.name}</strong><div>{shop.slug}</div></td>
       <td style={{padding:12}}>{shop.organization}<div>{shop.owner} · {shop.email}</div></td>
@@ -55,6 +57,9 @@ export default async function IndependentShopAdmin(){
       <td style={{padding:12}}>{shop.status}</td>
       <td style={{padding:12}}>{shop.initialized?'Initialisé':'À initialiser'}</td>
       <td style={{padding:12}}>{independentShopPublicAccess(shop)?<Link href={'/vitrines/'+encodeURIComponent(shop.slug)} target="_blank">Vitrine accessible</Link>:'Non accessible'}</td>
+      <td style={{padding:12}}>{shop.workspaceId&&shop.plan&&shop.subscriptionStatus?
+       <IndependentBillingActions shopId={shop.id} plan={shop.plan} status={shop.subscriptionStatus} owner={shop.owner} plans={enabledPlans.map(p=>p.code)}/>:
+       <span>Compte de facturation non configuré</span>}</td>
      </tr>)}</tbody>
     </table>
     {shops.length===0&&<p style={{padding:16}}>Aucune boutique indépendante trouvée.</p>}
