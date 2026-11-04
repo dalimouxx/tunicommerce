@@ -13,6 +13,7 @@ export default function PublicCart({slug,products,shipping,zones}:{slug:string;p
  const [phone,setPhone]=useState('');
  const [city,setCity]=useState('Tunis');
  const [address,setAddress]=useState('');
+ const [coupon,setCoupon]=useState('');
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
  const [accepted,setAccepted]=useState<Result|null>(null);
@@ -35,7 +36,7 @@ export default function PublicCart({slug,products,shipping,zones}:{slug:string;p
   try{
    const response=await fetch('/api/v1/public/vitrines/'+encodeURIComponent(slug)+'/checkout',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({requestId:id,name,phone,city,address,items:selected.map(p=>({productId:p.id,quantity:p.quantity}))})
+    body:JSON.stringify({requestId:id,name,phone,city,address,coupon:coupon.trim()?coupon.trim().toUpperCase():undefined,items:selected.map(p=>({productId:p.id,quantity:p.quantity}))})
    });
    const result=await response.json() as Result;
    if(!response.ok)throw new Error(result.error||'Commande refusée');
@@ -66,12 +67,14 @@ export default function PublicCart({slug,products,shipping,zones}:{slug:string;p
   </label>)}
   <p>Sous-total : <strong>{amount(subtotal)} TND</strong> · livraison : {amount(delivery)} TND · total estimé : <strong>{amount(estimatedTotal)} TND</strong></p>
   <p>Les tarifs et les stocks sont revérifiés par le serveur lors de la commande. Aucun paiement n'est demandé en ligne.</p>
+  {coupon.trim()&&<p>Le total estimé ci-dessus est affiché avant réduction. Le coupon sera validé et appliqué au montant final côté serveur.</p>}
   {notice&&<p role="alert">{notice}</p>}
   <form onSubmit={e=>void submit(e)} style={{display:'grid',gap:12,maxWidth:420}}>
    <label>Nom complet<input required minLength={2} maxLength={160} value={name} onChange={e=>{setName(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
-   <label>Téléphone tunisien<input required pattern="(\+216)?[2459][0-9]{7}" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>Téléphone tunisien<input required type="tel" inputMode="tel" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
    <label>Gouvernorat<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v}>{v}</option>)}</select></label>
    <label>Adresse de livraison<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>Code promo (facultatif)<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder="Code communiqué par le marchand" style={{display:'block',padding:10,width:'100%'}}/></label>
    <button type="submit" disabled={busy||selected.length===0} style={{padding:14,border:0,borderRadius:10,background:'#126c65',color:'white',fontWeight:700}}>Commander · payer à la livraison</button>
   </form>
  </section>;
