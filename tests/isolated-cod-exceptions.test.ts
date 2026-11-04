@@ -23,7 +23,7 @@ test('exports COD aging and mismatches, not private buyer or bank-verification c
  assert.equal(rows.length,1);
  assert.equal(rows[0].ageDays,3);
  assert.equal(rows[0].declaredMinusRegisteredMillimes,12000);
- assert.equal(rows[0].outstandingGrossMillimes,20000);
+ assert.equal(rows[0].outstandingGrossMillimes,next.orders[0].total-next.orders[0].collected);
  assert.match(rows[0].attention,/Ecart/);
  const csv=codAuditCsv(rows);
  assert.ok(csv.startsWith('\uFEFF'));
