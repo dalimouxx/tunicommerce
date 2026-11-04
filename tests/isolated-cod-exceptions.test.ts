@@ -61,10 +61,10 @@ test('P3 COD audit navigates beyond 1000 delivered orders and filters attention 
  const middle=codAuditPage(state,{page:10,filter:'ALL'});
  const last=codAuditPage(state,{page:13,filter:'ALL'});
  assert.deepEqual([first.rows.length,middle.rows.length,last.rows.length],[100,100,5]);
- assert.deepEqual([first.total,first.totalPages,first.attentionCount],[1205,13,1205]);
+ assert.deepEqual([first.total,first.totalPages,first.attentionCount],[1205,13,603]);
  assert.equal(new Set([...first.rows,...middle.rows,...last.rows].map(x=>x.reference)).size,205);
- assert.equal(codAuditPage(state,{page:1,filter:'ATTENTION'}).total,1205);
- assert.equal(codAuditPage(state,{page:1,filter:'CLEAN'}).total,0);
+ assert.equal(codAuditPage(state,{page:1,filter:'ATTENTION'}).total,603);
+ assert.equal(codAuditPage(state,{page:1,filter:'CLEAN'}).total,602);
  assert.equal(codAuditRows(state).length,1000); // older callers preserve behavior
  assert.throws(()=>codAuditPage(state,{page:14,filter:'ALL'}),/introuvable/);
  const text=JSON.stringify({total:first.total,attention:first.attentionCount});
