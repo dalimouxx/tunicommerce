@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {confirmationQueue} from '../../../modules/shops/operational-queues';
+import {callCenterWorkload} from '../../../modules/shops/call-center-workload';
 
 type Order={id:string;reference:string;status:string;createdAt:string;callbackAt?:string;assignedAgentId?:string};
 type Member={role:string;active:boolean;user:{id:string;name:string;email:string}};
@@ -52,12 +53,16 @@ export default function ShopAgentAssignment({shopId}:{shopId:string}){
  }
  const queue=confirmationQueue(orders);
  const assigned=queue.filter(order=>!!order.assignedAgentId).length;
+ const workload=callCenterWorkload(orders,agents.map(a=>({id:a.user.id,name:a.user.name,role:a.role,active:a.active})));
  return <section style={{background:'#fff',padding:24,borderRadius:16,border:'1px solid #dce6ed',marginTop:16}}>
   <h2>Répartition des commandes · Call Center</h2>
   <p>Le propriétaire affecte les commandes aux agents actifs de cette boutique. Une commande attribuée ne peut plus être confirmée ou annotée par un autre agent Call Center. Les commandes sans attribution restent dans la file libre.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement des agents et commandes…</p>:<>
-   <p>{assigned} commande(s) attribuée(s) sur {queue.length} à confirmer.</p>
+   <p>{assigned} commande(s) attribuée(s) sur {queue.length} à confirmer · {workload.unassigned} sans agent · {workload.overdue} rappel(s) en retard.</p>
+   <h3>Charge actuelle des agents</h3>
+   <div style={{display:'flex',gap:10,flexWrap:'wrap',margin:'12px 0'}}>{workload.agents.map(agent=><div key={agent.id} style={{border:'1px solid #dce6ed',padding:12,borderRadius:10,minWidth:155}}><strong>{agent.name}</strong><p>{agent.assigned} dossier(s) · {agent.overdue} rappel(s) en retard</p></div>)}</div>
+   <p style={{fontSize:13,color:'#526375'}}>Suggestion fondée uniquement sur le nombre de commandes actives attribuées. Elle ne déclenche aucune affectation et ne mesure pas les appels effectivement réalisés.</p>
    {agents.length===0&&<p>Aucun agent autorisé. Invitez un collaborateur Call Center depuis la gestion des équipes.</p>}
    <div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}>
     <thead><tr><th>Commande</th><th>Statut</th><th>Agent responsable</th><th>Action</th></tr></thead>
@@ -71,7 +76,7 @@ export default function ShopAgentAssignment({shopId}:{shopId:string}){
       {order.assignedAgentId&&!agents.some(member=>member.user.id===order.assignedAgentId)&&
        <option value={order.assignedAgentId}>Agent devenu inactif</option>}
      </select></td>
-     <td style={{padding:10}}><button type="button" disabled={!!busy||
+     <td style={{padding:10}}>{!order.assignedAgentId&&workload.suggestedAgentId&&<button type="button" disabled={!!busy} onClick={()=>setChosen(v=>({...v,[order.id]:workload.suggestedAgentId||''}))}>Suggérer l'agent le moins chargé</button>}<button type="button" disabled={!!busy||
       (chosen[order.id]===undefined?order.assignedAgentId||'':chosen[order.id])===(order.assignedAgentId||'')}
       onClick={()=>void assign(order)}>Enregistrer</button></td>
     </tr>)}</tbody>
