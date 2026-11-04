@@ -28,7 +28,7 @@ test('roles only receive entitled data sections',()=>{
 test('viewer order projection excludes customer and money while call center includes contact only',()=>{
  const state=sample();
  const viewer=projectTeamSection(state,'VIEWER','orders')!;
- const callCenter=projectTeamSection(state,'CALL_CENTER','orders')!;
+ const callCenter=projectTeamSection(state,'CALL_CENTER','orders','test-authenticated-call-agent')!;
  const viewerText=JSON.stringify(viewer);
  const callText=JSON.stringify(callCenter);
  assert.ok(!viewerText.includes('22123456'));
@@ -57,7 +57,7 @@ test('contact notes are visible to authorized call agents but never to a viewer'
  const order=sample();
  const id=order.orders[0].id;
  const next=applyAction(order,'note',{id,note:'Contact manuel · Téléphone · Sans réponse'});
- const callCenter=projectTeamSection(next,'CALL_CENTER','orders')!;
+ const callCenter=projectTeamSection(next,'CALL_CENTER','orders','test-authenticated-call-agent')!;
  const viewer=projectTeamSection(next,'VIEWER','orders')!;
  const callText=JSON.stringify(callCenter);
  const viewerText=JSON.stringify(viewer);
