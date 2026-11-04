@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import {redirect} from 'next/navigation';
+import {redirect,notFound} from 'next/navigation';
 import {getCurrentUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
-import {mergeCommerceIntegrity} from '../../../modules/platform/commerce-integrity';
-import {normalizeState} from '../../../modules/commerce/normalize';
+import {mergeCommerceIntegrity,parseIntegrityPage,integrityTotalPages,INTEGRITY_PAGE_SIZE} from '../../../modules/platform/commerce-integrity';
 import type {State} from '../../../modules/commerce/types';
 import styles from '../platform.module.css';
 
@@ -19,18 +18,26 @@ const labels={
  DUPLICATE_ORDER_ID:'Identifiants commandes dupliqués',
  NEGATIVE_WAREHOUSE_BALANCE:'Quantités négatives par dépôt'
 } as const;
-export default async function PlatformIntegrityPage(){
+export default async function PlatformIntegrityPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
  const actor=await getCurrentUser();
  if(!actor)redirect('/login');
  if(actor.role!=='ADMIN')redirect('/marchand');
- const [totalShops,rows,organizations,activeMembers]=await Promise.all([
+ let currentPage:number;
+ try{currentPage=parseIntegrityPage(await searchParams);}catch{notFound();}
+ const [totalShops,organizations,activeMembers]=await Promise.all([
   prisma.shopCommerce.count(),
-  prisma.shopCommerce.findMany({orderBy:{updatedAt:'desc'},take:100,select:{data:true}}),
   prisma.organization.count(),
   prisma.membership.count({where:{active:true}})
  ]);
- const report=mergeCommerceIntegrity(rows.map(row=>normalizeState(row.data as unknown as State)));
- const incomplete=rows.length<totalShops;
+ const totalPages=integrityTotalPages(totalShops);
+ if(currentPage>totalPages)notFound();
+ // Stable shop order ensures all shops can be inspected across successive pages
+ // without materializing a full multi-tenant JSON dataset in the Render process.
+ const rows=await prisma.shopCommerce.findMany({
+  orderBy:{shopId:'asc'},skip:(currentPage-1)*INTEGRITY_PAGE_SIZE,
+  take:INTEGRITY_PAGE_SIZE,select:{data:true}
+ });
+ const report=mergeCommerceIntegrity(rows.map(row=>row.data as unknown as State));
  return <div>
   <div className={styles.head}><div>
    <span className={styles.eyebrow}>ADMINISTRATION GLOBALE · INTÉGRITÉ</span>
@@ -38,15 +45,20 @@ export default async function PlatformIntegrityPage(){
    <p>Diagnostic en lecture seule, sans noms de clients, coordonnées, références de commande ou identifiants commerciaux détaillés. Les résultats ne certifient pas les paiements ni les intégrations externes.</p>
   </div></div>
   <div className={styles.stats}>
-   <section className={styles.stat}><span>Commerces contrôlés</span><strong>{report.checkedShops}/{totalShops}</strong></section>
+   <section className={styles.stat}><span>Commerces contrôlés sur cette page</span><strong>{report.checkedShops}/{totalShops}</strong></section>
    <section className={styles.stat}><span>Organisations</span><strong>{organizations}</strong></section>
    <section className={styles.stat}><span>Membres actifs</span><strong>{activeMembers}</strong></section>
-   <section className={styles.stat}><span>Commerces avec anomalies</span><strong>{report.shopsWithFindings}</strong></section>
+   <section className={styles.stat}><span>Commerces avec anomalies sur cette page</span><strong>{report.shopsWithFindings}</strong></section>
    <section className={styles.stat}><span>Commandes examinées</span><strong>{report.orders}</strong></section>
   </div>
-  {incomplete&&<p role="alert">Contrôle partiel : seules les 100 boutiques récemment modifiées ont été analysées. Les autres données ne sont pas certifiées.</p>}
+  <p>Contrôle de la page <strong>{currentPage}/{totalPages}</strong> : les chiffres d'intégrité concernent uniquement les commerces de cette page. Parcourez toutes les pages pour examiner chaque boutique ; ce rapport ne constitue pas un certificat global.</p>
+  <nav aria-label="Pages de contrôle d'intégrité" style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',margin:'14px 0'}}>
+   {currentPage>1&&<Link href={'/admin/fiabilite?page='+(currentPage-1)}>Page précédente</Link>}
+   <span>Page {currentPage}/{totalPages}</span>
+   {currentPage<totalPages&&<Link href={'/admin/fiabilite?page='+(currentPage+1)}>Page suivante</Link>}
+  </nav>
   <section className={styles.panel}>
-   <h2>Contrôles métiers · {report.shopsWithFindings===0?'Aucune anomalie détectée dans l’échantillon':'Anomalies à examiner'}</h2>
+   <h2>Contrôles métiers · {report.shopsWithFindings===0?'Aucune anomalie détectée sur cette page':'Anomalies à examiner'}</h2>
    <div className={styles.tableWrap}><table className={styles.table}>
     <thead><tr><th>Vérification</th><th>Occurrences détectées</th></tr></thead>
     <tbody>{report.totals.map(row=><tr key={row.code}>
