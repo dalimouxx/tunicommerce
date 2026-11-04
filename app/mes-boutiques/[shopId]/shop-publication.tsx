@@ -1,5 +1,6 @@
 'use client';
 import {useState} from 'react';
+import ShopBranding from './shop-branding';
 
 export default function ShopPublication({shopId,slug,initialPublished}:{shopId:string;slug:string;initialPublished:boolean}){
  const [published,setPublished]=useState(initialPublished);
@@ -16,16 +17,16 @@ export default function ShopPublication({shopId,slug,initialPublished}:{shopId:s
    const data=await response.json() as {published?:boolean;error?:string};
    if(!response.ok)throw new Error(data.error||'Modification impossible');
    setPublished(data.published===true);
-   setNotice(data.published?'Catalogue publié. Les commandes restent désactivées.':'Catalogue retiré de la vitrine publique.');
+   setNotice(data.published?'Vitrine publiée. Les commandes COD sont possibles sous réserve de disponibilité et d’un abonnement actif.':'Catalogue retiré de la vitrine publique.');
   }catch(error){setNotice(error instanceof Error?error.message:'Une erreur est survenue');}
   finally{setBusy(false);}
  }
- return <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+ return <><div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
   <button type="button" disabled={busy} onClick={()=>void toggle()}
    style={{padding:'12px 18px',border:0,borderRadius:10,background:published?'#984b39':'#126c65',color:'#fff',fontWeight:700}}>
    {published?'Retirer du public':'Publier mon catalogue'}
   </button>
   {published&&<a href={publicPath} target="_blank" rel="noopener noreferrer">Voir la vitrine publique</a>}
   <span aria-live="polite" role="status">{notice}</span>
- </div>;
+ </div><ShopBranding shopId={shopId}/></>;
 }
