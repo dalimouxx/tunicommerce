@@ -70,6 +70,11 @@ export default async function GlobalAdministration(){
     <span>Visualiser les échéances et configurer les offres actuellement gérées manuellement.</span>
     <ArrowUpRight size={17}/>
    </Link>
+   <Link href="/admin/lancement" className={styles.infoCard}>
+    <ShieldCheck size={22}/><strong>Préparation au lancement commercial</strong>
+    <span>Vérifier les sept validations et les dépendances externes avant toute ouverture commerciale.</span>
+    <ArrowUpRight size={17}/>
+   </Link>
    <div className={styles.infoCard}>
     <ShieldCheck size={22}/><strong>Sécurité des espaces</strong>
     <span>Les actions globales sont réservées aux super-administrateurs. Les commandes et les données commerciales restent propres à chaque boutique.</span>

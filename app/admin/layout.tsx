@@ -33,6 +33,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <Link href="/admin/plans"><CircleDollarSign size={18}/> Offres et quotas</Link>
     <Link href="/admin/journal"><Activity size={18}/> Journal d’activité</Link>
     <Link href="/admin/fiabilite"><ShieldCheck size={18}/> Fiabilité et contrôles</Link>
+    <Link href="/admin/lancement"><ShieldCheck size={18}/> Préparation au lancement</Link>
     <Link href="/boutiques"><Globe size={18}/> Boutiques publiques</Link>
     <Link href="/mes-boutiques"><Store size={18}/> Mes boutiques et accès</Link>
    </nav>
