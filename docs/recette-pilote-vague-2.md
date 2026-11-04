@@ -31,3 +31,19 @@ Cette procédure doit être effectuée **sur un environnement de test** avec au 
 - Rapprochement bancaire réel : récupération de relevés ou API d'institution financière, droits et processus de validation.
 
 Ne jamais qualifier un versement déclaré, une remise interne ou un rapprochement manuel de preuve bancaire ni d'accusé de réception API.
+
+## Vague commune P1/P2/P3 — contrôles ajoutés
+
+- **P1 :** vérifier que les liens privés `/vitrines/:slug/suivi/:token`
+  renvoient `Referrer-Policy: no-referrer`, `Cache-Control: private, no-store`
+  et `X-Robots-Tag: noindex`. Ne jamais envoyer ces URLs dans les journaux publics.
+- **P2 :** pour une boutique publiée de test, rechercher un produit avec et sans
+  accent, filtrer par catégorie et disponibilité, trier par prix, afficher sa
+  photo puis cliquer « Ajouter au panier ». Le stockage navigateur ne conserve
+  que les IDs et quantités ; le total COD est recomputé côté serveur.
+- **P3 :** préparer **plus de 100 commandes factices** dans une base jetable,
+  comparer pages 1, 2 et 3 de l'export, vérifier le filtre READY/SHIPPED,
+  les noms et adresses sur la seule boutique propriétaire. Les CSV ne sont
+  jamais transmis automatiquement à un transporteur.
+- Vérifier sur téléphone les images, la navigation, l'ancre panier et les
+  boutons de pagination. Le rendu et le suivi réel sont à valider manuellement.
