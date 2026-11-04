@@ -25,7 +25,7 @@ export function publicTrackingView(state:State,token:string){
   items:order.items.map(item=>({name:item.name,variant:item.variant,quantity:item.quantity})),
   carrier:order.status==='SHIPPED'||order.status==='DELIVERED'?order.carrier:'',
   tracking:order.status==='SHIPPED'||order.status==='DELIVERED'?order.tracking:'',
-  requests:(order.customerRequests||[]).map(({id,type,status,at})=>({id,type,status,at})),
+  requests:(order.customerRequests||[]).map(({id,type,status,at,reply})=>({id,type,status,at,reply:reply||''})),
   canCancel:canRequest(order,'CANCEL')&&!order.customerRequests?.some(row=>row.status==='PENDING')&&
    (order.customerRequests?.length||0)<5,
   canReturn:canRequest(order,'RETURN')&&!order.customerRequests?.some(row=>row.status==='PENDING')&&
