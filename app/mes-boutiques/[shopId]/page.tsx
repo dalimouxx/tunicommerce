@@ -10,6 +10,7 @@ import {carrierCodReport} from '../../../modules/shops/carrier-cod-report';
 import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
 import ShopInventory from './shop-inventory';
+import ShopWarehouses from './shop-warehouses';
 import ShopCoupons from './shop-coupons';
 import ShopInsights from './shop-insights';
 import ShopOrders from './shop-orders';
@@ -150,7 +151,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <p>Prévisualisez votre catalogue ou publiez-le pour accepter des commandes COD. La publication nécessite un abonnement marchand valide.</p>
     <div className={styles.actions}><Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}>Prévisualiser la boutique</Link></div>
    </section>}
-   {isolated?.initialized&&<><ShopStorefrontThemes shopId={shopId}/><ShopInsights shopId={shopId}/><ShopInventory shopId={shopId}/><ShopCoupons shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCarrierConfig shopId={shopId}/><ShopFulfillment shopId={shopId}/><ShopCarrierHandoffs shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/><ShopCarrierStatements shopId={shopId}/><ShopCodMatching shopId={shopId}/><ShopReturns shopId={shopId}/></>}</>:
+   {isolated?.initialized&&<><ShopStorefrontThemes shopId={shopId}/><ShopInsights shopId={shopId}/><ShopInventory shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/><ShopOrders shopId={shopId}/><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCarrierConfig shopId={shopId}/><ShopFulfillment shopId={shopId}/><ShopCarrierHandoffs shopId={shopId}/><ShopCustomers shopId={shopId}/><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/><ShopCarrierStatements shopId={shopId}/><ShopCodMatching shopId={shopId}/><ShopReturns shopId={shopId}/></>}</>:
    <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
