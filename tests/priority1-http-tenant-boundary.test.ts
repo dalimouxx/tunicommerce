@@ -124,6 +124,35 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal((await get(endpoint,globalAdmin.cookie)).status,404);
   });
 
+  await t.test('P1/P3 dispatch CSV pagination requires owner session and never exports another tenant',async()=>{
+   const commerceRow=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.id}});
+   const {normalizeState}=await import('../modules/commerce/normalize');
+   let state=normalizeState(commerceRow.data as never);
+   const one=state.orders[0].id;
+   for(const status of ['CONFIRMED','PREPARING','READY'] as const)state=applyAction(state,'transition',{id:one,status});
+   await prisma.shopCommerce.update({where:{shopId:a.id},data:{data:state as unknown as Prisma.InputJsonValue}});
+   const path='/api/v1/shops/'+a.id+'/dispatch-manifest?status=READY&page=1&format=json';
+   assert.equal((await get(path)).status,401);
+   assert.equal((await get(path,ownerB.cookie)).status,404);
+   assert.equal((await get(path,globalAdmin.cookie)).status,404);
+   assert.equal((await get(path,agentA.cookie)).status,403);
+   const response=await get(path,ownerA.cookie);
+   assert.equal(response.status,200);
+   const summary=await response.json() as {total:number;readyCount:number;shippedCount:number};
+   assert.equal(summary.total,1);
+   assert.equal(summary.readyCount,1);
+   assert.equal(JSON.stringify(summary).includes('22123456'),false);
+   const downloaded=await get('/api/v1/shops/'+a.id+'/dispatch-manifest?status=READY&page=1&format=csv',ownerA.cookie);
+   assert.equal(downloaded.status,200);
+   assert.equal(downloaded.headers.get('x-export-total-rows'),'1');
+   assert.ok(downloaded.headers.get('cache-control')?.includes('no-store'));
+   const csv=await downloaded.text();
+   assert.ok(csv.includes('Autre adresse privée'));
+   assert.equal(csv.includes('Adresse privée p1-'+mark+'-bravo'),false);
+   assert.equal((await get('/api/v1/shops/'+a.id+'/dispatch-manifest?page=2',ownerA.cookie)).status,400);
+   assert.equal((await get('/api/v1/shops/'+a.id+'/dispatch-manifest?format=html',ownerA.cookie)).status,400);
+  });
+
   await t.test('revoked employee loses access despite existing signed session',async()=>{
    await prisma.membership.update({where:{shopId_userId:{shopId:a.id,userId:viewer.id}},
     data:{active:false}});

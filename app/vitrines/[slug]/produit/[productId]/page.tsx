@@ -43,13 +43,17 @@ export default async function PublicProductPage({params}:Context){
    <nav><Link href={'/vitrines/'+encodeURIComponent(slug)} style={{color:theme.accent}}>Retour à {store.name}</Link></nav>
    <article style={{marginTop:20,background:theme.surface,border:'1px solid '+theme.accent,borderRadius:18,padding:26}}>
     <p style={{color:theme.accent}}>{product.category}</p>
+    {product.imageUrl&&<img src={product.imageUrl} alt={'Photo de '+product.name}
+     loading="eager" decoding="async" referrerPolicy="no-referrer"
+     style={{width:'100%',maxWidth:480,maxHeight:390,objectFit:'contain',display:'block',
+      borderRadius:14,background:'#f8fafc',marginBottom:16}}/>}
     <h1>{product.name}</h1>
     {product.variant&&<p>Variante : {product.variant}</p>}
     {product.description&&<p>{product.description}</p>}
     <h2>{money(product.price)} TND</h2>
     <p>{product.available?'En stock · Disponible à la commande':'Rupture de stock · Commande indisponible'}</p>
     <p>Le prix de livraison et toute réduction sont confirmés lors du checkout. Paiement à la livraison uniquement.</p>
-    {product.available&&<Link href={'/vitrines/'+encodeURIComponent(slug)+'?produit='+encodeURIComponent(product.id)}
+    {product.available&&<Link href={'/vitrines/'+encodeURIComponent(slug)+'?produit='+encodeURIComponent(product.id)+'#panier'}
      style={{display:'inline-block',marginTop:12,padding:'12px 18px',background:theme.accent,
       color:theme.code==='MINUIT'?'#112331':'#fff',borderRadius:10,textDecoration:'none',fontWeight:700}}>
      Ajouter au panier et commander</Link>}

@@ -2,11 +2,12 @@ import {notFound} from 'next/navigation';
 import Link from 'next/link';
 import type {Metadata} from 'next';
 import PublicCart from './public-cart';
+import CatalogBrowser from './catalog-browser';
 import {prisma} from '../../../modules/storage/client';
 import {isPublicIsolatedShop} from '../../../modules/shops/publication';
 import {isolatedStorefrontPreview} from '../../../modules/shops/storefront-preview';
 import {normalizeState} from '../../../modules/commerce/normalize';
-import {money,type State} from '../../../modules/commerce/types';
+import type {State} from '../../../modules/commerce/types';
 import styles from '../../mes-boutiques/shops.module.css';
 
 export const dynamic='force-dynamic';
@@ -58,18 +59,8 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     <h2>Catalogue</h2>
     <p>Prix en dinars tunisiens. Commande avec paiement à la livraison uniquement. Le marchand confirmera la commande avant préparation.</p>
    </section>
-   <div className={styles.grid}>
-    {catalog.products.map(product=><article key={product.id} className={styles.card} style={{background:theme.surface,color:theme.foreground,borderColor:theme.accent}}>
-     <span className={styles.kicker} style={{color:theme.accent}}>{product.category}</span>
-     <h2>{product.name}</h2>
-     {product.variant&&<p>{product.variant}</p>}
-     {product.description&&<p>{product.description}</p>}
-     <p><strong>{money(product.price)} TND</strong></p>
-     <p>{product.available?'Disponible':'Rupture de stock'}</p>
-     <p>{product.available?'Ajoutez cet article au panier ci-dessous.':'Article indisponible à la commande.'}</p>
-     <Link href={'/vitrines/'+encodeURIComponent(slug)+'/produit/'+encodeURIComponent(product.id)} style={{color:theme.accent}}>Voir la fiche produit</Link>
-    </article>)}
-   </div>
+   <CatalogBrowser slug={slug} products={catalog.products} surface={theme.surface}
+    foreground={theme.foreground} accent={theme.accent}/>
    {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd} shipping={catalog.shipping} zones={catalog.zones} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
    {catalog.products.length===0&&<section className={styles.card} style={{background:theme.surface,color:theme.foreground}}><p>Aucun produit disponible pour le moment.</p></section>}
   </div>

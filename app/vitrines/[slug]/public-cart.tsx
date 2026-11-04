@@ -64,7 +64,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier les données.');}
   finally{setBusy(false);}
  }
- if(accepted?.accepted)return <section style={{background:'#f0faf7',padding:24,borderRadius:16}}>
+ if(accepted?.accepted)return <section id="panier" style={{background:'#f0faf7',padding:24,borderRadius:16}}>
   <h2>Commande reçue</h2>
   <p>Votre demande de paiement à la livraison a été enregistrée. Le marchand doit encore la confirmer.</p>
   {accepted.reference&&<p>Référence : <strong>{accepted.reference}</strong></p>}
@@ -74,7 +74,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   {accepted.alreadyApplied&&<p>Cette demande avait déjà été reçue : aucun doublon créé.</p>}
   <button type="button" onClick={()=>setAccepted(null)}>Nouvelle commande</button>
  </section>;
- return <section style={{background:'#fff',border:'1px solid #dbe5eb',borderRadius:16,padding:22,marginTop:18}}>
+ return <section id="panier" style={{background:'#fff',border:'1px solid #dbe5eb',borderRadius:16,padding:22,marginTop:18}}>
   <h2>Panier et paiement à la livraison</h2>
   <p>Sélectionnez les articles de cette boutique. Le total final et les frais de livraison sont calculés par le serveur lors de la commande.</p>
   <p style={{fontSize:13,color:'#586b75'}}>Le panier conserve uniquement les références et quantités des produits dans ce navigateur pendant sept jours. Nom, téléphone et adresse ne sont jamais enregistrés localement par cette fonction.</p>

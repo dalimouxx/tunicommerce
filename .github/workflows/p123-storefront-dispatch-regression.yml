@@ -1,0 +1,33 @@
+name: TuniCommerce P1 P2 P3 storefront delivery security
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/public-catalog-filters.ts'
+      - 'modules/shops/storefront-preview.ts'
+      - 'modules/shops/dispatch-manifest.ts'
+      - 'app/vitrines/**'
+      - 'app/mes-boutiques/[shopId]/shop-dispatch-exports.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-fulfillment.tsx'
+      - 'app/api/v1/shops/[shopId]/dispatch-manifest/route.ts'
+      - 'tests/isolated-dispatch-manifest.test.ts'
+      - 'tests/isolated-public-catalog-browser.test.ts'
+      - 'next.config.ts'
+      - '.github/workflows/p123-storefront-dispatch-regression.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-p123:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-dispatch-manifest.test.ts tests/isolated-public-catalog-browser.test.ts tests/isolated-public-product-detail.test.ts
+      - run: npm run typecheck
+      - run: npm run build

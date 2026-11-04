@@ -1,5 +1,6 @@
 import type {State} from '../commerce/types';
 import {publicCatalog} from '../platform/public';
+import {publicProductImageUrl} from './public-catalog-filters';
 import {storefrontThemeSummary} from './storefront-themes';
 
 /** Explicitly public-safe product fields, derived from one isolated shop state.
@@ -18,7 +19,7 @@ export function isolatedStorefrontPreview(state:State){
   zones:catalog.zones,
   products:catalog.products.map(product=>({
    id:product.id,name:product.name,category:product.category,variant:product.variant,
-   price:product.price,description:product.description,imageUrl:product.imageUrl,
+   price:product.price,description:product.description,imageUrl:publicProductImageUrl(product.imageUrl),
    available:product.available
   }))
  };
