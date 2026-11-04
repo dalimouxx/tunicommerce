@@ -1,0 +1,28 @@
+name: TuniCommerce merchant atomic catalog CSV import
+on:
+  pull_request:
+    paths:
+      - 'modules/commerce/catalog-import.ts'
+      - 'modules/commerce/service.ts'
+      - 'modules/shops/bulk-catalog-import.ts'
+      - 'app/api/v1/shops/[shopId]/catalog-import/route.ts'
+      - 'app/mes-boutiques/[shopId]/import-catalogue/**'
+      - 'app/mes-boutiques/[shopId]/shop-inventory.tsx'
+      - 'tests/isolated-bulk-catalog-import.test.ts'
+      - 'docs/import-catalogue-marchand.md'
+      - '.github/workflows/wave3-merchant-csv-import.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-bulk-catalog-import.test.ts
+      - run: npm run typecheck
+      - run: npm run build

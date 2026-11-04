@@ -8,6 +8,7 @@ import {applyReturn} from '../returns/service';
 import {applyInvoice} from '../invoices/service';
 import {updateCart} from '../cart/service';
 import {initialState} from './seed';
+import {catalogImportPayload} from './catalog-import';
 import {transitions,labels,governors,type State,type Status} from './types';
 const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0).max(1000000000);const qty=z.number().int().min(1).max(10000);
 const schemas={
@@ -35,6 +36,26 @@ export function applyAction(input:State,action:string,payload:unknown):State{
   const p=z.object({theme:z.enum(['OASIS','SABLE','MINUIT'])}).strict().parse(payload);
   s.shop.theme=p.theme;
   log('Thème de vitrine modifié · '+p.theme);
+  return s;
+ }
+ if(action==='importProducts'){
+  const input=catalogImportPayload.parse(payload);
+  const known=new Set(s.products.map(product=>product.sku.trim().toUpperCase()));
+  for(const row of input.rows){
+   const key=row.sku.toUpperCase();
+   if(known.has(key))throw Error('SKU déjà existant ou dupliqué : '+row.sku);
+   known.add(key);
+  }
+  for(const row of input.rows){
+   const productId=id();
+   s.products.push({
+    id:productId,sku:row.sku,name:row.name,category:row.category,
+    variant:row.variant,price:row.price,cost:row.cost,stock:0,threshold:row.threshold,
+    color:'#cbd5e1',active:true
+   });
+   if(row.stock>0)move(productId,row.stock,'Import catalogue · Stock initial');
+  }
+  log('Import catalogue : '+input.rows.length+' produit(s)');
   return s;
  }
  if(action==='assignCallAgent'){
