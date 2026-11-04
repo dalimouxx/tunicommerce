@@ -66,6 +66,31 @@ export function applyAction(input:State,action:string,payload:unknown):State{
   log('Bordereau déclaré '+p.reference+' · '+order.reference);
   return s;
  }
+ if(action==='reconcileCarrierStatement'){
+  const p=z.object({
+   statementId:z.string().uuid(),settlementId:z.string().uuid(),
+   proofReference:z.string().trim().min(6).max(160)
+  }).strict().parse(payload);
+  const statement=(s.carrierStatements||[]).find(row=>row.id===p.statementId);
+  const settlement=s.settlements.find(row=>row.id===p.settlementId);
+  if(!statement||!settlement)throw Error('Bordereau ou versement introuvable');
+  if(statement.orderId!==settlement.orderId)throw Error('Bordereau et versement de commandes différentes');
+  const order=s.orders.find(row=>row.id===statement.orderId);
+  if(!order||order.status!=='DELIVERED')throw Error('Rapprochement limité aux commandes livrées');
+  if(statement.carrier!==order.carrier)throw Error('Transporteur incohérent avec la livraison');
+  if(statement.amount!==settlement.amount)throw Error('Montants différents : rapprochez seulement des écritures de même montant');
+  const matches=s.carrierReconciliations||[];
+  if(matches.some(row=>row.statementId===p.statementId||row.settlementId===p.settlementId))
+   throw Error('Ce bordereau ou versement est déjà rapproché');
+  matches.unshift({id:id(),statementId:p.statementId,settlementId:p.settlementId,
+   proofReference:p.proofReference,at:now});
+  s.carrierReconciliations=matches;
+  order.events.push({at:now,label:'Rapprochement manuel déclaré · '+statement.reference+' ↔ '+settlement.reference});
+  log('Rapprochement COD manuel '+order.reference+' · '+statement.reference);
+  // Do NOT change order.collected or create settlement: the external proof was
+  // declared by an operator, not verified by a bank API.
+  return s;
+ }
  if(action==='reset'){if((payload as {confirm?:string})?.confirm!=='EFFACER')throw Error('Confirmation requise');return initialState(false);}
  if(['receiveReturn','refundReturn'].includes(action))return applyReturn(s,action,payload);
  if(['createInvoice','issueInvoice','cancelInvoice'].includes(action))return applyInvoice(s,action,payload);
