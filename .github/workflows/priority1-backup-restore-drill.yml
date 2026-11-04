@@ -1,0 +1,65 @@
+name: TuniCommerce P1 disposable backup and restore drill
+on:
+  pull_request:
+    paths:
+      - 'tests/priority1-backup-drill.test.ts'
+      - 'docs/priority1-neon-recovery-runbook.md'
+      - '.github/workflows/priority1-backup-restore-drill.yml'
+  workflow_dispatch:
+jobs:
+  backup-restore:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: tunicommerce_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U test_user -d tunicommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_test?schema=public
+      TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_test?schema=public
+      POSTGRES_CID: ${{ job.services.postgres.id }}
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - name: Seed test data with tenant relations and a COD order
+        run: P1_BACKUP_PHASE=seed node --import tsx --test tests/priority1-backup-drill.test.ts
+      - name: Create an ephemeral SQL backup (never upload as artifact)
+        run: |
+          set -euo pipefail
+          docker exec "$POSTGRES_CID" pg_dump -U test_user -d tunicommerce_test --format=custom --no-owner --no-acl > "$RUNNER_TEMP/p1-test-backup.dump"
+          test -s "$RUNNER_TEMP/p1-test-backup.dump"
+      - name: Restore to a second independent disposable test database
+        run: |
+          set -euo pipefail
+          docker exec "$POSTGRES_CID" createdb -U test_user tunicommerce_restore_test
+          docker exec -i "$POSTGRES_CID" pg_restore -U test_user -d tunicommerce_restore_test --no-owner --no-privileges < "$RUNNER_TEMP/p1-test-backup.dump"
+      - name: Assert restored tenant, memberships, inventory and order
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_restore_test?schema=public
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/tunicommerce_restore_test?schema=public
+          P1_BACKUP_PHASE: restored
+        run: node --import tsx --test tests/priority1-backup-drill.test.ts
+      - name: Confirm modifications to restored copy did not affect the source
+        env:
+          P1_BACKUP_PHASE: source-unchanged
+        run: node --import tsx --test tests/priority1-backup-drill.test.ts
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Destroy temporary dump and leave no backup artifact
+        if: always()
+        run: rm -f "$RUNNER_TEMP/p1-test-backup.dump"
