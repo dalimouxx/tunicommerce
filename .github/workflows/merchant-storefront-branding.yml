@@ -1,0 +1,27 @@
+name: TuniCommerce merchant storefront identity and media
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/merchant-branding.ts'
+      - 'app/api/v1/shops/[shopId]/branding/route.ts'
+      - 'app/mes-boutiques/[shopId]/shop-branding.tsx'
+      - 'app/mes-boutiques/[shopId]/shop-publication.tsx'
+      - 'modules/shops/storefront-preview.ts'
+      - 'app/vitrines/[slug]/page.tsx'
+      - 'tests/isolated-merchant-branding.test.ts'
+      - '.github/workflows/merchant-storefront-branding.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-merchant-branding.test.ts
+      - run: npm run typecheck
+      - run: npm run build
