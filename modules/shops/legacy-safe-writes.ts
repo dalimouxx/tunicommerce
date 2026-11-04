@@ -9,7 +9,7 @@ import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import type {State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
 
-type LegacyInput={action:string;payload:unknown;requestId:string};
+type LegacyInput={action:string;payload?:unknown;requestId:string};
 
 /**
  * Legacy and independent shops MUST serialize on the same owner advisory lock.
