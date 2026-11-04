@@ -102,7 +102,7 @@ test('real Postgres: owners, tenants, same-owner serializability, quotas and sto
     data:blank() as unknown as Prisma.InputJsonValue,version:{increment:1}}});
    const a=mutateLegacyCommerce(ownerId,{action:'product',requestId:randomUUID(),
     payload:{sku:'LEGACY',name:'Legacy',category:'Test',variant:'',price:10000,
-     cost:5000,stock:1,threshold:1,color:'#ddd'}});
+     cost:5000,stock:1,threshold:1,color:'#dddddd'}});
    const b=writeIsolatedCommerce(ownerId,shopIds[1],importInput('NEW-SHOP'),()=>{});
    const results=await Promise.allSettled([a,b]);
    assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
