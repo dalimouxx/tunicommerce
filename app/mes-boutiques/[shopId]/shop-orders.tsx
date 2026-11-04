@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
+import {pageOperationalQueue} from '../../../modules/shops/operational-queues';
 
 type Order={id:string;reference:string;status:string;total:number;source:string;createdAt:string;items:{name:string;quantity:number}[]};
 type Product={id:string;name:string;stock:number;price:number;active:boolean};
@@ -14,6 +15,7 @@ export default function ShopOrders({shopId}:{shopId:string}){
  const [loading,setLoading]=useState(true);
  const [notice,setNotice]=useState('');
  const [query,setQuery]=useState('');
+ const [page,setPage]=useState(1);
  const [statusFilter,setStatusFilter]=useState('ALL');
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
@@ -28,6 +30,7 @@ export default function ShopOrders({shopId}:{shopId:string}){
   !normalizedQuery||[o.reference,...o.items.map(item=>item.name)].join(' ').toLocaleLowerCase('fr').includes(normalizedQuery)
  ));
  const statuses=Array.from(new Set(orders.map(o=>o.status))).sort();
+ const current=pageOperationalQueue(filteredOrders,page,30);
  useEffect(()=>{
   let active=true;
   Promise.all([
@@ -59,7 +62,7 @@ export default function ShopOrders({shopId}:{shopId:string}){
    });
    const data=await response.json() as {orders?:Order[];error?:string};
    if(!response.ok)throw new Error(data.error||'Commande impossible');
-   setOrders(data.orders||[]);
+   setOrders(data.orders||[]);setPage(1);
    const inventory=await fetch(base+'/inventory',{cache:'no-store'});
    if(inventory.ok){const updated=await inventory.json() as {products:Product[]};setProducts(updated.products);setProductId(current=>updated.products.some(p=>p.id===current&&p.active&&p.stock>0)?current:updated.products.find(p=>p.active&&p.stock>0)?.id||'');}
    setName('');setPhone('');setAddress('');setQuantity('1');
@@ -82,14 +85,19 @@ export default function ShopOrders({shopId}:{shopId:string}){
     <button type="submit" disabled={busy||!selectedProductAvailable} style={{padding:'12px 16px',border:0,borderRadius:10,color:'white',background:'#126c65',fontWeight:700}}>Créer la commande</button>
    </form>
    <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',margin:'16px 0'}}>
-    <label>Rechercher une commande<input aria-label="Rechercher par référence ou article" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Référence ou produit" style={{display:'block',padding:10}}/></label>
-    <label>Filtrer par statut<select aria-label="Filtrer par statut" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{display:'block',padding:10}}><option value="ALL">Tous les statuts</option>{statuses.map(status=><option key={status} value={status}>{status}</option>)}</select></label>
+    <label>Rechercher une commande<input aria-label="Rechercher par référence ou article" value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="Référence ou produit" style={{display:'block',padding:10}}/></label>
+    <label>Filtrer par statut<select aria-label="Filtrer par statut" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}} style={{display:'block',padding:10}}><option value="ALL">Tous les statuts</option>{statuses.map(status=><option key={status} value={status}>{status}</option>)}</select></label>
     <span aria-live="polite">{filteredOrders.length} commande(s) correspondante(s)</span>
    </div>
+   <nav aria-label="Pages des commandes" style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
+    <button type="button" disabled={current.page===1||busy} onClick={()=>setPage(n=>Math.max(1,n-1))}>Précédentes</button>
+    <span>Page {current.page}/{current.totalPages} · {current.total} commande(s)</span>
+    <button type="button" disabled={current.page>=current.totalPages||busy} onClick={()=>setPage(n=>Math.min(n+1,current.totalPages))}>Suivantes</button>
+   </nav>
    <div style={{overflowX:'auto'}}>
     <table style={{width:'100%',borderCollapse:'collapse',textAlign:'left'}}>
      <thead><tr><th>Référence</th><th>Produit(s)</th><th>Statut</th><th>Montant</th><th>Date</th></tr></thead>
-     <tbody>{filteredOrders.slice(0,30).map(o=><tr key={o.id} style={{borderTop:'1px solid #e0e6ee'}}>
+     <tbody>{current.items.map(o=><tr key={o.id} style={{borderTop:'1px solid #e0e6ee'}}>
       <td style={{padding:10}}>{o.reference}</td>
       <td style={{padding:10}}>{o.items.map(i=>i.name+' × '+i.quantity).join(', ')}</td>
       <td style={{padding:10}}>{o.status}</td>
@@ -97,7 +105,7 @@ export default function ShopOrders({shopId}:{shopId:string}){
       <td style={{padding:10}}>{new Date(o.createdAt).toLocaleDateString('fr-TN')}</td>
      </tr>)}</tbody>
     </table>
-    {!orders.length?<p>Aucune commande pour cette boutique.</p>:filteredOrders.length===0?<p>Aucune commande ne correspond à vos filtres.</p>:filteredOrders.length>30?<p>Les 30 premiers résultats sont affichés. Affinez la recherche pour voir d'autres commandes.</p>:null}
+    {!orders.length?<p>Aucune commande pour cette boutique.</p>:filteredOrders.length===0?<p>Aucune commande ne correspond à vos filtres.</p>:filteredOrders.length>30?<p>Parcourez toutes les pages pour consulter les commandes plus anciennes.</p>:null}
    </div>
   </>}
  </section>;

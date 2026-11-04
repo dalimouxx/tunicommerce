@@ -1,3 +1,4 @@
+import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
@@ -16,4 +17,12 @@ test('customer directory excludes private address, notes and order contents',()=
 });
 test('empty isolated shop has no customers',()=>{
  assert.deepEqual(isolatedCustomerDirectory(initialState(false)),[]);
+});
+
+test('P2 customer directory navigation preserves every record beyond 100',()=>{
+ const rows=Array.from({length:213},(_,i)=>({name:'Client '+i,phone:String(i)}));
+ const pages=Array.from({length:5},(_,i)=>pageOperationalQueue(rows,i+1,50));
+ assert.deepEqual(pages.map(p=>p.items.length),[50,50,50,50,13]);
+ assert.equal(new Set(pages.flatMap(p=>p.items.map(x=>x.name))).size,213);
+ assert.equal(pageOperationalQueue(rows,999,50).page,5);
 });

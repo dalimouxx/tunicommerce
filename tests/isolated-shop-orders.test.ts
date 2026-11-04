@@ -1,3 +1,4 @@
+import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
@@ -41,4 +42,13 @@ test('subscription order quota prevents growth across all owned shops',()=>{
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,after,{...capped,maxOrdersPerMonth:20},now));
  assert.doesNotThrow(()=>assertMerchantAggregateQuotas([],before,after,{...capped,maxOrdersPerMonth:null},now));
  assert.equal(before.orders.length,0);
+});
+
+test('P2 owner can browse all 178 matching orders across six pages',()=>{
+ const orders=Array.from({length:178},(_,i)=>({reference:'TC-'+i,status:i%2?'SHIPPED':'TO_CONFIRM'}));
+ const matching=orders.filter(o=>o.status==='TO_CONFIRM');
+ const pages=[1,2,3].map(page=>pageOperationalQueue(matching,page,30));
+ assert.deepEqual(pages.map(x=>x.items.length),[30,30,29]);
+ assert.equal(new Set(pages.flatMap(x=>x.items.map(o=>o.reference))).size,89);
+ assert.equal(pageOperationalQueue(matching,4,30).page,3);
 });
