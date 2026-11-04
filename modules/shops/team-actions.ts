@@ -26,9 +26,10 @@ export type TeamWriteInput=z.infer<typeof teamWriteInput>;
 export function requiredTeamPermission(action:TeamWriteInput['action']):ShopPermission{
  return action==='adjustStock'?'stock.adjust':'orders.update';
 }
-export function validateCallTransition(previous:State,input:Extract<TeamWriteInput,{action:'confirmOrder'}>){
+export function validateCallTransition(previous:State,input:Extract<TeamWriteInput,{action:'confirmOrder'}>,actorId?:string){
  const order=previous.orders.find(o=>o.id===input.payload.id);
  if(!order)throw new HttpError(404,'Commande introuvable');
+ if(actorId&&order.assignedAgentId&&order.assignedAgentId!==actorId)throw new HttpError(403,'Commande attribuée à un autre agent');
  const permittedStatuses:readonly Status[]=['TO_CONFIRM','NO_ANSWER','CALLBACK'];
  if(!permittedStatuses.includes(order.status))
   throw new HttpError(403,'Cette commande ne peut pas être modifiée par le Call Center');
@@ -39,9 +40,10 @@ export function validateCallTransition(previous:State,input:Extract<TeamWriteInp
  if(input.payload.status!=='CALLBACK'&&input.payload.callbackAt)
   throw new HttpError(400,'Date de rappel non autorisée pour ce statut');
 }
-export function validateCallNote(previous:State,input:Extract<TeamWriteInput,{action:'callNote'}>){
+export function validateCallNote(previous:State,input:Extract<TeamWriteInput,{action:'callNote'}>,actorId?:string){
  const order=previous.orders.find(o=>o.id===input.payload.id);
  if(!order)throw new HttpError(404,'Commande introuvable');
+ if(actorId&&order.assignedAgentId&&order.assignedAgentId!==actorId)throw new HttpError(403,'Commande attribuée à un autre agent');
  if(!['TO_CONFIRM','NO_ANSWER','CALLBACK'].includes(order.status))
   throw new HttpError(403,'Seules les commandes en confirmation peuvent être annotées');
 }
@@ -49,8 +51,8 @@ export async function performTeamAction(actorId:string,shopId:string,input:TeamW
  const permission=requiredTeamPermission(input.action);
  const mutationAction=input.action==='adjustStock'?'stock':input.action==='confirmOrder'?'transition':'note';
  const check=(before:State,after:State)=>{
-  if(input.action==='confirmOrder')validateCallTransition(before,input);
-  if(input.action==='callNote')validateCallNote(before,input);
+  if(input.action==='confirmOrder')validateCallTransition(before,input,actorId);
+  if(input.action==='callNote')validateCallNote(before,input,actorId);
   if(input.action==='adjustStock'&&before.products.length!==after.products.length)
    throw new HttpError(409,'Modification de catalogue interdite');
  };
