@@ -1,14 +1,18 @@
 'use client';
 import {useMemo,useState} from 'react';
-import {customerOrderMessage,tunisianWhatsAppUrl} from '../../../modules/shops/manual-messaging';
+import {customerOrderMessage,tunisianWhatsAppUrl,filterManualMessageOrders} from '../../../modules/shops/manual-messaging';
+import {pageOperationalQueue} from '../../../modules/shops/operational-queues';
 type Order={id:string;reference:string;status:string;tracking?:string;
  customerSnapshot?:{name:string;phone:string;city:string}};
 export default function ShopManualMessages({orders}:{orders:Order[]}){
  const [selectedId,setSelectedId]=useState('');
+ const [query,setQuery]=useState('');
+ const [page,setPage]=useState(1);
  const [merchantName,setMerchantName]=useState('');
  const [consent,setConsent]=useState(false);
  const [notice,setNotice]=useState('');
  const selected=orders.find(o=>o.id===selectedId);
+ const options=pageOperationalQueue(filterManualMessageOrders(orders,query),page,25);
  const message=useMemo(()=>{
   if(!selected)return '';
   try{return customerOrderMessage(selected,merchantName||'Votre boutique');}catch{return '';}
@@ -28,12 +32,18 @@ export default function ShopManualMessages({orders}:{orders:Order[]}){
   <h3>Préparer un message transactionnel (envoi manuel)</h3>
   <p>Modèles pour WhatsApp ou SMS. Vous choisissez la commande et le destinataire ; aucune API n'envoie de message, aucun contact n'est marqué comme effectué sans déclaration séparée.</p>
   <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+   <label>Rechercher commande ou client<input type="search" maxLength={80} value={query} placeholder="Référence ou nom" onChange={e=>{setQuery(e.target.value);setPage(1);setSelectedId('');setConsent(false);}} style={{display:'block',padding:8}}/></label>
    <label>Nom affiché du marchand<input maxLength={70} value={merchantName} placeholder="Votre boutique" onChange={e=>setMerchantName(e.target.value)} style={{display:'block',padding:8}}/></label>
    <label>Commande<select value={selectedId} onChange={e=>{setSelectedId(e.target.value);setConsent(false);setNotice('');}} style={{display:'block',padding:8,maxWidth:340}}>
     <option value="">Choisir une commande</option>
-    {orders.slice(0,100).map(order=><option key={order.id} value={order.id}>{order.reference} · {order.status} · {order.customerSnapshot?.name||'Client'}</option>)}
+    {options.items.map(order=><option key={order.id} value={order.id}>{order.reference} · {order.status} · {order.customerSnapshot?.name||'Client'}</option>)}
    </select></label>
   </div>
+  <nav aria-label="Pages des messages manuels" style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
+   <button type="button" disabled={options.page===1} onClick={()=>setPage(n=>Math.max(1,n-1))}>Précédentes</button>
+   <span>{options.total} commande(s) · page {options.page}/{options.totalPages}</span>
+   <button type="button" disabled={options.page>=options.totalPages} onClick={()=>setPage(n=>Math.min(n+1,options.totalPages))}>Suivantes</button>
+  </nav>
   {selected&&<div style={{marginTop:12}}>
    <p><strong>Destinataire :</strong> {selected.customerSnapshot?.name||'Non renseigné'} · {selected.customerSnapshot?.phone||'Numéro indisponible'}</p>
    <label>Prévisualisation (aucune donnée de coût ou note interne)<textarea readOnly value={message} rows={4} style={{display:'block',width:'100%',padding:10,maxWidth:620}}/></label>

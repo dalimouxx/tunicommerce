@@ -30,3 +30,12 @@ export function tunisianWhatsAppUrl(phone:string,message:string){
  if(!message||message.length>800)return null;
  return 'https://wa.me/216'+normalized+'?text='+encodeURIComponent(message);
 }
+
+/** Only a merchant-side selector. This never sends a message or exposes a public list. */
+export function filterManualMessageOrders<T extends {reference:string;customerSnapshot?:{name?:string}}>(
+ orders:readonly T[],search:string):T[]{
+ const text=search.trim().toLocaleLowerCase('fr').slice(0,80);
+ if(!text)return [...orders];
+ return orders.filter(o=>o.reference.toLocaleLowerCase('fr').includes(text)||
+  (o.customerSnapshot?.name||'').toLocaleLowerCase('fr').includes(text));
+}

@@ -43,6 +43,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
    <h2>Gestion de ma boutique</h2>
    <p>Choisissez un espace de travail. Les autres boutiques et l'administration globale restent indépendantes.</p>
   </header>
+  <ShopCallCenterAlerts shopId={shopId}/>
   <nav role="tablist" aria-label="Modules de gestion" className={styles.workspaceNavigation}>
    {merchantWorkspaceTabs.map(tab=><button key={tab.id} type="button" role="tab"
     id={'espace-'+tab.id}
@@ -59,7 +60,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
    <p>{current.description} <a className={styles.workspaceDeepLink} href={merchantWorkspaceHash(active)}>Lien direct vers cet espace</a></p>
    {active==='orders'&&<ShopOrders shopId={shopId}/>}
    {active==='catalog'&&<><ShopInventory shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/></>}
-   {active==='callcenter'&&<><ShopCallCenterAlerts shopId={shopId}/><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomerRequests shopId={shopId}/></>}
+   {active==='callcenter'&&<><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomerRequests shopId={shopId}/></>}
    {active==='delivery'&&<><ShopCarrierConfig shopId={shopId}/><ShopFulfillment shopId={shopId}/><ShopCarrierHandoffs shopId={shopId}/></>}
    {active==='finance'&&<><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/><ShopCarrierStatements shopId={shopId}/><ShopCodMatching shopId={shopId}/><ShopReturns shopId={shopId}/></>}
    {active==='growth'&&<><ShopCustomers shopId={shopId}/><ShopInsights shopId={shopId}/><ShopStorefrontThemes shopId={shopId}/></>}
