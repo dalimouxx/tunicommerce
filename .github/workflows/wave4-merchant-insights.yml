@@ -1,0 +1,25 @@
+name: TuniCommerce isolated merchant insights
+on:
+  pull_request:
+    paths:
+      - 'modules/shops/merchant-insights.ts'
+      - 'app/api/v1/shops/[shopId]/insights/route.ts'
+      - 'app/mes-boutiques/[shopId]/shop-insights.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'tests/isolated-merchant-insights.test.ts'
+      - '.github/workflows/wave4-merchant-insights.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-merchant-insights.test.ts
+      - run: npm run typecheck
+      - run: npm run build
