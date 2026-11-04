@@ -1,0 +1,28 @@
+name: TuniCommerce P5 global admin launch controls
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/commercial-launch-status.ts'
+      - 'app/admin/lancement/**'
+      - 'app/admin/layout.tsx'
+      - 'app/admin/page.tsx'
+      - 'tests/admin-commercial-launch-status.test.ts'
+      - '.github/workflows/admin-commercial-launch-status.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/admin-commercial-launch-status.test.ts
+      - run: npm run typecheck
+      - run: npm run build
