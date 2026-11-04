@@ -61,7 +61,7 @@ jobs:
             | docker exec -i "$POSTGRES_CID" pg_restore -U restore_user \
                 --no-owner --no-privileges --exit-on-error -d tunicommerce_restore_test
           answer="$(docker exec "$POSTGRES_CID" psql -U restore_user -d tunicommerce_restore_test \
-            -Atqc "SELECT CASE WHEN to_regclass('public.\\\"User\\\"') IS NOT NULL AND to_regclass('public.\\\"Workspace\\\"') IS NOT NULL AND to_regclass('public.\\\"Shop\\\"') IS NOT NULL AND to_regclass('public.\\\"ShopCommerce\\\"') IS NOT NULL THEN 'ok' ELSE 'missing' END")"
+            -Atqc "SELECT CASE WHEN (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('User','Workspace','Shop','ShopCommerce')) = 4 THEN 'ok' ELSE 'missing' END")"
           test "$answer" = ok
           echo "Real encrypted dump restored into disposable local PostgreSQL; required tables verified."
           echo "Source Neon database was never used as the restore destination."
