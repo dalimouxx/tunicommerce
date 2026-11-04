@@ -17,6 +17,7 @@ export const publicCodCheckoutInput=z.object({
  phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/),
  city:z.enum(governors as [string,...string[]]),
  address:z.string().trim().min(3).max(160),
+ coupon:z.string().trim().min(2).max(30).regex(/^[A-Za-z0-9_-]+$/).optional(),
  items:z.array(z.object({productId:z.string().min(1).max(160),quantity:z.number().int().min(1).max(10)}).strict()).min(1).max(15)
 }).strict();
 
@@ -74,7 +75,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   try{
    next=applyAction(before,'createOrder',{
     name:input.name,phone:input.phone,city:input.city,address:input.address,
-    source:'Boutique',items:input.items
+    source:'Boutique',items:input.items,coupon:input.coupon?.toUpperCase()
    });
   }catch(error){
    if(error instanceof z.ZodError)throw new HttpError(400,error.issues[0]?.message||'Commande invalide');
