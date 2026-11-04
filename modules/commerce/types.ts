@@ -6,6 +6,7 @@ export type Movement={id:string;productId:string;label:string;quantity:number;at
 export type Expense={id:string;label:string;category:string;amount:number;date:string};
 export type Coupon={id:string;code:string;percent:number;limit:number;used:number;active:boolean};
 export type Settlement={id:string;orderId:string;amount:number;reference:string;at:string};
+export type CarrierHandoff={id:string;orderId:string;carrier:string;tracking:string;proofReference:string;at:string};
 export type CarrierStatement={id:string;orderId:string;carrier:string;reference:string;amount:number;date:string;at:string};
 export type CarrierReconciliation={id:string;statementId:string;settlementId:string;proofReference:string;at:string};
 export type State={zones:DeliveryZone[];carriers:Carrier[];returns:ReturnRecord[];invoices:Invoice[];carts:Cart[];shop:{logoUrl?:string;bannerUrl?:string;description?:string;name:string;phone:string;address:string;shipping:number;currency:string};products:Product[];customers:Customer[];orders:Order[];movements:Movement[];expenses:Expense[];coupons:Coupon[];settlements:Settlement[];carrierStatements?:CarrierStatement[];carrierReconciliations?:CarrierReconciliation[];audit:{id:string;at:string;label:string}[];requests:string[];demo:boolean};
