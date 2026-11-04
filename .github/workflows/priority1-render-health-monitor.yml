@@ -9,7 +9,7 @@ on:
       - 'docs/priority1-monitoring.md'
       - '.github/workflows/priority1-render-health-monitor.yml'
   schedule:
-    - cron: '17 7,19 * * *'
+    - cron: '17 1,7,13,19 * * *'
   workflow_dispatch:
 permissions:
   contents: read
