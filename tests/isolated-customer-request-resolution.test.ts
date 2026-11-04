@@ -29,6 +29,7 @@ test('P2/P3 owner resolves cancellation request and releases reserved stock exac
  assert.equal(processed.orders[0].status,'CANCELLED');
  assert.equal(processed.orders[0].customerRequests?.[0]?.status,'ACCEPTED');
  assert.equal(processed.products[0].stock,3);
+ assert.equal(publicTrackingView(processed,token)?.requests[0]?.reply,'Annulation confirmée');
  assert.equal(requested.products[0].stock,2);
  assert.throws(()=>applyAction(processed,mutation.action,mutation.payload),/déjà traitée/);
  assert.equal(publicTrackingView(processed,token)?.canCancel,false);

@@ -43,7 +43,7 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
    {order.requests.length===0?<p>Aucune demande envoyée pour cette commande.</p>:
     <ul>{order.requests.map(request=><li key={request.id}>
      {request.type==='CANCEL'?'Annulation':'Retour'} · {request.status==='PENDING'?'En attente':request.status==='ACCEPTED'?'Acceptée':'Refusée'}
-     · {new Date(request.at).toLocaleDateString('fr-TN')}
+     · {new Date(request.at).toLocaleDateString('fr-TN')} {request.reply&&<span>· Réponse du marchand : {request.reply}</span>}
     </li>)}</ul>}
    <p>Le traitement d’une demande reste manuel : les statuts de livraison, stocks et encaissements ne changent pas automatiquement.</p>
   </section>
