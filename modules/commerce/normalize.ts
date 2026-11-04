@@ -1,3 +1,3 @@
 import type {State} from './types';
 /** Additive state upgrade. Existing owner data and history are preserved. */
-export function normalizeState(s:State):State{return {...s,zones:s.zones||[],carriers:s.carriers||[],returns:s.returns||[],invoices:s.invoices||[],carts:s.carts||[],carrierStatements:s.carrierStatements||[],carrierReconciliations:s.carrierReconciliations||[],carrierHandoffs:s.carrierHandoffs||[],warehouses:s.warehouses||[],warehouseBalances:s.warehouseBalances||[],stockTransfers:s.stockTransfers||[]};}
+export function normalizeState(s:State):State{return {...s,zones:s.zones||[],carriers:s.carriers||[],returns:s.returns||[],invoices:s.invoices||[],carts:s.carts||[],carrierStatements:s.carrierStatements||[],carrierReconciliations:s.carrierReconciliations||[],carrierHandoffs:s.carrierHandoffs||[],warehouses:s.warehouses||[],warehouseBalances:s.warehouseBalances||[],stockTransfers:s.stockTransfers||[],warehousePicks:s.warehousePicks||[]};}
