@@ -91,6 +91,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
    </form>
    <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',margin:'14px 0'}}>
     <button type="button" disabled={busy||products.length===0} onClick={exportCatalog}>Exporter mon catalogue en CSV</button>
+    <a href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/import-catalogue'} style={{display:'inline-block',padding:10,border:'1px solid #b9d5d8',borderRadius:8}}>Importer un catalogue CSV (100 produits max.)</a>
     <span style={{fontSize:13,color:'#526477'}}>Export privé : contient les coûts d'achat et les stocks de cette boutique.</span>
    </div>
    {editing&&<form onSubmit={event=>void saveEdit(event)} style={{border:'1px solid #b7d9d5',borderRadius:12,padding:16,display:'flex',gap:10,flexWrap:'wrap',alignItems:'end',marginBottom:16}}>
