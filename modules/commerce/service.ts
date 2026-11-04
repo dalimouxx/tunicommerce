@@ -31,6 +31,12 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  let result=s;if(p.status==='ACCEPTED'&&request.type==='CANCEL')result=applyAction(s,'transition',{id:order.id,status:'CANCELLED'});
  const target=result.orders.find(o=>o.id===p.orderId)!.customerRequests!.find(r=>r.id===p.requestId)!;target.status=p.status;target.reply=p.reply;result.audit.unshift({id:id(),at:now,label:'Demande client '+p.status+' · '+order.reference});return result;
  }
+ if(action==='saveStorefrontTheme'){
+  const p=z.object({theme:z.enum(['OASIS','SABLE','MINUIT'])}).strict().parse(payload);
+  s.shop.theme=p.theme;
+  log('Thème de vitrine modifié · '+p.theme);
+  return s;
+ }
  if(action==='assignCallAgent'){
   const p=z.object({id:str,agentId:z.string().uuid().nullable()}).strict().parse(payload);
   const order=s.orders.find(order=>order.id===p.id);

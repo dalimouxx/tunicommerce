@@ -1,5 +1,6 @@
 import type {State} from '../commerce/types';
 import {publicCatalog} from '../platform/public';
+import {storefrontThemeSummary} from './storefront-themes';
 
 /** Explicitly public-safe product fields, derived from one isolated shop state.
  * This is a preview helper only: it does not grant publication or checkout access.
@@ -7,6 +8,7 @@ import {publicCatalog} from '../platform/public';
 export function isolatedStorefrontPreview(state:State){
  const catalog=publicCatalog(state);
  return {
+  theme:storefrontThemeSummary(state),
   name:catalog.name,
   description:catalog.description,
   shipping:catalog.shipping,
