@@ -59,6 +59,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      <h1>{shop.name}</h1><p>Statut : {shop.status} · Votre rôle : {membership.role}</p></div>
     <Link className={styles.back} href="/mes-boutiques">Toutes mes boutiques</Link>
    </header>
+   {isolated?.initialized&&<MerchantShopWorkspace shopId={shopId}/>}
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>
     <section key={name} className={styles.card}><span className={styles.kicker}>{name}</span><h2>{value}</h2></section>
    )}</div>
