@@ -81,6 +81,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    )}</div>
    <section className={styles.card}>
     <h2>Suivi des commandes de cette boutique</h2>
+    <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/anomalies'}>Ouvrir le centre des anomalies : expéditions, bons, demandes, retours et écarts COD</Link></p>
     <p>Répartition opérationnelle des commandes, sans coordonnées clients. Les chiffres reflètent les données enregistrées et non les opérations en cours de synchronisation.</p>
     <div className={styles.grid}>
      {([
