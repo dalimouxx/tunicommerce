@@ -1,0 +1,27 @@
+name: TuniCommerce carrier COD manual reconciliation
+on:
+  pull_request:
+    paths:
+      - 'modules/commerce/types.ts'
+      - 'modules/commerce/normalize.ts'
+      - 'modules/commerce/service.ts'
+      - 'modules/shops/carrier-statements.ts'
+      - 'app/mes-boutiques/[shopId]/shop-cod-matching.tsx'
+      - 'app/mes-boutiques/[shopId]/page.tsx'
+      - 'tests/isolated-carrier-reconciliation.test.ts'
+      - '.github/workflows/isolated-carrier-reconciliation.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/isolated-carrier-reconciliation.test.ts tests/isolated-carrier-statements.test.ts
+      - run: npm run typecheck
+      - run: npm run build
