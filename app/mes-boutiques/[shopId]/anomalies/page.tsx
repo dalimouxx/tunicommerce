@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {notFound,redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../../modules/auth/session';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../modules/shops/isolated-commerce';
-import {merchantExceptionQueue} from '../../../../modules/shops/merchant-exceptions';
+import {merchantExceptionQueue,parseMerchantExceptionQuery} from '../../../../modules/shops/merchant-exceptions';
 export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 const labels={
@@ -14,14 +14,18 @@ const labels={
  CUSTOMER_REQUEST:'Demandes client à traiter',
  REFUND_DUE:'Remboursements dus'
 } as const;
-export default async function MerchantExceptionPage({params}:{params:Promise<{shopId:string}>}){
+export default async function MerchantExceptionPage({params,searchParams}:{params:Promise<{shopId:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}){
  const actor=await getCurrentUser();if(!actor)redirect('/login');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);if(!shop)notFound();
  const commerce=await readIsolatedCommerce(shopId,shop.name);
  if(!commerce.initialized)notFound();
- const report=merchantExceptionQueue(commerce.state);
+ let report:ReturnType<typeof merchantExceptionQueue>;
+ try{report=merchantExceptionQueue(commerce.state,new Date(),parseMerchantExceptionQuery(await searchParams));}
+ catch{notFound();}
  const root='/mes-boutiques/'+encodeURIComponent(shopId);
+ const self=root+'/anomalies';
+ const href=(kind:string,pageNum:number)=>self+'?kind='+kind+'&page='+pageNum;
  return <main style={{maxWidth:1080,margin:'30px auto',padding:22,color:'#263641',background:'#f7fafc'}}>
   <Link href={root}>Retour à {shop.name}</Link>
   <h1>Centre des anomalies opérationnelles</h1>
@@ -32,7 +36,16 @@ export default async function MerchantExceptionPage({params}:{params:Promise<{sh
     <strong style={{fontSize:26}}>{report.byKind[key as keyof typeof report.byKind]}</strong>
    </section>)}
   </div>
-  <p><strong>{report.total}</strong> anomalie(s) détectée(s). Les 100 premières sont affichées par priorité et ancienneté.</p>
+  <p><strong>{report.total}</strong> anomalie(s) détectée(s), dont <strong>{report.filteredTotal}</strong> pour le filtre sélectionné. Page {report.page}/{report.totalPages}.</p>
+  <nav aria-label="Filtrer les anomalies" style={{display:'flex',gap:10,flexWrap:'wrap',margin:'12px 0'}}>
+   <Link href={href('ALL',1)}>Toutes ({report.total})</Link>
+   {Object.entries(labels).map(([kind,label])=><Link key={kind} href={href(kind,1)}>{label} ({report.byKind[kind as keyof typeof report.byKind]})</Link>)}
+  </nav>
+  <nav aria-label="Pagination des anomalies" style={{display:'flex',gap:16,alignItems:'center',margin:'12px 0'}}>
+   {report.page>1&&<Link href={href(report.kind,report.page-1)}>Page précédente</Link>}
+   <span>Page {report.page} sur {report.totalPages}</span>
+   {report.page<report.totalPages&&<Link href={href(report.kind,report.page+1)}>Page suivante</Link>}
+  </nav>
   <div style={{overflowX:'auto',background:'white',border:'1px solid #dce5eb',borderRadius:14,padding:14}}>
    <table style={{borderCollapse:'collapse',width:'100%',textAlign:'left'}}>
     <thead><tr><th>Commande</th><th>Priorité</th><th>Point à traiter</th><th>Ancienneté</th><th>Montant concerné</th></tr></thead>

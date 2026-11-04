@@ -1,5 +1,5 @@
 import type {State} from '../commerce/types';
-import {codAuditRows} from './cod-exceptions';
+import {HttpError} from '../auth/http';
 export type MerchantExceptionKind='STALLED_SHIPMENT'|'HANDOFF_MISSING'|'DELIVERED_NO_HANDOFF'|'COD_OVERDUE'|'COD_MISMATCH'|'CUSTOMER_REQUEST'|'REFUND_DUE';
 export type MerchantException={id:string;orderReference:string;kind:MerchantExceptionKind;
  priority:'HIGH'|'MEDIUM';title:string;detail:string;ageDays:number|null;amountMillimes?:number};
@@ -8,11 +8,25 @@ function age(at:string,now:Date):number|null{
  const t=Date.parse(at);
  return Number.isFinite(t)?Math.max(0,Math.floor((now.getTime()-t)/DAY_MS)):null;
 }
-export function merchantExceptionQueue(state:State,now=new Date()){
+export const MERCHANT_EXCEPTION_PAGE_SIZE=100;
+export type MerchantExceptionFilter='ALL'|MerchantExceptionKind;
+export type MerchantExceptionQuery={page:number;kind:MerchantExceptionFilter};
+const exceptionKinds=['STALLED_SHIPMENT','HANDOFF_MISSING','DELIVERED_NO_HANDOFF','COD_OVERDUE','COD_MISMATCH','CUSTOMER_REQUEST','REFUND_DUE'] as const;
+export function parseMerchantExceptionQuery(raw:Record<string,string|string[]|undefined>):MerchantExceptionQuery{
+ for(const key of Object.keys(raw))
+  if(key!=='page'&&key!=='kind')throw new HttpError(400,'Filtre anomalies inconnu');
+ const page=raw.page??'1',kind=raw.kind??'ALL';
+ if(typeof page!=='string'||!/^[1-9][0-9]{0,6}$/.test(page))
+  throw new HttpError(400,'Page anomalies invalide');
+ if(typeof kind!=='string'||(kind!=='ALL'&&!exceptionKinds.some(k=>k===kind)))
+  throw new HttpError(400,'Catégorie anomalies invalide');
+ return {page:Number(page),kind:kind as MerchantExceptionFilter};
+}
+export function merchantExceptionQueue(state:State,now=new Date(),query:MerchantExceptionQuery={page:1,kind:'ALL'}){
  const issues:MerchantException[]=[];
  const push=(item:MerchantException)=>issues.push(item);
  const handedOff=new Set((state.carrierHandoffs||[]).map(x=>x.orderId));
- for(const order of state.orders.slice(0,5000)){
+ for(const order of state.orders){
   const days=age(order.updatedAt,now);
   if(order.status==='SHIPPED'&&days!==null&&days>=4)
    push({id:'stalled:'+order.id,orderReference:order.reference,kind:'STALLED_SHIPMENT',priority:'HIGH',
@@ -36,15 +50,24 @@ export function merchantExceptionQueue(state:State,now=new Date()){
     detail:'Une demande client reste en attente de décision du marchand.',ageDays:age(req.at,now)});
   }
  }
- for(const item of codAuditRows(state,now)){
-  if(item.declaredMinusRegisteredMillimes===0)continue;
-  push({id:'cod:'+item.reference,orderReference:item.reference,kind:'COD_MISMATCH',
+ const totals=(rows:readonly {orderId:string;amount:number}[])=>{
+  const byOrder=new Map<string,number>();
+  for(const row of rows)byOrder.set(row.orderId,(byOrder.get(row.orderId)||0)+row.amount);
+  return byOrder;
+ };
+ const statements=totals(state.carrierStatements||[]);
+ const settlements=totals(state.settlements||[]);
+ for(const order of state.orders){
+  if(order.status!=='DELIVERED')continue;
+  const difference=(statements.get(order.id)||0)-(settlements.get(order.id)||0);
+  if(difference===0)continue;
+  push({id:'cod:'+order.reference,orderReference:order.reference,kind:'COD_MISMATCH',
    priority:'HIGH',title:'Écart entre bordereaux et versements COD déclarés',
    detail:'Les montants déclarés ne correspondent pas. Vérification humaine et justificatifs requis.',
-   amountMillimes:item.declaredMinusRegisteredMillimes,ageDays:item.ageDays});
+   amountMillimes:difference,ageDays:age(order.updatedAt,now)});
  }
  const referenceByOrder=new Map(state.orders.map(o=>[o.id,o.reference]));
- for(const ret of (state.returns||[]).slice(0,2000)){
+ for(const ret of (state.returns||[])){
   const remaining=ret.credit-ret.refunded;
   if(remaining<=0)continue;
   push({id:'refund:'+ret.id,orderReference:referenceByOrder.get(ret.orderId)||'Commande indisponible',
@@ -52,13 +75,19 @@ export function merchantExceptionQueue(state:State,now=new Date()){
    detail:'L’avoir enregistré comporte un solde non remboursé. Vérifiez le dossier et le paiement réel.',
    amountMillimes:remaining,ageDays:age(ret.createdAt,now)});
  }
- const kinds=['STALLED_SHIPMENT','HANDOFF_MISSING','DELIVERED_NO_HANDOFF','COD_OVERDUE','COD_MISMATCH','CUSTOMER_REQUEST','REFUND_DUE'] as const;
+ const kinds=exceptionKinds;
  issues.sort((a,b)=>Number(b.priority==='HIGH')-Number(a.priority==='HIGH')||
   (b.ageDays??-1)-(a.ageDays??-1)||a.id.localeCompare(b.id));
+ const filtered=query.kind==='ALL'?issues:issues.filter(item=>item.kind===query.kind);
+ const totalPages=Math.max(1,Math.ceil(filtered.length/MERCHANT_EXCEPTION_PAGE_SIZE));
+ if(!Number.isSafeInteger(query.page)||query.page<1||query.page>totalPages)
+  throw new HttpError(400,'Page anomalies introuvable');
  return {
-  total:issues.length,
+  total:issues.length,filteredTotal:filtered.length,
+  page:query.page,pageSize:MERCHANT_EXCEPTION_PAGE_SIZE,totalPages,kind:query.kind,
   byKind:Object.fromEntries(kinds.map(kind=>[kind,issues.filter(i=>i.kind===kind).length])) as Record<MerchantExceptionKind,number>,
-  items:issues.slice(0,100),generatedAt:now.toISOString(),
+  items:filtered.slice((query.page-1)*MERCHANT_EXCEPTION_PAGE_SIZE,query.page*MERCHANT_EXCEPTION_PAGE_SIZE),
+  generatedAt:now.toISOString(),
   note:'Indicateurs calculés à partir des saisies internes. Aucun statut transporteur ou paiement bancaire n’est certifié.'
  };
 }

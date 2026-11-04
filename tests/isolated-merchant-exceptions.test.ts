@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
-import {merchantExceptionQueue} from '../modules/shops/merchant-exceptions';
+import {merchantExceptionQueue,parseMerchantExceptionQuery,MERCHANT_EXCEPTION_PAGE_SIZE} from '../modules/shops/merchant-exceptions';
 const now=new Date('2026-11-04T12:00:00.000Z');
 test('stalled shipments, missing handoffs and open buyer requests are triaged without customer PII',()=>{
  const state=initialState(false);
@@ -58,4 +58,43 @@ test('P3 livré : alertes bons manquants et COD ancien, sans preuve bancaire inv
  assert.equal(resolved.byKind.COD_OVERDUE,0);
  for(const secret of ['CLIENT SECRET','22123456','RUE PRIVÉE'])
   assert.equal(JSON.stringify(report).includes(secret),false);
+});
+
+test('P1/P3 all anomalies beyond old 5000 orders, 2000 returns and 100 view rows are reachable',()=>{
+ const state=initialState(false);
+ state.orders=Array.from({length:5105},(_,i)=>({id:'order-'+i,reference:'TC-'+i,
+  status:'SHIPPED',createdAt:'2026-10-23T08:00:00Z',updatedAt:'2026-10-24T08:00:00Z'})) as never;
+ state.returns=Array.from({length:2025},(_,i)=>({
+  id:'ret-'+i,orderId:'order-'+i,credit:3500,refunded:0,createdAt:'2026-10-20T12:00:00Z'
+ })) as never;
+ const first=merchantExceptionQueue(state,now);
+ assert.equal(first.byKind.STALLED_SHIPMENT,5105);
+ assert.equal(first.byKind.REFUND_DUE,2025);
+ assert.equal(first.pageSize,MERCHANT_EXCEPTION_PAGE_SIZE);
+ const last=merchantExceptionQueue(state,now,{page:21,kind:'REFUND_DUE'});
+ assert.equal(last.filteredTotal,2025);
+ assert.equal(last.items.length,25);
+ assert.equal(last.items.every(x=>x.kind==='REFUND_DUE'),true);
+ assert.equal(first.total,5105*2+2025);
+ assert.equal(JSON.stringify(first).includes('22123456'),false);
+});
+test('P1/P3 COD mismatch list includes orders after 1000 and is independently pageable',()=>{
+ const state=initialState(false);
+ state.orders=Array.from({length:1106},(_,i)=>({
+  id:'order-'+i,reference:'TC-'+i,status:'DELIVERED',total:15000,collected:15000,
+  carrier:'Transport',createdAt:'2026-10-01T10:00:00Z',updatedAt:'2026-10-01T10:00:00Z'
+ })) as never;
+ state.carrierStatements=Array.from({length:1106},(_,i)=>({
+  id:'statement-'+i,orderId:'order-'+i,amount:15000
+ })) as never;
+ const last=merchantExceptionQueue(state,now,{page:12,kind:'COD_MISMATCH'});
+ assert.equal(last.filteredTotal,1106);
+ assert.equal(last.items.length,6);
+ assert.equal(last.byKind.COD_MISMATCH,1106);
+});
+test('P1 rejects repeated, unknown or oversized anomaly filters',()=>{
+ assert.deepEqual(parseMerchantExceptionQuery({page:'2',kind:'REFUND_DUE'}),{page:2,kind:'REFUND_DUE'});
+ for(const bad of [{page:'0'},{page:['1','2']},{kind:'UNKNOWN'},{kind:['ALL','REFUND_DUE']},
+  {page:'10000000'},{search:'customer-name'}])
+  assert.throws(()=>parseMerchantExceptionQuery(bad));
 });
