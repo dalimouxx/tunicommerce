@@ -1,5 +1,6 @@
 'use client';
-import {useRef,useState,type FormEvent} from 'react';
+import {useEffect,useRef,useState,type FormEvent} from 'react';
+import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../../../modules/shops/public-cart-recovery';
 import {governors} from '../../../modules/commerce/types';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
@@ -9,6 +10,7 @@ const amount=(v:number)=>(v/1000).toFixed(3);
 
 export default function PublicCart({slug,products,shipping,zones,initialProductId}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string}){
  const [quantities,setQuantities]=useState<Record<string,number>>(()=>initialProductId&&products.some(p=>p.id===initialProductId&&p.available)?{[initialProductId]:1}:{});
+ const [hydrated,setHydrated]=useState(false);
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
  const [city,setCity]=useState('Tunis');
@@ -18,6 +20,22 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
  const [notice,setNotice]=useState('');
  const [accepted,setAccepted]=useState<Result|null>(null);
  const requestId=useRef<string|null>(null);
+ useEffect(()=>{
+  try{
+   const recovered=restoreCartQuantities(window.localStorage.getItem(cartStorageKey(slug)),products);
+   if(initialProductId&&products.some(p=>p.id===initialProductId&&p.available))recovered[initialProductId]=Math.max(1,recovered[initialProductId]||0);
+   setQuantities(recovered);
+  }catch{ /* localStorage may be unavailable in private browser modes */ }
+  finally{setHydrated(true);}
+ },[slug,initialProductId,products]);
+ useEffect(()=>{
+  if(!hydrated)return;
+  try{
+   const key=cartStorageKey(slug),payload=serializeCartQuantities(quantities,products);
+   if(payload)window.localStorage.setItem(key,payload);
+   else window.localStorage.removeItem(key);
+  }catch{ /* no persistent cart if storage is disabled */ }
+ },[hydrated,slug,products,quantities]);
  const selected=products.filter(p=>p.available&&quantities[p.id]>0).map(p=>({...p,quantity:quantities[p.id]}));
  const subtotal=selected.reduce((n,p)=>n+p.price*p.quantity,0);
  const zone=zones.find(zone=>zone.governorates.includes(city));
@@ -59,6 +77,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
  return <section style={{background:'#fff',border:'1px solid #dbe5eb',borderRadius:16,padding:22,marginTop:18}}>
   <h2>Panier et paiement à la livraison</h2>
   <p>Sélectionnez les articles de cette boutique. Le total final et les frais de livraison sont calculés par le serveur lors de la commande.</p>
+  <p style={{fontSize:13,color:'#586b75'}}>Le panier conserve uniquement les références et quantités des produits dans ce navigateur pendant sept jours. Nom, téléphone et adresse ne sont jamais enregistrés localement par cette fonction.</p>
   {products.filter(p=>p.available).map(p=><label key={p.id} style={{display:'flex',justifyContent:'space-between',gap:14,padding:'10px 0',borderBottom:'1px solid #edf0f4'}}>
    <span>{p.name} · {amount(p.price)} TND</span>
    <input aria-label={'Quantité '+p.name} type="number" min="0" max="10" step="1" value={quantities[p.id]||0}
