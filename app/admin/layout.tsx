@@ -28,6 +28,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <Link href="/admin/abonnements"><Receipt size={18}/> Abonnements</Link>
     <Link href="/admin/paiements"><Banknote size={18}/> Règlements SaaS</Link>
     <Link href="/admin/finances-saas"><CircleDollarSign size={18}/> Finance et échéances SaaS</Link>
+    <Link href="/admin/integrations"><Settings2 size={18}/> Intégrations externes</Link>
     <Link href="/admin/coordonnees-paiement"><Landmark size={18}/> Coordonnées de paiement</Link>
     <Link href="/admin/plans"><CircleDollarSign size={18}/> Offres et quotas</Link>
     <Link href="/admin/journal"><Activity size={18}/> Journal d’activité</Link>

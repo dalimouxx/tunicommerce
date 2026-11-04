@@ -1,0 +1,25 @@
+name: TuniCommerce provider readiness
+on:
+  pull_request:
+    paths:
+      - 'modules/platform/integration-readiness.ts'
+      - 'app/admin/integrations/page.tsx'
+      - 'app/admin/layout.tsx'
+      - 'tests/integration-readiness.test.ts'
+      - 'docs/integrations-externes-preparation.md'
+      - '.github/workflows/wave4-provider-readiness.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --import tsx --test tests/integration-readiness.test.ts
+      - run: npm run typecheck
+      - run: npm run build
