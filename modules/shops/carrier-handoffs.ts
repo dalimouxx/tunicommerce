@@ -21,7 +21,7 @@ export function parseHandoffPages(params:URLSearchParams):HandoffPages{
    throw new HttpError(400,'Paramètres de remise invalides');
  }
  const page=(key:string)=>{
-  const raw=params.get(key)||'1';
+  const raw=params.has(key)?params.get(key)!:'1';
   if(!/^[1-9][0-9]{0,3}$/.test(raw))throw new HttpError(400,'Page de remise invalide');
   return Number(raw);
  };
