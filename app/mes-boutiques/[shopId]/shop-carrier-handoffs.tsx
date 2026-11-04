@@ -1,0 +1,77 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+
+type Row={id:string;reference:string;carrier:string;tracking:string};
+type Receipt={id:string;orderReference:string;carrier:string;tracking:string;proofReference:string;at:string};
+type Response={pending?:Row[];receipts?:Receipt[];pendingCount?:number;totalRecorded?:number;alreadyApplied?:boolean;error?:string};
+
+export default function ShopCarrierHandoffs({shopId}:{shopId:string}){
+ const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/carrier-handoffs';
+ const [pending,setPending]=useState<Row[]>([]);
+ const [receipts,setReceipts]=useState<Receipt[]>([]);
+ const [proofs,setProofs]=useState<Record<string,string>>({});
+ const [count,setCount]=useState(0);
+ const [notice,setNotice]=useState('');
+ const [busy,setBusy]=useState('');
+ const [loading,setLoading]=useState(true);
+ const keys=useRef<Record<string,{requestId:string;proof:string}>>({});
+ useEffect(()=>{
+  const controller=new AbortController();
+  fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{
+   const data=await response.json() as Response;
+   if(!response.ok)throw Error(data.error||'Remises indisponibles');
+   if(!controller.signal.aborted){setPending(data.pending||[]);setReceipts(data.receipts||[]);setCount(data.pendingCount||0);}
+  }).catch(error=>{if(!controller.signal.aborted)setNotice(error instanceof Error?error.message:'Erreur réseau');})
+   .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+  return()=>controller.abort();
+ },[url]);
+ async function record(order:Row){
+  const proofReference=(proofs[order.id]||'').trim();
+  if(proofReference.length<6){setNotice('Référence du bon de remise requise (6 caractères minimum).');return;}
+  if(!window.confirm('Confirmer que le colis '+order.reference+' a été remis au transporteur indiqué ? Cette déclaration ne confirme ni une livraison finale ni un règlement COD.'))return;
+  const existing=keys.current[order.id];
+  const requestId=existing?.proof===proofReference?existing.requestId:crypto.randomUUID();
+  keys.current[order.id]={proof:proofReference,requestId};
+  setBusy(order.id);setNotice('');
+  try{
+   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'recordCarrierHandoff',requestId,payload:{orderId:order.id,proofReference}})});
+   const data=await response.json() as Response;
+   if(!response.ok)throw Error(data.error||'Remise refusée');
+   setPending(data.pending||[]);setReceipts(data.receipts||[]);setCount(data.pendingCount||0);
+   delete keys.current[order.id];
+   setNotice(data.alreadyApplied?'La remise avait déjà été enregistrée.':
+    'Remise déclarée avec référence et historique. Aucun statut de livraison ni paiement n’a été modifié.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez avec la même référence.');}
+  finally{setBusy('');}
+ }
+ return <section style={{background:'white',border:'1px solid #dce6ec',borderRadius:16,padding:22,marginTop:16}}>
+  <h2>Remise physique des colis · Registre</h2>
+  <p>Déclarez la remise au transporteur uniquement lorsqu'elle a réellement eu lieu. La référence du bon reste dans l'historique ; ce n'est ni une confirmation API du transporteur, ni une preuve d'encaissement COD.</p>
+  {notice&&<p role="status" aria-live="polite">{notice}</p>}
+  {loading?<p>Chargement…</p>:<>
+   <p><strong>{count}</strong> colis expédié(s) sans déclaration de remise · <strong>{receipts.length}</strong> dernier(s) bon(s) enregistrés.</p>
+   <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',textAlign:'left'}}>
+    <thead><tr><th>Commande</th><th>Transporteur</th><th>Numéro de suivi</th><th>Bon de remise</th></tr></thead>
+    <tbody>{pending.slice(0,40).map(order=><tr key={order.id} style={{borderTop:'1px solid #e2e7eb'}}>
+     <td style={{padding:8}}>{order.reference}</td><td style={{padding:8}}>{order.carrier}</td>
+     <td style={{padding:8}}>{order.tracking}</td>
+     <td style={{padding:8}}><input aria-label={'Bon de remise '+order.reference} maxLength={160}
+      placeholder="Référence du bon signé" value={proofs[order.id]||''}
+      onChange={event=>{setProofs(x=>({...x,[order.id]:event.target.value}));delete keys.current[order.id];}}/>
+      <button type="button" disabled={!!busy||(proofs[order.id]||'').trim().length<6}
+       onClick={()=>void record(order)}>Déclarer la remise</button></td>
+    </tr>)}</tbody></table></div>
+   {count===0&&<p>Aucune remise en attente sur les commandes actuellement expédiées.</p>}
+   {count>40&&<p>Seules les 40 premières remises à traiter sont affichées.</p>}
+   <h3>Historique des bons</h3>
+   <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',textAlign:'left'}}>
+    <thead><tr><th>Commande</th><th>Transporteur</th><th>Bon</th><th>Date d'enregistrement</th></tr></thead>
+    <tbody>{receipts.map(receipt=><tr key={receipt.id} style={{borderTop:'1px solid #e2e7eb'}}>
+     <td style={{padding:8}}>{receipt.orderReference}</td><td style={{padding:8}}>{receipt.carrier}</td>
+     <td style={{padding:8}}>{receipt.proofReference}</td>
+     <td style={{padding:8}}>{new Date(receipt.at).toLocaleString('fr-TN')}</td>
+    </tr>)}</tbody></table></div>
+  </>}
+ </section>;
+}
