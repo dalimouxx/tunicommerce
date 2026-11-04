@@ -15,3 +15,15 @@
 .primary{background:#126c65;color:white}.secondary,.back{color:#1c4e57;border:1px solid #bed5d8;background:white}
 .note{color:#69788b;font-size:13px;line-height:1.6;margin-top:22px}
 @media(max-width:680px){.shell{padding:25px 14px}.header{flex-direction:column}.header h1{font-size:31px}}
+
+.workspaceShell{background:#fff;border:1px solid #dce6eb;border-radius:20px;padding:20px;margin:22px 0;box-shadow:0 6px 24px #10283c09}
+.workspaceHeader h2{margin:0 0 8px;font-size:24px}
+.workspaceHeader p,.workspacePanel>p{color:#526176;line-height:1.5;margin:0 0 16px}
+.workspaceNavigation{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:4px 2px 14px;margin-bottom:16px}
+.workspaceTab,.workspaceTabActive{border:1px solid #c5d8dc;background:#f5faf9;color:#244954;border-radius:12px;padding:11px 14px;font-weight:700;white-space:nowrap;cursor:pointer;font-size:14px;flex-shrink:0}
+.workspaceTab:hover{background:#e6f1f0}
+.workspaceTabActive{color:#fff;background:#126c65;border-color:#126c65}
+.workspaceTab:focus-visible,.workspaceTabActive:focus-visible{outline:3px solid #54bba8;outline-offset:2px}
+.workspacePanel{border-top:1px solid #e0e8ed;padding-top:16px;min-width:0}
+.workspacePanel>h3{font-size:21px;margin:0 0 7px}
+@media(max-width:680px){.workspaceShell{padding:12px;border-radius:14px}.workspaceNavigation{margin-left:-3px;margin-right:-3px}.workspaceTab,.workspaceTabActive{padding:12px}.workspacePanel{overflow-wrap:anywhere}}
