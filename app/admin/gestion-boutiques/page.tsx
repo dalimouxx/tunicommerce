@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
-import {getCurrentUser} from '../../../modules/auth/session';
+import {getSuperAdminUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
 import {legacyShopName} from '../../../modules/platform/admin-overview';
 import AdminPanel,{type ManagedShop} from '../../../components/admin-panel';
@@ -10,8 +10,8 @@ export const dynamic='force-dynamic';
 export default async function ShopManagement({
  searchParams
 }:{searchParams:Promise<{shop?:string,filtre?:string}>}){
- const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ const actor=await getSuperAdminUser();
+ if(!actor)redirect('/connexion/admin');
  if(actor.role!=='ADMIN')redirect('/marchand');
  const [workspaces,options,plans]=await Promise.all([
   prisma.workspace.findMany({

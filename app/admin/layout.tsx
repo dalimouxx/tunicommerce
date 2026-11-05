@@ -1,15 +1,16 @@
 import {redirect} from 'next/navigation';
 import Link from 'next/link';
 import {ShieldCheck,Store,Users,Globe,Layers,Settings2,Receipt,Activity,ArrowLeftRight,CircleDollarSign,Banknote,Landmark} from 'lucide-react';
-import {getCurrentUser} from '../../modules/auth/session';
+import {getSuperAdminUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import styles from './platform.module.css';
+import PortalLogout from '../../components/portal-logout';
 
 export const dynamic='force-dynamic';
 
 export default async function AdminLayout({children}:{children:React.ReactNode}){
- const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ const actor=await getSuperAdminUser();
+ if(!actor)redirect('/connexion/admin');
  if(actor.role!=='ADMIN')redirect('/marchand');
  const ownWorkspace=await prisma.workspace.findUnique({
   where:{ownerId:actor.userId},select:{id:true}
@@ -39,12 +40,12 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
    </nav>
    <div className={styles.sectionLabel}>MON ESPACE</div>
    <nav className={styles.navigation}>
-    {ownWorkspace&&<Link href="/marchand"><ArrowLeftRight size={18}/> Ma boutique personnelle</Link>}
+    {ownWorkspace&&<Link href="/connexion/boutique"><ArrowLeftRight size={18}/> Ma boutique personnelle · autre connexion</Link>}
     <Link href="/admin/gestion-boutiques"><Settings2 size={18}/> Configuration des boutiques</Link>
    </nav>
    <div className={styles.identity}>
     <span className={styles.identityIcon}><ShieldCheck size={19}/></span>
-    <div><strong>Super-administrateur</strong><small>{actor.email}</small></div>
+    <div><strong>Super-administrateur</strong><small>{actor.email}</small><PortalLogout/></div>
    </div>
   </aside>
   <main className={styles.main}>

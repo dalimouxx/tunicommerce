@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {notFound,redirect} from 'next/navigation';
 import {ArrowUpRight,Store,Package,ShoppingBag,Users,Wallet,ShieldCheck,Clock,ExternalLink,Link2Off} from 'lucide-react';
-import {getCurrentUser} from '../../../../modules/auth/session';
+import {getSuperAdminUser} from '../../../../modules/auth/session';
 import {prisma} from '../../../../modules/storage/client';
 import {normalizeState} from '../../../../modules/commerce/normalize';
 import {money,type State} from '../../../../modules/commerce/types';
@@ -13,8 +13,8 @@ import PlanOverrideEditor from '../../../../components/plan-override-editor';
 export const dynamic='force-dynamic';
 
 export default async function AdminShopDetails({params}:{params:Promise<{id:string}>}){
- const user=await getCurrentUser();
- if(!user)redirect('/login');
+ const user=await getSuperAdminUser();
+ if(!user)redirect('/connexion/admin');
  if(user.role!=='ADMIN')redirect('/marchand');
  const {id}=await params;
  if(!/^[0-9a-f-]{36}$/i.test(id))notFound();

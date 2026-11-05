@@ -66,7 +66,7 @@ export default function SignupForm(){
      <button className={styles.submit} type="submit" disabled={busy||slug.length<3}>{busy?'Création…':'Créer ma boutique'} <ArrowRight size={18}/></button>
      <p className={styles.security}><ShieldCheck size={14}/> Espace privé par marchand · Essai initial de 30 jours · Configuration avant publication</p>
     </form>
-    <div className={styles.foot}>Vous avez déjà un compte ? <Link href="/login">Se connecter</Link></div>
+    <div className={styles.foot}>Vous avez déjà un compte ? <Link href="/connexion/boutique">Se connecter</Link></div>
    </div>
   </main>
  </div>;

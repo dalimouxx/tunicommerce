@@ -37,7 +37,7 @@ export async function checkAnonymousBoundaries({
       throw Error('Expected login redirect, received '+response.status);
      const location=response.headers.get('location');
      const redirect=new URL(location||'',origin);
-     if(redirect.origin!==origin||redirect.pathname!=='/login')
+     if(redirect.origin!==origin||redirect.pathname!=='/connexion/admin')
       throw Error('Unexpected admin redirect destination');
     }
     last='';break;

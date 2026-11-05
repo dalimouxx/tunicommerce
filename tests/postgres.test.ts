@@ -14,9 +14,9 @@ const {digest}=await import('../modules/auth/crypto');
 const base='http://127.0.0.1:3137';const origin='https://test.local';
 const token=randomBytes(32).toString('hex');const password=randomBytes(24).toString('hex');
 let child:ReturnType<typeof spawn>;
-let cookie='';
+let cookie='';let adminCookie='';
 const post=(path:string,body:unknown,session=cookie,requestOrigin=origin)=>fetch(base+path,{method:'POST',headers:{origin:requestOrigin,'content-type':'application/json',cookie:session},body:JSON.stringify(body),redirect:'manual'});
-async function login(){const r=await post('/api/auth/login',{email:'owner@example.test',password},'');assert.equal(r.status,200);cookie=r.headers.get('set-cookie')!.split(';')[0];return r;}
+async function login(){const r=await post('/api/auth/merchant/login',{email:'owner@example.test',password},'');assert.equal(r.status,200);cookie=r.headers.get('set-cookie')!.split(';')[0];return r;}
 
 test('PostgreSQL and HTTP integration',async t=>{
  try{
@@ -24,7 +24,7 @@ test('PostgreSQL and HTTP integration',async t=>{
   await prisma.platformAudit.deleteMany();await prisma.publicReceipt.deleteMany();await prisma.session.deleteMany();await prisma.workspace.deleteMany();await prisma.user.deleteMany();await prisma.setupLock.deleteMany();await prisma.authThrottle.deleteMany();
   child=spawn(process.execPath,['scripts/start.mjs'],{env:{...process.env,NODE_ENV:'production',PORT:'3137',DATABASE_URL:url,APP_URL:origin,SETUP_TOKEN:token},stdio:'ignore'});
   let ready=false;for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error('Test web server exited');try{const r=await fetch(base+'/api/health');if(r.ok){ready=true;break;}}catch{}await delay(200);}assert.ok(ready,'Web server ready');
-  await t.test('Anonymous requests and forged ChatGPT headers cannot access data',async()=>{const r=await fetch(base+'/api/commerce',{headers:{'oai-authenticated-user-id':'attacker','oai-authenticated-user-email':'attacker@example.test'}});assert.equal(r.status,401);const page=await fetch(base,{redirect:'manual'});assert.equal(page.status,307);assert.ok(page.headers.get('location')?.includes('/login'));});
+  await t.test('Anonymous requests and forged ChatGPT headers cannot access data',async()=>{const r=await fetch(base+'/api/commerce',{headers:{'oai-authenticated-user-id':'attacker','oai-authenticated-user-email':'attacker@example.test'}});assert.equal(r.status,401);const page=await fetch(base,{redirect:'manual'});assert.equal(page.status,307);assert.ok(page.headers.get('location')?.includes('/connexion/boutique'));});
   await t.test('Setup requires the secret and can create only one owner',async()=>{const input={email:'OWNER@example.test',name:'Owner Test',password,token};assert.equal((await post('/api/auth/setup',{...input,token:'bad'.repeat(20)},'')).status,403);assert.equal((await post('/api/auth/setup',input,'','https://evil.test')).status,403);const replies=await Promise.all([post('/api/auth/setup',input,''),post('/api/auth/setup',input,'')]);assert.deepEqual(replies.map(r=>r.status).sort(),[201,409]);assert.equal(await prisma.user.count(),1);});
   await t.test('Login rejects invalid password and creates a secure hashed session',async()=>{assert.equal((await post('/api/auth/login',{email:'owner@example.test',password:'wrong'},'')).status,401);const r=await login();const header=r.headers.get('set-cookie')!;assert.match(header,/HttpOnly/i);assert.match(header,/Secure/i);assert.match(header,/SameSite=lax/i);assert.match(header,/__Host-tunicommerce/);const raw=cookie.split('=')[1];const row=await prisma.session.findUnique({where:{tokenHash:digest(raw)}});assert.ok(row);assert.notEqual(row.tokenHash,raw);});
   await t.test('Concurrent first workspace requests create a single workspace',async()=>{const results=await Promise.all([fetch(base+'/api/commerce',{headers:{cookie}}),fetch(base+'/api/commerce',{headers:{cookie}})]);assert.deepEqual(results.map(r=>r.status),[200,200]);assert.equal(await prisma.workspace.count(),1);});
@@ -32,16 +32,17 @@ test('PostgreSQL and HTTP integration',async t=>{
   await t.test('PostgreSQL CAS rejects stale writes and isolates owners',async()=>{const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});const second=await prisma.user.create({data:{email:'second@example.test',name:'Test',passwordHash:'not-a-real-password'}});const a=await readWorkspace(owner.id);const b=await readWorkspace(second.id);const next=applyAction(a.state,'settings',{name:'Changed',phone:'',address:'',shipping:9000});const results=await Promise.all([saveWorkspace(owner.id,next,a.version),saveWorkspace(owner.id,next,a.version)]);assert.equal(results.filter(Boolean).length,1);assert.equal(await saveWorkspace('unknown-owner',next,a.version),false);assert.equal((await readWorkspace(second.id)).state.shop.name,b.state.shop.name);});
   await t.test('Platform roles, tenant isolation, publication and checkout are enforced',async()=>{
     const owner=await prisma.user.findUniqueOrThrow({where:{email:'owner@example.test'}});assert.equal(owner.role,'ADMIN');
+     const adminLogin=await post('/api/auth/admin/login',{email:'owner@example.test',password},'');assert.equal(adminLogin.status,200);adminCookie=adminLogin.headers.get('set-cookie')!.split(';')[0];
     const shop=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
     const config={slug:'test-store',published:true,plan:'PRO',subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000).toISOString()};
     assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},'')).status,401);
-    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config})).status,200);
+    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},adminCookie)).status,200);
     const html=await (await fetch(base+'/boutiques/test-store')).text();assert.ok(html.includes('Casque sans fil'));assert.ok(!html.includes('owner@example.test'));assert.ok(!html.includes('22111222'));assert.ok(!html.includes('passwordHash'));
     const create={action:'create',name:'New Merchant',email:'merchant@example.test',password,shopName:'New Store',...config,slug:'second-store'};
-    assert.equal((await post('/api/admin/shops',create)).status,200);
+    assert.equal((await post('/api/admin/shops',create,adminCookie)).status,200);
     const merchant=await prisma.user.findUniqueOrThrow({where:{email:create.email}});assert.equal(merchant.role,'MERCHANT');
     const loginResponse=await post('/api/auth/login',{email:create.email,password},'');const merchantCookie=loginResponse.headers.get('set-cookie')!.split(';')[0];
-    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},merchantCookie)).status,403);
+    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},merchantCookie)).status,401);
     const own=await (await fetch(base+'/api/commerce',{headers:{cookie:merchantCookie}})).json();assert.equal(own.state.shop.name,'New Store');assert.equal(own.state.orders.length,0);
     const body={requestId:crypto.randomUUID(),customer:{name:'Public Buyer',phone:'22999888',city:'Tunis',address:'Public Street'},items:[{productId:'p1',quantity:1}],ownerId:merchant.id,total:1};
     const before=await readWorkspace(owner.id);
@@ -59,11 +60,11 @@ test('PostgreSQL and HTTP integration',async t=>{
     assert.equal((await post('/api/commerce',resolution)).status,200);const cancelled=await readWorkspace(owner.id);assert.equal(cancelled.state.orders[0].status,'CANCELLED');assert.equal(cancelled.state.products[0].stock,before.state.products[0].stock);
     assert.equal((await post('/api/boutiques/second-store/checkout',{...body,requestId:crypto.randomUUID()},'')).status,400);
     for(const change of [{subscriptionStatus:'SUSPENDED'},{subscriptionEndsAt:new Date(0).toISOString()},{published:false}]){
-      assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config,...change})).status,200);
+      assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config,...change},adminCookie)).status,200);
       assert.equal((await fetch(base+'/boutiques/test-store')).status,404);
       assert.equal((await post('/api/boutiques/test-store/checkout',{...body,requestId:crypto.randomUUID()},'')).status,403);
     }
-    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},cookie,'https://evil.test')).status,403);
+    assert.equal((await post('/api/admin/shops',{action:'update',id:shop.id,...config},adminCookie,'https://evil.test')).status,403);
     assert.ok(await prisma.platformAudit.count()>=5);
   });
   await t.test('Expired and revoked sessions cannot be reused',async()=>{const raw=cookie.split('=')[1];await prisma.session.update({where:{tokenHash:digest(raw)},data:{expiresAt:new Date(0)}});assert.equal((await fetch(base+'/api/commerce',{headers:{cookie}})).status,401);await login();const old=cookie;assert.equal((await post('/api/auth/logout',{})).status,200);assert.equal((await fetch(base+'/api/commerce',{headers:{cookie:old}})).status,401);});

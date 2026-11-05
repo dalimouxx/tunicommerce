@@ -70,7 +70,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    name:'Admin Supervision',email:'admin@example.test',password,token
   });
   assert.equal(setup.status,201);
-  const login=await post('/api/auth/login',{email:'admin@example.test',password});
+  const login=await post('/api/auth/admin/login',{email:'admin@example.test',password});
   assert.equal(login.status,200);
   const adminCookie=login.headers.get('set-cookie')!.split(';')[0];
 
@@ -136,9 +136,9 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    merchantCookie=login.headers.get('set-cookie')!.split(';')[0];
    for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/abonnements/complet','/admin/journal','/admin/gestion-boutiques','/admin/boutiques/'+merchantWorkspaceId])
     assert.equal((await get(path,merchantCookie)).status,307,path);
-   assert.equal((await get('/api/admin/subscriptions/export',merchantCookie)).status,403);
-   assert.equal((await post('/api/admin/shops',{action:'update',id:merchantWorkspaceId,...config('galerie-gabes')},merchantCookie)).status,403);
-   assert.equal((await post('/api/admin/shops',{action:'link',id:merchantWorkspaceId},merchantCookie)).status,403);
+   assert.equal((await get('/api/admin/subscriptions/export',merchantCookie)).status,401);
+   assert.equal((await post('/api/admin/shops',{action:'update',id:merchantWorkspaceId,...config('galerie-gabes')},merchantCookie)).status,401);
+   assert.equal((await post('/api/admin/shops',{action:'link',id:merchantWorkspaceId},merchantCookie)).status,401);
    assert.equal((await post('/api/admin/shops',{action:'link',id:merchantWorkspaceId},adminCookie,'https://wrong-origin.test')).status,403);
   });
 
@@ -163,7 +163,11 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
   });
 
   await t.test('Admin can explicitly link existing legacy workspace without changing commerce data',async()=>{
-   assert.equal((await get('/api/commerce',adminCookie)).status,200);
+   const personalLogin=await post('/api/auth/merchant/login',{email:'admin@example.test',password});
+   assert.equal(personalLogin.status,200);
+   const personalCookie=personalLogin.headers.get('set-cookie')!.split(';')[0];
+   assert.equal((await get('/api/commerce',adminCookie)).status,401);
+   assert.equal((await get('/api/commerce',personalCookie)).status,200);
    const owner=await prisma.user.findUniqueOrThrow({where:{email:'admin@example.test'}});
    const old=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    assert.equal(await prisma.shop.count({where:{legacyWorkspaceId:old.id}}),0);
@@ -187,7 +191,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    const after=await prisma.workspace.findUniqueOrThrow({where:{id:old.id}});
    assert.deepEqual(after.data,before,'No legacy commerce data changed');
    assert.equal((await get('/admin/boutiques/'+old.id,adminCookie)).status,200);
-   assert.equal((await get('/marchand',adminCookie)).status,200);
+   assert.equal((await get('/marchand',personalCookie)).status,200);
    const collision=await post('/api/admin/shops',{
     action:'update',id:old.id,...config('galerie-mode-gabes')
    },adminCookie);

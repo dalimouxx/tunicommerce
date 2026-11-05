@@ -100,7 +100,7 @@ test('SaaS configurable catalog, quota exceptions and COD safety',async t=>{
   const setup=await post('/api/auth/setup',{name:'Plateforme SaaS',
    email:'admin@example.test',password,token:setupToken});
   assert.equal(setup.status,201);
-  const login=await post('/api/auth/login',{email:'admin@example.test',password});
+  const login=await post('/api/auth/admin/login',{email:'admin@example.test',password});
   assert.equal(login.status,200);
   const adminCookie=login.headers.get('set-cookie')!.split(';')[0];
 
@@ -139,8 +139,8 @@ test('SaaS configurable catalog, quota exceptions and COD safety',async t=>{
    const login=await post('/api/auth/login',{email:'merchant@example.test',password});
    assert.equal(login.status,200);
    merchantCookie=login.headers.get('set-cookie')!.split(';')[0];
-   assert.equal((await get('/api/admin/plans',merchantCookie)).status,403);
-   assert.equal((await post('/api/admin/plans',newPlan,merchantCookie)).status,403);
+   assert.equal((await get('/api/admin/plans',merchantCookie)).status,401);
+   assert.equal((await post('/api/admin/plans',newPlan,merchantCookie)).status,401);
    assert.equal((await post('/api/admin/plans',{...newPlan,enabled:false},adminCookie)).status,409);
    assert.equal((await post('/api/admin/shops',{
     action:'update',id:workspaceId,slug:'boutique-pilote',published:false,
@@ -200,7 +200,7 @@ test('SaaS configurable catalog, quota exceptions and COD safety',async t=>{
     workspaceId,maxProducts:2,maxOrdersPerMonth:2,maxPhotos:2,
     note:'Boutique pilote sous autorisation'
    };
-   assert.equal((await post('/api/admin/plan-overrides',input,merchantCookie)).status,403);
+   assert.equal((await post('/api/admin/plan-overrides',input,merchantCookie)).status,401);
    assert.equal((await post('/api/admin/plan-overrides',input,adminCookie,'https://evil.test')).status,403);
    const save=await post('/api/admin/plan-overrides',input,adminCookie);
    assert.equal(save.status,200);
