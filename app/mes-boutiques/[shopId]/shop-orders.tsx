@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
 import {pageOperationalQueue} from '../../../modules/shops/operational-queues';
+import {merchantOrdersCsv} from '../../../modules/shops/merchant-order-export';
 
 type Order={id:string;reference:string;status:string;total:number;source:string;createdAt:string;items:{name:string;quantity:number}[]};
 type Product={id:string;name:string;stock:number;price:number;active:boolean};
@@ -45,6 +46,18 @@ export default function ShopOrders({shopId}:{shopId:string}){
    .finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[base]);
+ function exportOrders(){
+  try{
+   if(filteredOrders.length===0)return;
+   const csv=merchantOrdersCsv(filteredOrders);
+   const href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+   const link=document.createElement('a');
+   link.href=href;link.download='commandes-boutique.csv';
+   document.body.appendChild(link);link.click();link.remove();
+   window.setTimeout(()=>URL.revokeObjectURL(href),1000);
+   setNotice('Export CSV créé depuis les commandes filtrées. Aucune donnée n’a été envoyée à un prestataire.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Export indisponible');}
+ }
  async function create(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
   const count=Number(quantity);
@@ -88,6 +101,9 @@ export default function ShopOrders({shopId}:{shopId:string}){
     <label>Rechercher une commande<input aria-label="Rechercher par référence ou article" value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}} placeholder="Référence ou produit" style={{display:'block',padding:10}}/></label>
     <label>Filtrer par statut<select aria-label="Filtrer par statut" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}} style={{display:'block',padding:10}}><option value="ALL">Tous les statuts</option>{statuses.map(status=><option key={status} value={status}>{status}</option>)}</select></label>
     <span aria-live="polite">{filteredOrders.length} commande(s) correspondante(s)</span>
+    <button type="button" disabled={filteredOrders.length===0||busy}
+     onClick={exportOrders}>Exporter les {filteredOrders.length} commande(s) filtrée(s) · CSV</button>
+    <small>Fichier privé sans adresses ni téléphones d’acheteurs. Conservez-le en sécurité.</small>
    </div>
    <nav aria-label="Pages des commandes" style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',margin:'12px 0'}}>
     <button type="button" disabled={current.page===1||busy} onClick={()=>setPage(n=>Math.max(1,n-1))}>Précédentes</button>

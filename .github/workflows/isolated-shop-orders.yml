@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'modules/shops/orders.ts'
+      - 'modules/shops/merchant-order-export.ts'
+      - 'app/mes-boutiques/[shopId]/shop-orders.tsx'
+      - 'tests/merchant-order-export.test.ts'
       - 'app/api/v1/shops/**/orders/**'
       - 'tests/isolated-shop-orders.test.ts'
       - '.github/workflows/isolated-shop-orders.yml'
@@ -18,6 +21,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: node --import tsx --test tests/isolated-shop-orders.test.ts
+      - run: node --import tsx --test tests/isolated-shop-orders.test.ts tests/merchant-order-export.test.ts
       - run: npm run typecheck
       - run: npm run build
