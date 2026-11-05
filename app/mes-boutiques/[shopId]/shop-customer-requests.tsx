@@ -1,23 +1,21 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import {merchantCustomerRequestQueue,type MerchantCustomerRequest as CustomerRequest} from '../../../modules/shops/customer-request-queue';
 
-type CustomerRequest={id:string;type:'CANCEL'|'RETURN';reason:string;at:string;
- status:'PENDING'|'ACCEPTED'|'REJECTED';reply?:string};
 type Order={id:string;reference:string;status:string;customerRequests?:CustomerRequest[]};
 type ResponseBody={orders?:Order[];alreadyApplied?:boolean;error?:string};
 
 export default function ShopCustomerRequests({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/orders';
  const [orders,setOrders]=useState<Order[]>([]);
+ const [pendingPage,setPendingPage]=useState(1);
+ const [historyPage,setHistoryPage]=useState(1);
  const [reply,setReply]=useState<Record<string,string>>({});
  const [notice,setNotice]=useState('');
  const [busy,setBusy]=useState('');
  const [loading,setLoading]=useState(true);
  const pending=useRef<Record<string,{id:string;body:string}>>({});
- const pendingRows=orders.flatMap(order=>(order.customerRequests||[])
-  .filter(request=>request.status==='PENDING').map(request=>({order,request})));
- const history=orders.flatMap(order=>(order.customerRequests||[])
-  .filter(request=>request.status!=='PENDING').map(request=>({order,request})));
+ const {pending:pendingQueue,history:historyQueue}=merchantCustomerRequestQueue(orders,pendingPage,historyPage);
  async function refresh(){
   setLoading(true);setNotice('');
   try{
@@ -73,9 +71,14 @@ export default function ShopCustomerRequests({shopId}:{shopId:string}){
   <button type="button" disabled={!!busy} onClick={()=>void refresh()}>Actualiser les demandes</button>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement…</p>:<>
-   <p><strong>{pendingRows.length}</strong> demande(s) en attente · {history.length} décision(s) déjà enregistrée(s).</p>
+   <p><strong>{pendingQueue.total}</strong> demande(s) en attente · {historyQueue.total} décision(s) enregistrée(s).</p>
+   <nav aria-label="Pages des demandes en attente" style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',margin:'12px 0'}}>
+    <button type="button" disabled={pendingQueue.page===1||!!busy} onClick={()=>setPendingPage(n=>Math.max(1,n-1))}>Demandes précédentes</button>
+    <span>À traiter · page {pendingQueue.page}/{pendingQueue.totalPages}</span>
+    <button type="button" disabled={pendingQueue.page>=pendingQueue.totalPages||!!busy} onClick={()=>setPendingPage(n=>Math.min(n+1,pendingQueue.totalPages))}>Demandes suivantes</button>
+   </nav>
    <div style={{display:'grid',gap:12}}>
-    {pendingRows.slice(0,50).map(({order,request})=><article key={request.id}
+    {pendingQueue.items.map(({order,request})=><article key={request.id}
      style={{padding:14,border:'1px solid #dde6ed',borderRadius:12}}>
      <h3>{order.reference} · {request.type==='CANCEL'?'Annulation':'Retour'}</h3>
      <p>État de la commande : {order.status} · reçu le {new Date(request.at).toLocaleString('fr-TN')}</p>
@@ -93,11 +96,16 @@ export default function ShopCustomerRequests({shopId}:{shopId:string}){
      </div>
     </article>)}
    </div>
-   {pendingRows.length===0&&<p>Aucune demande client à traiter.</p>}
-   {pendingRows.length>50&&<p>Seules les 50 premières demandes sont affichées.</p>}
-   {history.length>0&&<details style={{marginTop:18}}>
-    <summary>Historique des décisions ({history.length})</summary>
-    <ul>{history.slice(0,100).map(({order,request})=><li key={request.id}>
+   {pendingQueue.total===0&&<p>Aucune demande client à traiter.</p>}
+
+   {historyQueue.total>0&&<details style={{marginTop:18}}>
+    <summary>Historique des décisions ({historyQueue.total})</summary>
+    <nav aria-label="Pages de l’historique SAV" style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',margin:'12px 0'}}>
+     <button type="button" disabled={historyQueue.page===1||!!busy} onClick={()=>setHistoryPage(n=>Math.max(1,n-1))}>Décisions précédentes</button>
+     <span>Historique · page {historyQueue.page}/{historyQueue.totalPages}</span>
+     <button type="button" disabled={historyQueue.page>=historyQueue.totalPages||!!busy} onClick={()=>setHistoryPage(n=>Math.min(n+1,historyQueue.totalPages))}>Décisions suivantes</button>
+    </nav>
+    <ul>{historyQueue.items.map(({order,request})=><li key={request.id}>
      {order.reference} · {request.type==='CANCEL'?'Annulation':'Retour'} · {request.status==='ACCEPTED'?'Acceptée':'Refusée'}
      · {request.reply||'Sans réponse affichable'}
     </li>)}</ul>
