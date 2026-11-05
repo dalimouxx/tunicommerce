@@ -7,7 +7,10 @@ const paths=[
  {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/orders',kind:'api'},
  {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/dispatch-manifest',kind:'api'},
  {path:'/api/v1/shops/00000000-0000-4000-8000-000000000001/cod-exceptions',kind:'api'},
- {path:'/admin',kind:'redirect'}
+ {path:'/admin',kind:'redirect'},
+ {path:'/admin/lancement',kind:'redirect'},
+ {path:'/admin/fiabilite',kind:'redirect'},
+ {path:'/admin/integrations',kind:'redirect'}
 ];
 
 /**

@@ -22,3 +22,7 @@ connectée avec des comptes de démonstration distincts.
 - Surveillance anonyme read-only élargie aux trois API privées de boutique : commandes, export transport et export audit COD. Le contrôle doit échouer si une de ces API devient accessible sans session.
 - En-têtes `Cache-Control: private, no-store` et `X-Robots-Tag` appliqués aussi aux nouvelles routes de suivi privé et aux API marchandes.
 - Ces tests ne constituent pas des tests métiers authentifiés et ne remplacent pas des alertes externes 24/7.
+
+## P1 — Vérification des nouvelles pages d'administration
+
+Le contrôle de sécurité anonyme vérifie maintenant également `/admin/lancement`, `/admin/fiabilite` et `/admin/integrations`, qui doivent toutes rediriger vers `/login` sans cookie ni session. Le nombre de points d'accès vérifiés passe de six à neuf. Les vérifications ne lisent aucun secret, ne consultent aucun compte marchand et n'altèrent aucune commande. Ce contrôle valide uniquement la barrière aux visiteurs anonymes ; l'autorisation des rôles est vérifiée séparément dans les tests multi-boutiques.
