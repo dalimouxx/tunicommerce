@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
 import {applyAction} from '../modules/commerce/service';
 import {isolatedStorefrontPreview} from '../modules/shops/storefront-preview';
-import {storefrontPalette,storefrontThemeInput,previewStorefrontTheme} from '../modules/shops/storefront-themes';
+import {storefrontPalette,storefrontThemeInput,previewStorefrontTheme,storefrontSectors,storefrontThemesForSector} from '../modules/shops/storefront-themes';
 
 test('default theme remains safe for older shop records',()=>{
  const state=initialState(false);
@@ -79,4 +79,21 @@ test('private temporary theme preview never changes persisted storefront selecti
   assert.equal(updated.shop.theme,code);
   assert.equal(state.shop.theme,undefined);
  }
+});
+
+test('studio sector gallery provides safe curated choices without hiding saved themes',()=>{
+ const all=storefrontThemesForSector('ALL');
+ assert.equal(all.length,10);
+ assert.equal(storefrontSectors.length,7);
+ for(const item of storefrontSectors){
+  const suggestions=storefrontThemesForSector(item.id);
+  assert.ok(suggestions.length>0);
+  assert.equal(new Set(suggestions).size,suggestions.length);
+  assert.ok(suggestions.every(code=>all.includes(code)));
+ }
+ assert.ok(storefrontThemesForSector('FASHION').includes('URBAN'));
+ assert.ok(storefrontThemesForSector('BEAUTY').includes('ECLAT'));
+ assert.ok(storefrontThemesForSector('WELLNESS').includes('ZEN'));
+ assert.equal(storefrontThemesForSector('url(javascript:alert(1))').length,10);
+ assert.equal(storefrontThemesForSector({payload:'CUSTOM_CSS'}).length,10);
 });

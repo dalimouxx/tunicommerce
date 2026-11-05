@@ -73,7 +73,7 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
   await t.test('Team screen is private and available to the signed-in merchant',async()=>{
    const anonymous=await fetch(base+'/equipe',{redirect:'manual'});
    assert.equal(anonymous.status,307);
-   assert.ok(anonymous.headers.get('location')?.includes('/login'));
+   assert.ok(anonymous.headers.get('location')?.includes('/connexion/boutique'));
    const authorized=await get('/equipe',ownerCookie);
    assert.equal(authorized.status,200);
    const html=await authorized.text();

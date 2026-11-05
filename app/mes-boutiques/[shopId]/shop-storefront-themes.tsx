@@ -1,12 +1,13 @@
 'use client';
 import Link from 'next/link';
 import {useEffect,useState} from 'react';
-import {storefrontThemeCodes,storefrontPalette,type StorefrontThemeCode} from '../../../modules/shops/storefront-themes';
+import {storefrontPalette,storefrontSectors,storefrontThemesForSector,type StorefrontThemeCode,type StorefrontSector} from '../../../modules/shops/storefront-themes';
 import styles from './storefront-theme-gallery.module.css';
 
 export default function ShopStorefrontThemes({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/storefront-theme';
  const [active,setActive]=useState<StorefrontThemeCode>('OASIS');
+ const [sector,setSector]=useState<StorefrontSector>('ALL');
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
  const [loading,setLoading]=useState(true);
@@ -44,8 +45,13 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}
     className={styles.previewLink}>Voir mon aperçu privé</Link>
   </header>
+  <div className={styles.sectorFilters} role="group" aria-label="Sélectionner mon domaine d’activité">
+   {storefrontSectors.map(item=><button key={item.id} type="button" aria-pressed={sector===item.id}
+    data-active={sector===item.id} onClick={()=>setSector(item.id)}>{item.label}</button>)}
+  </div>
+  <p className={styles.matchCount} role="status">{storefrontThemesForSector(sector).length} thèmes recommandés pour ce secteur. Tous les thèmes restent disponibles.</p>
   <div className={styles.grid}>
-   {storefrontThemeCodes.map(code=>{
+   {storefrontThemesForSector(sector).map(code=>{
     const t=storefrontPalette(code);
     return <article key={code} className={styles.themeCard} data-active={active===code}>
      <div className={styles.miniSite} data-theme={code} style={{
