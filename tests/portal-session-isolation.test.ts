@@ -14,6 +14,6 @@ test('Role-specific login rejects merchant credentials at super-admin portal',()
  assert.equal(portalRoleAllowed('MERCHANT','ADMIN'),false);
  assert.equal(portalRoleAllowed('ADMIN','ADMIN'),true);
  assert.equal(portalRoleAllowed('MERCHANT','MERCHANT'),true);
- assert.equal(portalRoleAllowed('ADMIN','MERCHANT'),true);
+ assert.equal(portalRoleAllowed('ADMIN','MERCHANT'),false);
  assert.equal(portalRoleAllowed('VIEWER','ADMIN'),false);
 });

@@ -87,7 +87,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    const endpoint='/api/v1/shops/'+a.id+'/orders';
    assert.equal((await get(endpoint)).status,401);
    assert.equal((await get(endpoint,ownerB.cookie)).status,404);
-   assert.equal((await get(endpoint,globalAdmin.cookie)).status,404);
+   assert.equal((await get(endpoint,globalAdmin.cookie)).status,401);
    assert.equal((await get(endpoint,agentA.cookie)).status,403);
    assert.equal((await get(endpoint,ownerA.cookie)).status,200);
    assert.equal((await get('/api/v1/shops/'+b.id+'/orders',ownerA.cookie)).status,404);
@@ -121,7 +121,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal(replay.status,200);
    assert.equal((await replay.json() as {alreadyApplied:boolean}).alreadyApplied,true);
    assert.equal((await get('/api/v1/shops/'+b.id+'/warehouses',ownerA.cookie)).status,404);
-   assert.equal((await get(endpoint,globalAdmin.cookie)).status,404);
+   assert.equal((await get(endpoint,globalAdmin.cookie)).status,401);
   });
 
   await t.test('P1/P3 dispatch CSV pagination requires owner session and never exports another tenant',async()=>{
@@ -134,7 +134,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    const path='/api/v1/shops/'+a.id+'/dispatch-manifest?status=READY&page=1&format=json';
    assert.equal((await get(path)).status,401);
    assert.equal((await get(path,ownerB.cookie)).status,404);
-   assert.equal((await get(path,globalAdmin.cookie)).status,404);
+   assert.equal((await get(path,globalAdmin.cookie)).status,401);
    assert.equal((await get(path,agentA.cookie)).status,403);
    const response=await get(path,ownerA.cookie);
    assert.equal(response.status,200);
@@ -157,7 +157,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    const base='/api/v1/shops/'+a.id+'/cod-exceptions';
    assert.equal((await get(base)).status,401);
    assert.equal((await get(base,ownerB.cookie)).status,404);
-   assert.equal((await get(base,globalAdmin.cookie)).status,404);
+   assert.equal((await get(base,globalAdmin.cookie)).status,401);
    assert.equal((await get(base,agentA.cookie)).status,403);
    const response=await get(base+'?format=json&filter=ALL&page=1',ownerA.cookie);
    assert.equal(response.status,200);
@@ -217,7 +217,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    const endpoint='/api/v1/shops/'+a.id+'/orders';
    assert.equal((await post(endpoint,body)).status,401);
    assert.equal((await post(endpoint,body,ownerB.cookie)).status,404);
-   assert.equal((await post(endpoint,body,globalAdmin.cookie)).status,404);
+   assert.equal((await post(endpoint,body,globalAdmin.cookie)).status,401);
    assert.equal((await post(endpoint,body,agentA.cookie)).status,403);
    const approved=await post(endpoint,body,ownerA.cookie);
    assert.equal(approved.status,200);
@@ -234,7 +234,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    const path='/api/v1/shops/'+a.id+'/carrier-handoffs';
    assert.equal((await get(path)).status,401);
    assert.equal((await get(path,ownerB.cookie)).status,404);
-   assert.equal((await get(path,globalAdmin.cookie)).status,404);
+   assert.equal((await get(path,globalAdmin.cookie)).status,401);
    assert.equal((await get(path,agentA.cookie)).status,403);
    const result=await get(path+'?pendingPage=1&receiptsPage=1',ownerA.cookie);
    assert.equal(result.status,200);

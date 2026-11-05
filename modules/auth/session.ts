@@ -11,6 +11,7 @@ async function readPortalSession(portal:AuthPortal){
   const session=await prisma.session.findUnique({where:{tokenHash:portalSessionHash(token,portal)},include:{user:{select:{id:true,email:true,name:true,role:true}}}});
   if(!session||session.expiresAt<=new Date())return null;
   if(portal==='ADMIN'&&session.user.role!=='ADMIN')return null;
+  if(portal==='MERCHANT'&&session.user.role!=='MERCHANT')return null;
   return {userId:session.user.id,email:session.user.email,displayName:session.user.name,role:session.user.role};
 }
 export async function getCurrentUser(){return readPortalSession('MERCHANT');}
