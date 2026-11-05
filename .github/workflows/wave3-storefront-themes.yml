@@ -10,6 +10,11 @@ on:
       - 'app/mes-boutiques/[shopId]/shop-storefront-themes.tsx'
       - 'app/mes-boutiques/[shopId]/page.tsx'
       - 'app/vitrines/[slug]/page.tsx'
+      - 'app/vitrines/[slug]/catalog-browser.tsx'
+      - 'app/vitrines/[slug]/public-cart.tsx'
+      - 'app/vitrines/[slug]/storefront-premium.module.css'
+      - 'app/vitrines/[slug]/produit/[productId]/page.tsx'
+      - 'app/mes-boutiques/[shopId]/storefront-theme-gallery.module.css'
       - 'tests/isolated-storefront-themes.test.ts'
       - '.github/workflows/wave3-storefront-themes.yml'
   workflow_dispatch:

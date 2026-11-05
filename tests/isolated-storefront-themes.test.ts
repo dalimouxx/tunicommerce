@@ -47,3 +47,17 @@ test('seven premium themes preserve existing codes and expose safe fixed palette
  assert.equal(storefrontThemeInput.safeParse({action:'saveStorefrontTheme',requestId:crypto.randomUUID(),
   payload:{theme:'BACKGROUND:url(javascript:alert(1))'}}).success,false);
 });
+
+test('theme CTA button colors maintain WCAG AA contrast',()=>{
+ const luminance=(color:string)=>{
+  const normalized=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255)
+   .map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);
+  return normalized[0]*.2126+normalized[1]*.7152+normalized[2]*.0722;
+ };
+ for(const code of ['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP']){
+  const palette=storefrontPalette(code);
+  const a=luminance(palette.accent),b=luminance(palette.accentText);
+  const contrast=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+  assert.ok(contrast>=4.5,code+' CTA contrast ratio '+contrast);
+ }
+});
