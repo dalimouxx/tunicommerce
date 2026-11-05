@@ -138,3 +138,6 @@
  .shell :global(.product-tile),.shell :global(.platform .primary){transition:none!important}
  .shell :global(.product-tile:hover){transform:none}
 }
+
+.shell :global(.catalog-results){margin:12px 0 18px;font-size:12px;font-weight:650;opacity:.76}
+.shell :global(.catalog-empty){margin:14px 0 28px;padding:24px;border-radius:14px;border:1px dashed currentColor;opacity:.78;line-height:1.7}
