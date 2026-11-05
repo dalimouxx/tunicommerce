@@ -36,7 +36,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <Link href="/admin/fiabilite"><ShieldCheck size={18}/> Fiabilité et contrôles</Link>
     <Link href="/admin/lancement"><ShieldCheck size={18}/> Préparation au lancement</Link>
     <Link href="/boutiques"><Globe size={18}/> Boutiques publiques</Link>
-    <Link href="/mes-boutiques"><Store size={18}/> Mes boutiques et accès</Link>
+    <Link href="/connexion/boutique"><Store size={18}/> Espace Boutique · connexion séparée</Link>
    </nav>
    <div className={styles.sectionLabel}>MON ESPACE</div>
    <nav className={styles.navigation}>

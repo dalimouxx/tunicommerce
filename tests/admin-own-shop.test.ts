@@ -87,7 +87,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
   await t.test('ADMIN without a personally owned workspace cannot access merchant-only controls',async()=>{
    const page=await get('/marchand',shopCookie);
    assert.equal(page.status,307);
-   assert.equal(page.headers.get('location'),'/admin');
+   assert.equal(page.headers.get('location'),'/connexion/admin');
    assert.equal((await get('/api/v1/appearance',shopCookie)).status,403);
    assert.equal((await get('/api/v1/onboarding',shopCookie)).status,403);
    assert.equal((await get('/api/v1/product-media',shopCookie)).status,403);
@@ -118,7 +118,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
    assert.ok(adminHtml.includes('/connexion/boutique'));
    assert.equal((await get('/api/admin/plans',shopCookie)).status,401);
    const merchantHtml=await (await get('/marchand',shopCookie)).text();
-   assert.ok(merchantHtml.includes('Administration globale'));
+   assert.ok(merchantHtml.includes('Super Admin · connexion indépendante'));
    assert.deepEqual((await (await get('/api/commerce',shopCookie)).json()).state,ownedAdminState);
   });
 
