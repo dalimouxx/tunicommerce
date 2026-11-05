@@ -74,24 +74,30 @@ test('Super-admin can manage only their own legacy boutique and still access glo
    name:'Administrateur plateforme',email:'platform@example.test',password,token:setupToken
   });
   assert.equal(setup.status,201);
-  const login=await post('/api/auth/login',{email:'platform@example.test',password});
+  const login=await post('/api/auth/admin/login',{email:'platform@example.test',password});
   assert.equal(login.status,200);
   const adminCookie=login.headers.get('set-cookie')!.split(';')[0];
+  const shopLogin=await post('/api/auth/merchant/login',{email:'platform@example.test',password});
+  assert.equal(shopLogin.status,200);
+  const shopCookie=shopLogin.headers.get('set-cookie')!.split(';')[0];
+  assert.notEqual(adminCookie.split('=')[0],shopCookie.split('=')[0]);
+  assert.equal((await get('/admin',adminCookie)).status,307);
+
 
   await t.test('ADMIN without a personally owned workspace cannot access merchant-only controls',async()=>{
-   const page=await get('/marchand',adminCookie);
+   const page=await get('/marchand',shopCookie);
    assert.equal(page.status,307);
    assert.equal(page.headers.get('location'),'/admin');
-   assert.equal((await get('/api/v1/appearance',adminCookie)).status,403);
-   assert.equal((await get('/api/v1/onboarding',adminCookie)).status,403);
-   assert.equal((await get('/api/v1/product-media',adminCookie)).status,403);
-   assert.equal((await put('/api/v1/media/logo',new Uint8Array(image),adminCookie)).status,403);
+   assert.equal((await get('/api/v1/appearance',shopCookie)).status,403);
+   assert.equal((await get('/api/v1/onboarding',shopCookie)).status,403);
+   assert.equal((await get('/api/v1/product-media',shopCookie)).status,403);
+   assert.equal((await put('/api/v1/media/logo',new Uint8Array(image),shopCookie)).status,403);
    assert.equal((await get('/admin',adminCookie)).status,200);
   });
 
   // The old ADMIN account has an existing personal commerce workspace in production.
   // Simulate this existing state via the established legacy workspace creation route.
-  const legacy=await get('/api/commerce',adminCookie);
+  const legacy=await get('/api/commerce',shopCookie);
   assert.equal(legacy.status,200);
   const ownedAdminState=(await legacy.json()).state;
   const adminUser=await prisma.user.findUniqueOrThrow({where:{email:'platform@example.test'}});
@@ -99,20 +105,20 @@ test('Super-admin can manage only their own legacy boutique and still access glo
   assert.ok(await prisma.workspace.findUnique({where:{ownerId:adminUser.id}}));
 
   await t.test('ADMIN with owned Workspace can switch to merchant dashboard and back',async()=>{
-   assert.equal((await get('/marchand',adminCookie)).status,200);
+   assert.equal((await get('/marchand',shopCookie)).status,200);
    assert.equal((await get('/admin',adminCookie)).status,200);
-   assert.equal((await get('/demarrage',adminCookie)).status,200);
-   assert.equal((await get('/personnalisation',adminCookie)).status,200);
-   assert.equal((await get('/mediatheque',adminCookie)).status,200);
-   assert.equal((await get('/api/v1/onboarding',adminCookie)).status,200);
-   assert.equal((await get('/api/v1/appearance',adminCookie)).status,200);
-   assert.equal((await get('/api/v1/product-media',adminCookie)).status,200);
+   assert.equal((await get('/demarrage',shopCookie)).status,200);
+   assert.equal((await get('/personnalisation',shopCookie)).status,200);
+   assert.equal((await get('/mediatheque',shopCookie)).status,200);
+   assert.equal((await get('/api/v1/onboarding',shopCookie)).status,200);
+   assert.equal((await get('/api/v1/appearance',shopCookie)).status,200);
+   assert.equal((await get('/api/v1/product-media',shopCookie)).status,200);
    const adminHtml=await (await get('/admin',adminCookie)).text();
    assert.ok(adminHtml.includes('Ma boutique personnelle'));
    assert.ok(adminHtml.includes('/marchand'));
-   const merchantHtml=await (await get('/marchand',adminCookie)).text();
+   const merchantHtml=await (await get('/marchand',shopCookie)).text();
    assert.ok(merchantHtml.includes('Administration globale'));
-   assert.deepEqual((await (await get('/api/commerce',adminCookie)).json()).state,ownedAdminState);
+   assert.deepEqual((await (await get('/api/commerce',shopCookie)).json()).state,ownedAdminState);
   });
 
   let mediaUrl='';
@@ -122,20 +128,20 @@ test('Super-admin can manage only their own legacy boutique and still access glo
     tagline:'Livraison en Tunisie',description:'Boutique personnelle',
     logoUrl:'',bannerUrl:''
    };
-   const saved=await post('/api/v1/appearance',appearance,adminCookie);
+   const saved=await post('/api/v1/appearance',appearance,shopCookie);
    assert.equal(saved.status,200);
-   const read=await get('/api/v1/appearance',adminCookie);
+   const read=await get('/api/v1/appearance',shopCookie);
    assert.equal((await read.json()).store.appearance.theme,'pop');
-   const media=await put('/api/v1/media/logo',new Uint8Array(image),adminCookie);
+   const media=await put('/api/v1/media/logo',new Uint8Array(image),shopCookie);
    assert.equal(media.status,201);
    mediaUrl=(await media.json()).url;
-   assert.equal((await get(mediaUrl,adminCookie)).status,200);
+   assert.equal((await get(mediaUrl,shopCookie)).status,200);
    assert.equal((await get(mediaUrl)).status,404);
-   const upload=await put('/api/v1/product-media',new Uint8Array(image),adminCookie);
+   const upload=await put('/api/v1/product-media',new Uint8Array(image),shopCookie);
    assert.equal(upload.status,201);
-   const photos=(await (await get('/api/v1/product-media',adminCookie)).json()).photos;
+   const photos=(await (await get('/api/v1/product-media',shopCookie)).json()).photos;
    assert.equal(photos.length,1);
-   assert.equal((await post('/api/v1/appearance',appearance,adminCookie,'https://evil.test')).status,403);
+   assert.equal((await post('/api/v1/appearance',appearance,shopCookie,'https://evil.test')).status,403);
   });
 
   const foreignCookie=await merchantAccount();
@@ -145,7 +151,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
    const foreignStore=await get('/api/commerce',foreignCookie);
    assert.equal(foreignStore.status,200);
    assert.equal((await foreignStore.json()).state.shop.name,'Boutique Externe');
-   const ownStore=(await (await get('/api/commerce',adminCookie)).json()).state;
+   const ownStore=(await (await get('/api/commerce',shopCookie)).json()).state;
    assert.notEqual(ownStore.shop.name,'Boutique Externe');
    assert.equal((await get('/admin',foreignCookie)).status,307);
    assert.equal((await get('/marchand',foreignCookie)).status,200);
@@ -157,7 +163,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
      category:'Mode',variant:'Normal',price:29000,cost:10000,stock:3,
      threshold:1,color:'#aabbcc'
     }
-   },adminCookie);
+   },shopCookie);
    assert.equal(malicious.status,200);
    assert.equal((await malicious.json()).state.products.length,ownedAdminState.products.length+1);
    const after=(await (await get('/api/commerce',foreignCookie)).json()).state;
