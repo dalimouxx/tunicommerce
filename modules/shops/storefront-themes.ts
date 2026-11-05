@@ -3,7 +3,7 @@ import type {State} from '../commerce/types';
 import {writeIsolatedCommerce} from './aggregate-quotas';
 
 /** Presets only: tenants can select a theme, never submit executable CSS. */
-export const storefrontThemeCodes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP'] as const;
+export const storefrontThemeCodes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN'] as const;
 export type StorefrontThemeCode=(typeof storefrontThemeCodes)[number];
 export const storefrontThemeInput=z.object({
  action:z.literal('saveStorefrontTheme'),requestId:z.string().uuid(),
@@ -27,7 +27,13 @@ const palettes:Record<StorefrontThemeCode,Palette>={
  PRESTIGE:{name:'Prestige',description:'Luxe discret · bijoux et accessoires',background:'#161a20',
   foreground:'#f8f1e6',accent:'#d9af6a',accentText:'#23190f',surface:'#242b32',muted:'#cfc4b6'},
  POP:{name:'Pop',description:'Énergique et moderne · beauté et cadeaux',background:'#fff2f5',
-  foreground:'#382338',accent:'#a42d67',accentText:'#ffffff',surface:'#ffffff',muted:'#755367'}
+  foreground:'#382338',accent:'#a42d67',accentText:'#ffffff',surface:'#ffffff',muted:'#755367'},
+ ECLAT:{name:'Éclat',description:'Beauté et cosmétiques · rose éditorial lumineux',background:'#fff7f4',
+  foreground:'#392b35',accent:'#982746',accentText:'#ffffff',surface:'#ffffff',muted:'#765c69'},
+ URBAN:{name:'Urban',description:'Streetwear et sport · contraste graphique urbain',background:'#edf1f3',
+  foreground:'#182b36',accent:'#204153',accentText:'#ffffff',surface:'#ffffff',muted:'#566b75'},
+ ZEN:{name:'Zen',description:'Bien-être et décoration · minimalisme naturel',background:'#f3f6f0',
+  foreground:'#25392c',accent:'#35694b',accentText:'#ffffff',surface:'#ffffff',muted:'#5f7566'}
 };
 export function storefrontPalette(value:unknown){
  const code:StorefrontThemeCode=storefrontThemeCodes.includes(value as StorefrontThemeCode)?
@@ -38,3 +44,12 @@ export async function updateStorefrontTheme(ownerId:string,shopId:string,input:z
  return writeIsolatedCommerce(ownerId,shopId,input,()=>{});
 }
 export function storefrontThemeSummary(state:State){return storefrontPalette(state.shop.theme);}
+
+/** An owner may try a preset without saving it. Untrusted values never become CSS. */
+export function previewStorefrontTheme(active:unknown,requested:unknown){
+ const saved=storefrontPalette(active);
+ if(typeof requested!=='string'||!storefrontThemeCodes.includes(requested as StorefrontThemeCode))
+  return {theme:saved,temporary:false};
+ const next=storefrontPalette(requested);
+ return {theme:next,temporary:next.code!==saved.code};
+}

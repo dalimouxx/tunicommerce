@@ -8,6 +8,7 @@ on:
       - 'modules/commerce/service.ts'
       - 'app/api/v1/shops/[shopId]/storefront-theme/route.ts'
       - 'app/mes-boutiques/[shopId]/shop-storefront-themes.tsx'
+      - 'app/mes-boutiques/[shopId]/apercu/page.tsx'
       - 'app/mes-boutiques/[shopId]/page.tsx'
       - 'app/vitrines/[slug]/page.tsx'
       - 'app/vitrines/[slug]/catalog-browser.tsx'
