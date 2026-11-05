@@ -9,10 +9,12 @@ import {applyInvoice} from '../invoices/service';
 import {updateCart} from '../cart/service';
 import {initialState} from './seed';
 import {catalogImportPayload} from './catalog-import';
+import {marketingSettings} from '../shops/storefront-marketing';
 import {applyWarehouseMovement,applyWarehouseOperation,releaseOrderWarehousePicks} from '../warehouse/ledger';
 import {transitions,labels,governors,type State,type Status} from './types';
 const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0).max(1000000000);const qty=z.number().int().min(1).max(10000);
 const schemas={
+ marketing:marketingSettings,
  createOrder:z.object({name:str,phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/, 'Numéro tunisien invalide'),city:z.enum(governors as [string,...string[]]),address:str,source:z.enum(['Boutique','Facebook','Instagram','WhatsApp','TikTok','Manuel']),items:z.array(z.object({productId:str,quantity:qty})).min(1).max(100),coupon:z.string().trim().max(50).optional(),notes:z.string().max(2000).optional()}),
  transition:z.object({id:str,status:z.string(),carrier:z.string().max(160).optional(),carrierId:z.string().optional(),tracking:z.string().max(160).optional(),callbackAt:z.string().optional(),restock:z.boolean().optional()}),
  product:z.object({description:z.string().max(4000).optional(),imageUrl:productImageUrl,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
@@ -203,6 +205,7 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='settlement'){const o=s.orders.find(o=>o.id===p.id);if(!o||o.status!=='DELIVERED')throw Error('Commande non livrée');if(p.amount>o.total-o.collected)throw Error('Le montant dépasse le COD restant');o.collected+=p.amount;s.settlements.unshift({id:id(),orderId:o.id,amount:p.amount,reference:p.reference,at:now});o.events.push({at:now,label:'Encaissement COD : '+(p.amount/1000).toFixed(3)+' TND'});log('Encaissement '+o.reference);}
  if(action==='coupon'){if(s.coupons.some(c=>c.code===p.code.toUpperCase()))throw Error('Code déjà utilisé');s.coupons.push({...p,id:id(),code:p.code.toUpperCase(),used:0,active:true});log('Coupon : '+p.code);}
  if(action==='settings'){s.shop={...s.shop,...p};log('Paramètres boutique modifiés');}
+ if(action==='marketing'){s.shop={...s.shop,marketing:p};log('Pixels publicitaires et WhatsApp modifiés');}
  if(action==='note'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:p.note});log('Note ajoutée à '+o.reference);}
  return s;
 }

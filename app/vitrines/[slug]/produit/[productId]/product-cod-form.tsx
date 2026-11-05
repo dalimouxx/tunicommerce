@@ -6,10 +6,12 @@ import {
  PRODUCT_FORM_MAX_QUANTITY,clampQuantity,formatTunisianPhone,isValidTunisianMobile,
  normalizeTunisianPhone,productOrderSummary,type PublicDeliveryZone
 } from '../../../../../modules/shops/product-cod-form';
+import {orderWhatsappMessage,whatsappLink} from '../../../../../modules/shops/storefront-marketing';
+import {trackStorefront} from '../../storefront-pixels';
 import styles from '../../storefront-premium.module.css';
 
 type Props={slug:string;productId:string;productName:string;unitPrice:number;
- zones:PublicDeliveryZone[];defaultShipping:number;deliveryDays:number|null};
+ zones:PublicDeliveryZone[];defaultShipping:number;deliveryDays:number|null;whatsapp?:string};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
 type Field='name'|'phone'|'city'|'address';
 
@@ -24,7 +26,7 @@ function validate(values:Record<Field,string>):Partial<Record<Field,string>>{
  return errors;
 }
 
-export default function ProductCodForm({slug,productId,productName,unitPrice,zones,defaultShipping,deliveryDays}:Props){
+export default function ProductCodForm({slug,productId,productName,unitPrice,zones,defaultShipping,deliveryDays,whatsapp=''}:Props){
  const [quantity,setQuantity]=useState(1);
  const [values,setValues]=useState<Record<Field,string>>({name:'',phone:'',city:'',address:''});
  const [touched,setTouched]=useState<Partial<Record<Field,boolean>>>({});
@@ -42,6 +44,8 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
  const summary=productOrderSummary(unitPrice,quantity,values.city,zones,defaultShipping);
  const errors=validate(values);
  const shown=(field:Field)=>touched[field]?errors[field]:undefined;
+
+ useEffect(()=>{trackStorefront({name:'ViewContent',item:{id:productId,price:unitPrice,quantity:1}});},[productId,unitPrice]);
 
  // Sticky mobile button appears only while the form is scrolled out of view.
  useEffect(()=>{
@@ -68,6 +72,8 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
   if(Object.keys(errors).length){setNotice('Vérifiez les champs signalés pour finaliser la commande.');return;}
   const id=requestId.current||crypto.randomUUID();requestId.current=id;
   setBusy(true);setNotice('');
+  const items=[{id:productId,price:unitPrice,quantity:summary.quantity}];
+  trackStorefront({name:'InitiateCheckout',items,value:summary.subtotal});
   try{
    const response=await fetch('/api/v1/public/vitrines/'+encodeURIComponent(slug)+'/checkout',{
     method:'POST',headers:{'Content-Type':'application/json'},
@@ -79,6 +85,7 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
    const result=await response.json().catch(()=>({})) as Result;
    if(!response.ok)throw new Error(result.error||'Commande refusée. Réessayez.');
    setAccepted(result);
+   if(!result.alreadyApplied)trackStorefront({name:'Purchase',items,value:result.totalMillimes??summary.total,eventId:id});
    requestId.current=null;
    window.scrollTo({top:Math.max(0,(formRef.current?.getBoundingClientRect().top||0)+window.scrollY-24),behavior:'smooth'});
   }catch(error){
@@ -105,6 +112,9 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
     <a href={trackingPath} referrerPolicy="no-referrer" className={styles.primaryAction}>Suivre ma commande</a>
     <button type="button" className={styles.secondaryAction} onClick={()=>void copyTracking()}>Copier le lien de suivi</button>
    </div>}
+   {whatsapp&&accepted.reference&&<a className={styles.whatsappInline} target="_blank" rel="noopener noreferrer"
+    href={whatsappLink(whatsapp,orderWhatsappMessage(accepted.reference,accepted.totalMillimes))}>
+    <span aria-hidden="true">💬</span> Confirmer plus vite sur WhatsApp</a>}
    {copied&&<p className={styles.codHint} aria-live="polite">{copied}</p>}
    {trackingPath&&<p className={styles.codHint}>Ce lien est personnel : ne le partagez pas publiquement.</p>}
   </div>

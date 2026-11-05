@@ -1,6 +1,7 @@
 'use client';
 import {useState} from 'react';
 import ShopBranding from './shop-branding';
+import ShopMarketing from './shop-marketing';
 
 export default function ShopPublication({shopId,slug,initialPublished}:{shopId:string;slug:string;initialPublished:boolean}){
  const [published,setPublished]=useState(initialPublished);
@@ -28,5 +29,5 @@ export default function ShopPublication({shopId,slug,initialPublished}:{shopId:s
   </button>
   {published&&<a href={publicPath} target="_blank" rel="noopener noreferrer">Voir la vitrine publique</a>}
   <span aria-live="polite" role="status">{notice}</span>
- </div><ShopBranding shopId={shopId}/></>;
+ </div><ShopBranding shopId={shopId}/><ShopMarketing shopId={shopId}/></>;
 }

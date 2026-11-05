@@ -4,6 +4,8 @@ import type {CSSProperties} from 'react';
 import type {Metadata} from 'next';
 import PublicCart from './public-cart';
 import CatalogBrowser from './catalog-browser';
+import StorefrontPixels from './storefront-pixels';
+import {whatsappLink} from '../../../modules/shops/storefront-marketing';
 import {prisma} from '../../../modules/storage/client';
 import {isPublicIsolatedShop} from '../../../modules/shops/publication';
 import {isolatedStorefrontPreview} from '../../../modules/shops/storefront-preview';
@@ -50,12 +52,14 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   catalog.products.find(p=>p.available)||catalog.products[0];
  const names=[...new Set(catalog.products.map(product=>product.category).filter(Boolean))].slice(0,5);
  const publicBase='/vitrines/'+encodeURIComponent(slug);
+ const whatsappHref=whatsappLink(catalog.marketing.whatsapp,catalog.marketing.whatsappMessage||'Bonjour, j’ai une question sur vos produits.');
  const vars={
   '--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted
  } as CSSProperties;
  return <main className={styles.page} data-theme={theme.code} style={vars}>
+  <StorefrontPixels metaPixelId={catalog.marketing.metaPixelId} tiktokPixelId={catalog.marketing.tiktokPixelId}/>
   <div className={styles.announcement}>
    <span>Livraison selon les zones de la boutique</span>
    <span aria-hidden="true">✦</span>
@@ -114,6 +118,8 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     products={catalog.products.map(product=>({id:product.id,name:product.name,
      variant:product.variant,price:product.price,available:product.available}))}
     theme={theme}/>}
+   {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappFloat} aria-label="Contacter la boutique sur WhatsApp">
+    <span aria-hidden="true">💬</span><b>WhatsApp</b></a>}
    {catalog.products.length===0&&<div className={styles.emptyState}>
     <h2>Bientôt disponible</h2>
     <p>Cette boutique prépare actuellement sa collection.</p>

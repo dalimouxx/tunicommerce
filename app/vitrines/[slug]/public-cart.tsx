@@ -3,6 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../../../modules/shops/public-cart-recovery';
 import {governors} from '../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
+import {trackStorefront} from './storefront-pixels';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
@@ -66,6 +67,8 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   if(selected.length>15){setNotice('Panier limité à 15 références différentes.');return;}
   const id=requestId.current||crypto.randomUUID();requestId.current=id;
   setBusy(true);setNotice('');
+  const tracked=selected.map(p=>({id:p.id,price:p.price,quantity:p.quantity}));
+  trackStorefront({name:'InitiateCheckout',items:tracked,value:subtotal});
   try{
    const response=await fetch('/api/v1/public/vitrines/'+encodeURIComponent(slug)+'/checkout',{
     method:'POST',headers:{'Content-Type':'application/json'},
@@ -74,6 +77,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
    const result=await response.json() as Result;
    if(!response.ok)throw new Error(result.error||'Commande refusée');
    setAccepted(result);
+   if(!result.alreadyApplied)trackStorefront({name:'Purchase',items:tracked,value:result.totalMillimes??estimatedTotal,eventId:id});
    setTrackingNotice('');
    setQuantities({});
    requestId.current=null;

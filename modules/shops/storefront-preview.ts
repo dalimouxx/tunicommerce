@@ -2,6 +2,7 @@ import type {State} from '../commerce/types';
 import {publicCatalog} from '../platform/public';
 import {publicProductImageUrl} from './public-catalog-filters';
 import {storefrontThemeSummary} from './storefront-themes';
+import {storefrontMarketing} from './storefront-marketing';
 
 /** Explicitly public-safe product fields, derived from one isolated shop state.
  * This is a preview helper only: it does not grant publication or checkout access.
@@ -17,6 +18,7 @@ export function isolatedStorefrontPreview(state:State){
   description:catalog.description,
   shipping:catalog.shipping,
   zones:catalog.zones,
+  marketing:storefrontMarketing(state),
   products:catalog.products.map(product=>({
    id:product.id,name:product.name,category:product.category,variant:product.variant,
    price:product.price,description:product.description,imageUrl:publicProductImageUrl(product.imageUrl),

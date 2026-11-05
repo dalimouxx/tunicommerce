@@ -8,7 +8,7 @@ export function publicProductDetail(state:State,productId:string){
   .slice(0,4).map(item=>({id:item.id,name:item.name,price:item.price,variant:item.variant}));
  return {
   store:{name:catalog.name,description:catalog.description,theme:catalog.theme,logoUrl:catalog.logoUrl,
-  shipping:catalog.shipping,zones:catalog.zones},
+  shipping:catalog.shipping,zones:catalog.zones,marketing:catalog.marketing},
   product:{id:product.id,name:product.name,category:product.category,variant:product.variant,
    price:product.price,description:product.description,available:product.available,imageUrl:product.imageUrl},
   similar

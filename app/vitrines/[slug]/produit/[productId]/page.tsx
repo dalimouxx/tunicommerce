@@ -9,6 +9,8 @@ import {money,type State} from '../../../../../modules/commerce/types';
 import {publicProductDetail} from '../../../../../modules/shops/public-product-detail';
 import {fastestDeliveryDays} from '../../../../../modules/shops/product-cod-form';
 import ProductCodForm from './product-cod-form';
+import StorefrontPixels from '../../storefront-pixels';
+import {productWhatsappMessage,whatsappLink} from '../../../../../modules/shops/storefront-marketing';
 import styles from '../../storefront-premium.module.css';
 
 export const dynamic='force-dynamic';
@@ -43,10 +45,13 @@ export default async function PublicProductPage({params}:Context){
  if(!detail)notFound();
  const {product,store,similar}=detail,theme=store.theme;
  const base='/vitrines/'+encodeURIComponent(slug);
+ const marketing=store.marketing;
+ const whatsappHref=whatsappLink(marketing.whatsapp,productWhatsappMessage(marketing,product.name));
  const vars={'--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
  return <main className={styles.page} data-theme={theme.code} style={vars}>
+  <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
   <div className={styles.announcement}>Une boutique tunisienne indépendante · Paiement à la livraison</div>
   <div className={styles.container}>
    <header className={styles.storeHeader}>
@@ -73,7 +78,7 @@ export default async function PublicProductPage({params}:Context){
      <p className={styles.detailAvailability} aria-live="polite">{product.available?'● En stock · commande sans compte':'● Rupture de stock'}</p>
      {product.available?<ProductCodForm slug={slug} productId={product.id} productName={product.name}
       unitPrice={product.price} zones={store.zones} defaultShipping={store.shipping}
-      deliveryDays={fastestDeliveryDays(store.zones)}/>:
+      deliveryDays={fastestDeliveryDays(store.zones)} whatsapp={marketing.whatsapp}/>:
       <div className={styles.codUnavailable}>
        <strong>Ce produit est momentanément indisponible.</strong>
        <p>Découvrez les autres articles de la boutique.</p>
@@ -83,6 +88,8 @@ export default async function PublicProductPage({params}:Context){
       <h2 id="product-description">Description</h2>
       <p className={styles.detailDescription}>{product.description}</p>
      </section>}
+     {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappInline}>
+      <span aria-hidden="true">💬</span> Une question ? Écrivez-nous sur WhatsApp</a>}
      <Link href={base+'#catalogue'} className={styles.codLink}>← Continuer mes achats</Link>
     </div>
    </article>
@@ -94,6 +101,8 @@ export default async function PublicProductPage({params}:Context){
      <strong>{item.name}</strong><span>{money(item.price)} TND</span>
     </Link>)}</div>
    </section>}
+   {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappFloat+' '+styles.whatsappFloatRaised} aria-label="Contacter la boutique sur WhatsApp">
+    <span aria-hidden="true">💬</span><b>WhatsApp</b></a>}
    <footer className={styles.footer}><strong>{store.name}</strong>
     <p>Les informations de stock et de livraison sont vérifiées lors de la commande.</p></footer>
   </div>
