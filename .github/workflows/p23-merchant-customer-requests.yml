@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'modules/shops/orders.ts'
+      - 'modules/shops/customer-request-queue.ts'
+      - 'tests/merchant-customer-request-queue.test.ts'
       - 'modules/shops/order-fulfillment.ts'
       - 'app/mes-boutiques/[shopId]/shop-customer-requests.tsx'
       - 'app/mes-boutiques/[shopId]/merchant-shop-workspace.tsx'
@@ -25,6 +27,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: node --import tsx --test tests/isolated-customer-request-resolution.test.ts tests/isolated-public-customer-request.test.ts
+      - run: node --import tsx --test tests/isolated-customer-request-resolution.test.ts tests/isolated-public-customer-request.test.ts tests/merchant-customer-request-queue.test.ts
       - run: npm run typecheck
       - run: npm run build
