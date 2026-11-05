@@ -49,7 +49,7 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  }
  if(['initializeWarehouses','createWarehouse','transferWarehouseStock'].includes(action))return applyWarehouseOperation(s,action,payload);
  if(action==='saveStorefrontTheme'){
-  const p=z.object({theme:z.enum(['OASIS','SABLE','MINUIT'])}).strict().parse(payload);
+  const p=z.object({theme:z.enum(['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP'])}).strict().parse(payload);
   s.shop.theme=p.theme;
   log('Thème de vitrine modifié · '+p.theme);
   return s;

@@ -1,0 +1,43 @@
+.gallery{background:#fff;border:1px solid #dce5ee;border-radius:22px;padding:clamp(16px,3vw,30px);margin:22px 0;box-shadow:0 12px 38px #122a3d08;color:#14243c}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:25px}
+.header h2{font-size:clamp(23px,2.5vw,30px);margin:5px 0 8px;letter-spacing:-.8px}
+.header p{max-width:660px;line-height:1.6;color:#55657b;margin:0}
+.eyebrow{font-size:11px;letter-spacing:.14em;color:#126c65;font-weight:800}
+.previewLink{padding:12px 17px;border-radius:11px;border:1px solid #126c65;color:#126c65;text-decoration:none;font-weight:750}
+.previewLink:focus-visible,.themeFooter button:focus-visible{outline:3px solid #62bbab;outline-offset:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:18px}
+.themeCard{border:1px solid #dce5ee;border-radius:18px;overflow:hidden;box-shadow:0 9px 26px #11253d08;background:white}
+.themeCard[data-active="true"]{border:2px solid #126c65;box-shadow:0 10px 32px #126c6520}
+.miniSite{padding:14px 13px 18px;min-height:238px;overflow:hidden;position:relative;font-size:9px}
+.miniAnnouncement{font-size:7px;letter-spacing:1.1px;text-align:center;background:var(--preview-accent);color:var(--preview-accent-text);padding:6px;font-weight:800;margin:-14px -13px 12px}
+.miniHeader{display:flex;align-items:center;gap:7px;font-size:9px;font-weight:750}
+.miniHeader>span:last-child{margin-left:auto;font-size:14px}
+.miniLogo{width:23px;height:23px;border-radius:6px;background:var(--preview-accent);color:var(--preview-accent-text);display:grid;place-items:center}
+.miniHero{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;align-items:center;margin:15px 0}
+.miniHero>div:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.miniHero small{font-size:6px;font-weight:800;letter-spacing:1px;opacity:.7}
+.miniHero strong{font-size:16px;line-height:1.1;letter-spacing:-.6px;max-width:165px}
+.miniButton{padding:6px 12px;border-radius:6px;background:var(--preview-accent);color:var(--preview-accent-text);font-size:7px;font-weight:800}
+.miniHeroVisual{height:78px;background:var(--preview-surface);border-radius:15px;display:grid;place-items:center;font-size:36px;color:var(--preview-accent);box-shadow:0 4px 14px #0000000b}
+.miniProducts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.miniProducts>div{background:var(--preview-surface);border:1px solid #83838323;border-radius:9px;padding:7px;display:grid;gap:4px}
+.miniPhoto{height:38px;display:grid;place-items:center;border-radius:6px;background:color-mix(in srgb,var(--preview-accent) 11%,var(--preview-surface));color:var(--preview-accent);font-size:22px}
+.miniProducts small{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.miniProducts strong{font-size:8px}
+.themeFooter{padding:15px;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.themeFooter h3{margin:0 0 5px;font-size:17px}
+.themeFooter p{font-size:12px;color:#59677a;margin:0;max-width:195px;line-height:1.45}
+.themeFooter button{background:#116b63;color:white;border:0;border-radius:10px;font-weight:750;padding:10px 13px;cursor:pointer}
+.themeFooter button:disabled{background:#e1eeee;color:#3a615e;cursor:default}
+.activeTag{font-size:10px;vertical-align:middle;color:#14705f;background:#e4f7f1;border-radius:20px;padding:4px 7px}
+.notice{color:#155b4e;background:#eaf8f2;padding:10px;border-radius:10px}
+.footnote{font-size:12px;color:#657486;line-height:1.6}
+.miniSite[data-theme="ATELIER"] .miniHero strong,.miniSite[data-theme="PRESTIGE"] .miniHero strong,.miniSite[data-theme="SABLE"] .miniHero strong{font-family:Georgia,serif;font-weight:500}
+.miniSite[data-theme="PRESTIGE"] .miniHero,.miniSite[data-theme="MINUIT"] .miniHero{text-align:center;grid-template-columns:1fr}
+.miniSite[data-theme="PRESTIGE"] .miniHero>div:first-child,.miniSite[data-theme="MINUIT"] .miniHero>div:first-child{align-items:center}
+.miniSite[data-theme="PRESTIGE"] .miniHeroVisual,.miniSite[data-theme="MINUIT"] .miniHeroVisual{display:none}
+.miniSite[data-theme="NOVA"] .miniHeroVisual{border-radius:10px 30px 10px 30px}
+.miniSite[data-theme="POP"] .miniHero{background:#ffffffa8;padding:10px;border-radius:18px}
+.miniSite[data-theme="POP"] .miniPhoto{border-radius:14px}
+@media(max-width:640px){.gallery{padding:14px}.grid{grid-template-columns:1fr}.themeFooter{align-items:flex-start}}
+@media(prefers-reduced-motion:no-preference){.themeCard{transition:transform .18s,box-shadow .18s}.themeCard:hover{transform:translateY(-3px)}}

@@ -28,3 +28,22 @@ test('strict payload refuses arbitrary CSS and extra properties',()=>{
  assert.equal(storefrontThemeInput.safeParse(request).success,true);
  assert.equal(storefrontThemeInput.safeParse({...request,payload:{...request.payload,css:'body{display:none}'}}).success,false);
 });
+
+test('seven premium themes preserve existing codes and expose safe fixed palettes',()=>{
+ const codes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP'];
+ for(const code of codes){
+  const theme=storefrontPalette(code);
+  assert.equal(theme.code,code);
+  assert.match(theme.accent,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.background,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.surface,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.accentText,/^#[0-9a-f]{6}$/i);
+  const request={action:'saveStorefrontTheme',requestId:crypto.randomUUID(),payload:{theme:code}};
+  assert.equal(storefrontThemeInput.safeParse(request).success,true);
+  const persisted=applyAction(initialState(false),'saveStorefrontTheme',{theme:code});
+  assert.equal(isolatedStorefrontPreview(persisted).theme.code,code);
+ }
+ assert.equal(new Set(codes.map(code=>storefrontPalette(code).accent)).size,codes.length);
+ assert.equal(storefrontThemeInput.safeParse({action:'saveStorefrontTheme',requestId:crypto.randomUUID(),
+  payload:{theme:'BACKGROUND:url(javascript:alert(1))'}}).success,false);
+});
