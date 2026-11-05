@@ -5,6 +5,6 @@ export function portalSessionHash(token:string,portal:AuthPortal):string{
  return digest(portal==='ADMIN'?'super-admin-session:'+token:token);
 }
 export function portalRoleAllowed(role:string,portal:AuthPortal):boolean{
- return portal==='ADMIN'?role==='ADMIN':role==='MERCHANT'||role==='ADMIN';
+ return portal==='ADMIN'?role==='ADMIN':role==='MERCHANT';
 }
 export const portalLanding=(portal:AuthPortal)=>portal==='ADMIN'?'/admin':'/mes-boutiques';
