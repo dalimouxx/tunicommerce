@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'modules/shops/public-cart-recovery.ts'
+      - 'modules/shops/public-tracking-link.ts'
+      - 'tests/public-tracking-link.test.ts'
       - 'app/vitrines/[slug]/public-cart.tsx'
       - 'tests/isolated-public-cart-recovery.test.ts'
       - '.github/workflows/isolated-public-cart-recovery.yml'
@@ -18,6 +20,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: node --import tsx --test tests/isolated-public-cart-recovery.test.ts
+      - run: node --import tsx --test tests/isolated-public-cart-recovery.test.ts tests/public-tracking-link.test.ts
       - run: npm run typecheck
       - run: npm run build
