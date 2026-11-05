@@ -18,7 +18,7 @@ export default async function MerchantDashboard(){
  // Team members without an owner workspace must not receive a misleading
  // personal commerce dashboard. The new team area remains separate.
  if(!workspace){
-  if(user.role==='ADMIN')redirect('/admin');
+  if(user.role==='ADMIN')redirect('/connexion/admin');
   const membership=await prisma.membership.findFirst({
    where:{userId:user.userId,active:true},select:{id:true}
   });

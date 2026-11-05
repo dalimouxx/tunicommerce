@@ -1,0 +1,27 @@
+name: TuniCommerce independent portal navigation
+on:
+  pull_request:
+    paths:
+      - 'app/admin/layout.tsx'
+      - 'app/mes-boutiques/page.tsx'
+      - 'app/marchand/page.tsx'
+      - 'components/commerce-app.tsx'
+      - 'tests/portal-navigation-links.test.mjs'
+      - '.github/workflows/portal-navigation-clarity.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: node --test tests/portal-navigation-links.test.mjs
+      - run: npm run typecheck
+      - run: npm run build

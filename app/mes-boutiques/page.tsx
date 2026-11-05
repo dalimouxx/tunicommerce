@@ -51,7 +51,7 @@ export default async function MyShops(){
    <header className={styles.header}>
     <div><span className={styles.eyebrow}>ESPACE MARCHAND</span><h1>Mes boutiques</h1>
     <p>Retrouvez les boutiques auxquelles votre compte a réellement accès. Les données de chaque marchand restent séparées.</p></div>
-    <Link href={actor.role==='ADMIN'?'/admin':'/marchand'} className={styles.back}>Retour à mon espace</Link>
+    <Link href="/marchand" className={styles.back}>Retour à mon espace</Link>
    </header>
    {capacity&&subscription&&<section className={styles.card}>
     <span className={styles.kicker}>CAPACITÉ DE VOTRE ABONNEMENT</span>
@@ -69,7 +69,7 @@ export default async function MyShops(){
    {memberships.length===0&&!legacy&&<section className={styles.card}>
     <h2>Aucune boutique associée</h2>
     <p>Votre compte n'a pas encore de boutique personnelle ni de participation active. La création et l'affectation se font depuis les espaces autorisés.</p>
-    <Link href={actor.role==='ADMIN'?'/admin/gestion-boutiques':'/equipe'} className={styles.secondary}>Voir les options disponibles</Link>
+    <Link href={actor.role==='ADMIN'?'/connexion/admin':'/equipe'} className={styles.secondary}>Voir les options disponibles</Link>
    </section>}
    <div className={styles.grid}>{memberships.map(({shop,role,active})=>{
     const access=shopAccess({id:shop.id,legacyWorkspaceId:shop.legacyWorkspaceId,status:shop.status,active,role},legacy?.id||null);
