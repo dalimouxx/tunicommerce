@@ -1,5 +1,6 @@
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
+import type {CSSProperties} from 'react';
 import type {Metadata} from 'next';
 import PublicCart from './public-cart';
 import CatalogBrowser from './catalog-browser';
@@ -8,7 +9,7 @@ import {isPublicIsolatedShop} from '../../../modules/shops/publication';
 import {isolatedStorefrontPreview} from '../../../modules/shops/storefront-preview';
 import {normalizeState} from '../../../modules/commerce/normalize';
 import type {State} from '../../../modules/commerce/types';
-import styles from '../../mes-boutiques/shops.module.css';
+import styles from './storefront-premium.module.css';
 
 export const dynamic='force-dynamic';
 
@@ -45,24 +46,83 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  }))notFound();
  const catalog=isolatedStorefrontPreview(normalizeState(shop.commerce!.data as unknown as State));
  const theme=catalog.theme;
- return <main className={styles.shell} style={{background:theme.background,color:theme.foreground}}>
-  <div className={styles.content}>
-   <header className={styles.header}><div>
-    <span className={styles.eyebrow} style={{color:theme.accent}}>BOUTIQUE PUBLIQUE · CATALOGUE</span>
-    {catalog.logoUrl&&<img src={catalog.logoUrl} alt={'Logo '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:76,height:76,objectFit:'contain',borderRadius:16,background:theme.surface,padding:8}}/>}
-    <h1>{catalog.name||shop.name}</h1>
-    <p>{catalog.description||'Découvrez nos produits.'}</p>
-    {catalog.phone&&<p>Contact marchand : {catalog.phone}</p>}
-   </div></header>
-   {catalog.bannerUrl&&<div style={{overflow:'hidden',borderRadius:16,marginBottom:18}}><img src={catalog.bannerUrl} alt={'Bannière de '+(catalog.name||shop.name)} loading="lazy" referrerPolicy="no-referrer" style={{width:'100%',maxHeight:320,objectFit:'cover',display:'block'}}/></div>}
-   <section className={styles.card} style={{background:theme.surface,color:theme.foreground,borderColor:theme.accent}}>
-    <h2>Catalogue</h2>
-    <p>Prix en dinars tunisiens. Commande avec paiement à la livraison uniquement. Le marchand confirmera la commande avant préparation.</p>
+ const heroProduct=catalog.products.find(p=>p.available&&p.imageUrl)||
+  catalog.products.find(p=>p.available)||catalog.products[0];
+ const names=[...new Set(catalog.products.map(product=>product.category).filter(Boolean))].slice(0,5);
+ const publicBase='/vitrines/'+encodeURIComponent(slug);
+ const vars={
+  '--store-bg':theme.background,'--store-text':theme.foreground,
+  '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
+  '--store-surface':theme.surface,'--store-muted':theme.muted
+ } as CSSProperties;
+ return <main className={styles.page} data-theme={theme.code} style={vars}>
+  <div className={styles.announcement}>
+   <span>Livraison selon les zones de la boutique</span>
+   <span aria-hidden="true">✦</span>
+   <span>Paiement à la livraison en TND</span>
+  </div>
+  <div className={styles.container}>
+   <header className={styles.storeHeader}>
+    <Link className={styles.identity} href={publicBase} aria-label={'Accueil '+(catalog.name||shop.name)}>
+     {catalog.logoUrl?<img src={catalog.logoUrl} alt="" width={52} height={52}
+      referrerPolicy="no-referrer" className={styles.logo}/>:
+      <span className={styles.fallbackLogo}>{(catalog.name||shop.name).slice(0,1).toLocaleUpperCase('fr')}</span>}
+     <span className={styles.brandText}><strong>{catalog.name||shop.name}</strong>
+      <small>Boutique indépendante · Tunisie</small></span>
+    </Link>
+    <nav className={styles.nav} aria-label="Navigation de la boutique">
+     <a href="#catalogue">Collections</a>
+     {catalog.products.length>0&&<a href="#panier" className={styles.navCart}>Mon panier</a>}
+    </nav>
+   </header>
+   <section className={styles.hero} aria-labelledby="storefront-title">
+    <div className={styles.heroCopy}>
+     <span className={styles.kicker}>TUNICOMMERCE STUDIO · COLLECTIONS</span>
+     <h1 id="storefront-title">{catalog.name||shop.name}</h1>
+     <p className={styles.heroDescription}>{catalog.description||'Une sélection de produits pour vous, avec une expérience d’achat simple et un paiement à la livraison.'}</p>
+     <div className={styles.heroActions}>
+      <a href="#catalogue" className={styles.primaryAction}>Découvrir la collection <span aria-hidden="true">↗</span></a>
+      {catalog.products.length>0&&<a href="#panier" className={styles.secondaryAction}>Commander en ligne</a>}
+     </div>
+     {names.length>0&&<div className={styles.heroCategories} aria-label="Catégories proposées">
+      {names.map(name=><span key={name}>{name}</span>)}
+     </div>}
+    </div>
+    <div className={styles.heroVisual}>
+     {catalog.bannerUrl?<img src={catalog.bannerUrl}
+      alt={'Bannière de '+(catalog.name||shop.name)} loading="eager" decoding="async"
+      referrerPolicy="no-referrer" className={styles.heroImage}/>:
+      heroProduct?.imageUrl?<img src={heroProduct.imageUrl}
+       alt={'Produit sélectionné : '+heroProduct.name} loading="eager" decoding="async"
+       referrerPolicy="no-referrer" className={styles.heroImage}/>:
+       <div className={styles.heroAbstract} aria-hidden="true"><span>✦</span><span>TC</span></div>}
+     {heroProduct&&<div className={styles.featuredBadge}>
+      <span>Sélection de la boutique</span>
+      <strong>{heroProduct.name}</strong>
+      <small>{(heroProduct.price/1000).toFixed(3)} TND</small>
+     </div>}
+    </div>
    </section>
-   <CatalogBrowser slug={slug} products={catalog.products} surface={theme.surface}
-    foreground={theme.foreground} accent={theme.accent}/>
-   {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd} shipping={catalog.shipping} zones={catalog.zones} products={catalog.products.map(p=>({id:p.id,name:p.name,variant:p.variant,price:p.price,available:p.available}))}/>}
-   {catalog.products.length===0&&<section className={styles.card} style={{background:theme.surface,color:theme.foreground}}><p>Aucun produit disponible pour le moment.</p></section>}
+   <section className={styles.pillars} aria-label="Informations de commande">
+    <div><span aria-hidden="true">✧</span><strong>Choix sélectionné</strong><small>Produits proposés par cette boutique</small></div>
+    <div><span aria-hidden="true">◈</span><strong>Paiement à la livraison</strong><small>Pas de paiement en ligne à effectuer</small></div>
+    <div><span aria-hidden="true">✦</span><strong>Commande suivie</strong><small>Référence et lien confidentiel après validation</small></div>
+   </section>
+   <CatalogBrowser slug={slug} products={catalog.products}/>
+   {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd}
+    shipping={catalog.shipping} zones={catalog.zones}
+    products={catalog.products.map(product=>({id:product.id,name:product.name,
+     variant:product.variant,price:product.price,available:product.available}))}
+    theme={theme}/>}
+   {catalog.products.length===0&&<div className={styles.emptyState}>
+    <h2>Bientôt disponible</h2>
+    <p>Cette boutique prépare actuellement sa collection.</p>
+   </div>}
+   <footer className={styles.footer}>
+    <div><strong>{catalog.name||shop.name}</strong><p>Commerce tunisien indépendant · Paiement à la livraison</p></div>
+    <div>{catalog.phone&&<span>Contact marchand : {catalog.phone}</span>}
+     <span>Les conditions de livraison et les prix sont confirmés lors de la commande.</span></div>
+   </footer>
   </div>
  </main>;
 }

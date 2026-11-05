@@ -1,50 +1,84 @@
 'use client';
+import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {storefrontThemeCodes,storefrontPalette,type StorefrontThemeCode} from '../../../modules/shops/storefront-themes';
+import styles from './storefront-theme-gallery.module.css';
+
 export default function ShopStorefrontThemes({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/storefront-theme';
  const [active,setActive]=useState<StorefrontThemeCode>('OASIS');
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
+ const [loading,setLoading]=useState(true);
  useEffect(()=>{
   const controller=new AbortController();
   fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{
-   if(!response.ok)throw Error('Thèmes indisponibles');
-   const result=await response.json() as {theme?:{code:StorefrontThemeCode}};
-   if(!controller.signal.aborted&&result.theme)setActive(result.theme.code);
-  }).catch(e=>{if(!controller.signal.aborted)setNotice(e instanceof Error?e.message:'Erreur');});
+   const data=await response.json() as {theme?:{code:StorefrontThemeCode};error?:string};
+   if(!response.ok)throw Error(data.error||'Thèmes indisponibles');
+   if(!controller.signal.aborted&&data.theme)setActive(data.theme.code);
+  }).catch(error=>{if(!controller.signal.aborted)setNotice(error instanceof Error?error.message:'Erreur réseau');})
+   .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return()=>controller.abort();
  },[url]);
  async function save(theme:StorefrontThemeCode){
-  if(theme===active)return;
+  if(theme===active||busy)return;
   setBusy(true);setNotice('');
   try{
-   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    action:'saveStorefrontTheme',payload:{theme},requestId:crypto.randomUUID()
-   })});
+   const response=await fetch(url,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'saveStorefrontTheme',payload:{theme},requestId:crypto.randomUUID()})
+   });
    const data=await response.json() as {theme?:{code:StorefrontThemeCode};error?:string};
    if(!response.ok)throw Error(data.error||'Enregistrement impossible');
    setActive(data.theme?.code||theme);
-   setNotice('Thème enregistré. Il s’applique à la vitrine publique lorsque la boutique est publiée.');
+   setNotice('Thème '+storefrontPalette(theme).name+' enregistré. Visualisez-le dans l’aperçu privé avant publication.');
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau');}
   finally{setBusy(false);}
  }
- return <section style={{background:'#fff',padding:24,borderRadius:16,border:'1px solid #dce6ec',marginTop:16}}>
-  <h2>Thèmes de ma boutique publique</h2>
-  <p>Choisissez une ambiance prête à l'emploi. Les couleurs sont vérifiées côté serveur ; aucune feuille de style externe n'est exécutée.</p>
-  <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+ return <section className={styles.gallery} aria-labelledby="storefront-theme-title">
+  <header className={styles.header}>
+   <div><p className={styles.eyebrow}>PERSONNALISATION DE VOTRE VITRINE</p>
+    <h2 id="storefront-theme-title">Les thèmes TuniCommerce Studio</h2>
+    <p>Sept univers professionnels avec mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
+   </div>
+   <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}
+    className={styles.previewLink}>Voir mon aperçu privé</Link>
+  </header>
+  <div className={styles.grid}>
    {storefrontThemeCodes.map(code=>{
-    const theme=storefrontPalette(code);
-    return <div key={code} style={{flex:'1 1 180px',padding:16,border:'1px solid #dce6ec',borderRadius:12,background:theme.background,color:theme.foreground}}>
-     <strong>{theme.name}</strong>
-     <p style={{color:theme.muted}}>Aperçu des couleurs de la vitrine</p>
-     <button type="button" disabled={busy||active===code} onClick={()=>void save(code)}
-      style={{padding:10,background:theme.accent,color:code==='MINUIT'?'#112331':'white',border:0,borderRadius:8}}>
-      {active===code?'Thème actif':'Choisir ce thème'}
-     </button>
-    </div>;
+    const t=storefrontPalette(code);
+    return <article key={code} className={styles.themeCard} data-active={active===code}>
+     <div className={styles.miniSite} data-theme={code} style={{
+      background:t.background,color:t.foreground,
+      ['--preview-accent' as string]:t.accent,
+      ['--preview-accent-text' as string]:t.accentText,
+      ['--preview-surface' as string]:t.surface
+     }}>
+      <div className={styles.miniAnnouncement}>TUNICOMMERCE · PAIEMENT À LA LIVRAISON</div>
+      <div className={styles.miniHeader}><span className={styles.miniLogo}>S</span><span>Votre boutique</span><span>☰</span></div>
+      <div className={styles.miniHero}>
+       <div><small>NOUVELLE COLLECTION</small><strong>Découvrez votre univers.</strong>
+        <span className={styles.miniButton}>Explorer</span></div>
+       <div className={styles.miniHeroVisual}><span>✦</span></div>
+      </div>
+      <div className={styles.miniProducts}>
+       <div><span className={styles.miniPhoto}>◈</span><small>Produit premium</small><strong>49,000 TND</strong></div>
+       <div><span className={styles.miniPhoto}>◇</span><small>Nouvelle sélection</small><strong>79,000 TND</strong></div>
+       <div><span className={styles.miniPhoto}>✧</span><small>Incontournable</small><strong>29,000 TND</strong></div>
+      </div>
+     </div>
+     <div className={styles.themeFooter}>
+      <div><h3>{t.name} {active===code&&<span className={styles.activeTag}>Actif</span>}</h3>
+       <p>{t.description}</p></div>
+      <button type="button" disabled={loading||busy||active===code}
+       onClick={()=>void save(code)}>
+       {active===code?'Thème sélectionné':busy?'Enregistrement…':'Utiliser ce thème'}
+      </button>
+     </div>
+    </article>;
    })}
   </div>
-  {notice&&<p role="status" aria-live="polite">{notice}</p>}
+  {notice&&<p role="status" aria-live="polite" className={styles.notice}>{notice}</p>}
+  <p className={styles.footnote}>Les exemples ci-dessus illustrent le design ; les prix, visuels et produits réels viennent uniquement de votre propre boutique. Aucun CSS externe ou script marchand n’est exécuté.</p>
  </section>;
 }

@@ -28,3 +28,36 @@ test('strict payload refuses arbitrary CSS and extra properties',()=>{
  assert.equal(storefrontThemeInput.safeParse(request).success,true);
  assert.equal(storefrontThemeInput.safeParse({...request,payload:{...request.payload,css:'body{display:none}'}}).success,false);
 });
+
+test('seven premium themes preserve existing codes and expose safe fixed palettes',()=>{
+ const codes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP'];
+ for(const code of codes){
+  const theme=storefrontPalette(code);
+  assert.equal(theme.code,code);
+  assert.match(theme.accent,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.background,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.surface,/^#[0-9a-f]{6}$/i);
+  assert.match(theme.accentText,/^#[0-9a-f]{6}$/i);
+  const request={action:'saveStorefrontTheme',requestId:crypto.randomUUID(),payload:{theme:code}};
+  assert.equal(storefrontThemeInput.safeParse(request).success,true);
+  const persisted=applyAction(initialState(false),'saveStorefrontTheme',{theme:code});
+  assert.equal(isolatedStorefrontPreview(persisted).theme.code,code);
+ }
+ assert.equal(new Set(codes.map(code=>storefrontPalette(code).accent)).size,codes.length);
+ assert.equal(storefrontThemeInput.safeParse({action:'saveStorefrontTheme',requestId:crypto.randomUUID(),
+  payload:{theme:'BACKGROUND:url(javascript:alert(1))'}}).success,false);
+});
+
+test('theme CTA button colors maintain WCAG AA contrast',()=>{
+ const luminance=(color:string)=>{
+  const normalized=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255)
+   .map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);
+  return normalized[0]*.2126+normalized[1]*.7152+normalized[2]*.0722;
+ };
+ for(const code of ['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP']){
+  const palette=storefrontPalette(code);
+  const a=luminance(palette.accent),b=luminance(palette.accentText);
+  const contrast=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+  assert.ok(contrast>=4.5,code+' CTA contrast ratio '+contrast);
+ }
+});

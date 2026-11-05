@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import type {CSSProperties} from 'react';
 import {notFound,redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../../modules/auth/session';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../modules/shops/isolated-commerce';
 import {isolatedStorefrontPreview} from '../../../../modules/shops/storefront-preview';
 import {money} from '../../../../modules/commerce/types';
-import styles from '../../shops.module.css';
+import styles from '../../../vitrines/[slug]/storefront-premium.module.css';
 
 export const dynamic='force-dynamic';
 
@@ -17,35 +18,60 @@ export default async function ShopStorefrontPreview({params}:{params:Promise<{sh
  const commerce=await readIsolatedCommerce(shopId,shop.name);
  if(!commerce.initialized)notFound();
  const catalog=isolatedStorefrontPreview(commerce.state);
- return <main className={styles.shell}>
-  <div className={styles.content}>
-   <header className={styles.header}>
-    <div><span className={styles.eyebrow}>APERÇU PRIVÉ · AUCUNE VENTE PUBLIQUE</span>
-     <h1>{catalog.name}</h1>
-     <p>Voici ce que pourrait voir un acheteur. Cette page est réservée au propriétaire de la boutique et ne permet pas encore de commander.</p>
-    </div>
-    <Link className={styles.back} href={'/mes-boutiques/'+encodeURIComponent(shopId)}>Retour à la gestion</Link>
+ const theme=catalog.theme;
+ const vars={'--store-bg':theme.background,'--store-text':theme.foreground,
+  '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
+  '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
+ const first=catalog.products.find(p=>p.imageUrl)||catalog.products[0];
+ return <main className={styles.page} data-theme={theme.code} style={vars}>
+  <div className={styles.previewWarning}>
+   <strong>APERÇU PRIVÉ · Thème {theme.name}</strong>
+   <span>Visible uniquement par le propriétaire. Les commandes sont désactivées ici.</span>
+   <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'#espace=growth'}>Retour à mes thèmes</Link>
+  </div>
+  <div className={styles.container}>
+   <header className={styles.storeHeader}>
+    <span className={styles.identity}><span className={styles.fallbackLogo}>{catalog.name.slice(0,1)}</span>
+     <span className={styles.brandText}><strong>{catalog.name}</strong>
+      <small>Boutique indépendante · Tunisie</small></span></span>
+    <nav className={styles.nav}><span>Collections</span><span className={styles.navCart}>Panier privé désactivé</span></nav>
    </header>
-   <section className={styles.card}>
-    <h2>Vitrine de {catalog.name}</h2>
-    <p>{catalog.description||'Découvrez les articles disponibles dans notre boutique.'}</p>
-    <p>Les prix sont indiqués en dinars tunisiens (TND). Publication, paiement et checkout indépendants seront activés après validation des règles d'abonnement et de visibilité.</p>
+   <section className={styles.hero}>
+    <div className={styles.heroCopy}><span className={styles.kicker}>NOUVELLE COLLECTION</span>
+     <h1>{catalog.name}</h1>
+     <p className={styles.heroDescription}>{catalog.description||'Découvrez les articles de notre boutique.'}</p>
+     <span className={styles.primaryAction}>Aperçu du design</span>
+    </div>
+    <div className={styles.heroVisual}>
+     {(catalog.bannerUrl||first?.imageUrl)?
+      <img src={catalog.bannerUrl||first!.imageUrl} alt="Visuel de ma boutique"
+       loading="lazy" referrerPolicy="no-referrer" className={styles.heroImage}/>:
+      <div className={styles.heroAbstract} aria-hidden="true">✦</div>}
+    </div>
    </section>
-   <div className={styles.grid}>
-    {catalog.products.map(product=><article key={product.id} className={styles.card}>
-     {product.imageUrl&&<img src={product.imageUrl} alt={product.name} loading="lazy" style={{width:'100%',height:200,objectFit:'contain',borderRadius:12}}/>}
-     <span className={styles.kicker}>{product.category}</span>
-     <h2>{product.name}</h2>
-     {product.variant&&<p>Variante : {product.variant}</p>}
-     {product.description&&<p>{product.description}</p>}
-     <p><strong>{money(product.price)} TND</strong></p>
-     <p>{product.available?'Disponible':'Rupture de stock'}</p>
-     <button type="button" disabled style={{padding:'10px 14px'}}>Commande bientôt disponible</button>
-    </article>)}
-   </div>
-   {catalog.products.length===0&&<section className={styles.card}>
-    <h2>Votre catalogue est vide</h2><p>Ajoutez des produits depuis la gestion de votre boutique pour les voir ici.</p>
-   </section>}
+   <section className={styles.pillars}>
+    <div><span aria-hidden="true">✧</span><strong>Collection</strong><small>Vos produits</small></div>
+    <div><span aria-hidden="true">◈</span><strong>Paiement à la livraison</strong><small>Configuré à la commande</small></div>
+    <div><span aria-hidden="true">✦</span><strong>Suivi</strong><small>Statuts après commande</small></div>
+   </section>
+   <section className={styles.catalogue} aria-label="Aperçu des produits de ma boutique">
+    <div className={styles.sectionHeading}><h2>Explorer la collection</h2></div>
+    <div className={styles.productGrid}>{catalog.products.slice(0,12).map(product=>
+     <article key={product.id} className={styles.productCard}>
+      <div className={styles.productImageWrap}>{product.imageUrl?
+       <img src={product.imageUrl} alt={'Photo de '+product.name} loading="lazy" referrerPolicy="no-referrer"/>:
+       <span className={styles.productPlaceholder} aria-hidden="true">✧</span>}
+      </div>
+      <div className={styles.productBody}><span className={styles.productCategory}>{product.category}</span>
+       <h3>{product.name}</h3><p className={styles.productPrice}>{money(product.price)} TND</p>
+       <button type="button" disabled className={styles.previewDisabled}>Commander · aperçu uniquement</button>
+      </div>
+     </article>)}</div>
+    {catalog.products.length===0&&<div className={styles.emptyState}>
+     <h2>Catalogue vide</h2><p>Ajoutez vos produits depuis l'administration boutique.</p>
+    </div>}
+   </section>
+   <footer className={styles.footer}><strong>{catalog.name}</strong><p>Aperçu non public · aucune commande ne peut être créée ici.</p></footer>
   </div>
  </main>;
 }
