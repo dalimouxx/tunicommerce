@@ -54,3 +54,10 @@
 .miniSite[data-theme="ZEN"] .miniHero strong{font-family:Georgia,serif;font-weight:400}
 .miniSite[data-theme="ZEN"] .miniHeroVisual{border-radius:80px 80px 5px 5px}
 @media(max-width:640px){.themeActions{max-width:none}}
+
+.sectorFilters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.sectorFilters button{padding:10px 13px;background:#f3f7fa;border:1px solid #cbdce2;border-radius:50px;color:#1c4352;cursor:pointer;font-size:12px;font-weight:750}
+.sectorFilters button[data-active="true"]{background:#126c65;color:#fff;border-color:#126c65}
+.sectorFilters button:focus-visible{outline:3px solid #56c1a9;outline-offset:3px}
+.matchCount{font-size:12px;color:#587080;margin:0 0 18px}
+@media(max-width:640px){.sectorFilters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.sectorFilters button{flex:none;scroll-snap-align:start}}

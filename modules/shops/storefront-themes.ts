@@ -53,3 +53,30 @@ export function previewStorefrontTheme(active:unknown,requested:unknown){
  const next=storefrontPalette(requested);
  return {theme:next,temporary:next.code!==saved.code};
 }
+
+/** Editorial suggestions are only a gallery filter, never a restriction on plans. */
+export const storefrontSectors=[
+ {id:'ALL',label:'Tous les univers'},
+ {id:'FASHION',label:'Mode et accessoires'},
+ {id:'BEAUTY',label:'Beauté et cadeaux'},
+ {id:'TECH',label:'Tech et électronique'},
+ {id:'HOME',label:'Maison et artisanat'},
+ {id:'LUXURY',label:'Bijoux et luxe'},
+ {id:'WELLNESS',label:'Bien-être et naturel'}
+] as const;
+export type StorefrontSector=(typeof storefrontSectors)[number]['id'];
+const sectorPresets:Record<Exclude<StorefrontSector,'ALL'>,readonly StorefrontThemeCode[]>={
+ FASHION:['ATELIER','URBAN','POP','PRESTIGE'],
+ BEAUTY:['ECLAT','POP','OASIS','PRESTIGE'],
+ TECH:['NOVA','MINUIT','URBAN'],
+ HOME:['SABLE','ZEN','ATELIER','OASIS'],
+ LUXURY:['PRESTIGE','ECLAT','MINUIT'],
+ WELLNESS:['ZEN','OASIS','SABLE','ECLAT']
+};
+/** Only predetermined theme codes, no tenant-submitted CSS or remote assets. */
+export function storefrontThemesForSector(sector:unknown):readonly StorefrontThemeCode[]{
+ if(sector==='ALL')return storefrontThemeCodes;
+ if(typeof sector!=='string'||!Object.hasOwn(sectorPresets,sector))
+  return storefrontThemeCodes;
+ return sectorPresets[sector as Exclude<StorefrontSector,'ALL'>];
+}
