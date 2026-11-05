@@ -31,6 +31,7 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
    await sleep(250);
   }
   assert.equal(ready,true);
+  assert.equal((await get('/connexion')).status,200);
   assert.equal((await get('/connexion/admin')).status,200);
   assert.equal((await get('/connexion/boutique')).status,200);
   assert.equal((await get('/admin')).headers.get('location'),'/connexion/admin');
