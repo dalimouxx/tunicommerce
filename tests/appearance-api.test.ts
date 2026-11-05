@@ -72,12 +72,12 @@ test('Theme editor persists per merchant and preserves published COD storefront'
     email:'platform@example.test',name:'Admin',password,token:setupToken
    });
    assert.equal(admin.status,201);
-   const login=await post('/api/auth/login',{email:'platform@example.test',password});
+   const login=await post('/api/auth/admin/login',{email:'platform@example.test',password});
    assert.equal(login.status,200);
    const adminCookie=login.headers.get('set-cookie')!.split(';')[0];
    assert.equal((await get('/personnalisation',adminCookie)).status,307);
-   assert.equal((await get('/api/v1/appearance',adminCookie)).status,403);
-   assert.equal((await post('/api/v1/appearance',design,adminCookie)).status,403);
+   assert.equal((await get('/api/v1/appearance',adminCookie)).status,401);
+   assert.equal((await post('/api/v1/appearance',design,adminCookie)).status,401);
   });
 
   const cookie=await register('merchant@example.test','soleil-de-gabes');
