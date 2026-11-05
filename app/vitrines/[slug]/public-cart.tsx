@@ -6,10 +6,12 @@ import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
+type CartTheme={accent:string;accentText:string;surface:string;foreground:string;muted:string};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
 const amount=(v:number)=>(v/1000).toFixed(3);
 
-export default function PublicCart({slug,products,shipping,zones,initialProductId}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string}){
+export default function PublicCart({slug,products,shipping,zones,initialProductId,theme}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string;theme?:CartTheme}){
+ const accent=theme?.accent||'#126c65',accentText=theme?.accentText||'#ffffff';
  const [quantities,setQuantities]=useState<Record<string,number>>(()=>initialProductId&&products.some(p=>p.id===initialProductId&&p.available)?{[initialProductId]:1}:{});
  const [hydrated,setHydrated]=useState(false);
  const [name,setName]=useState('');
@@ -78,7 +80,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier les données.');}
   finally{setBusy(false);}
  }
- if(accepted?.accepted)return <section id="panier" style={{background:'#f0faf7',padding:24,borderRadius:16}}>
+ if(accepted?.accepted)return <section id="panier" style={{background:theme?.surface||'#f0faf7',color:theme?.foreground||'#172338',padding:24,borderRadius:16}}>
   <h2>Commande reçue</h2>
   <p>Votre demande de paiement à la livraison a été enregistrée. Le marchand doit encore la confirmer.</p>
   {accepted.reference&&<p>Référence : <strong>{accepted.reference}</strong></p>}
@@ -90,7 +92,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   {accepted.alreadyApplied&&<p>Cette demande avait déjà été reçue : aucun doublon créé.</p>}
   <button type="button" onClick={()=>{setAccepted(null);setTrackingNotice('');}}>Nouvelle commande</button>
  </section>;
- return <section id="panier" style={{background:'#fff',border:'1px solid #dbe5eb',borderRadius:16,padding:22,marginTop:18}}>
+ return <section id="panier" style={{background:theme?.surface||'#fff',color:theme?.foreground||'#172338',border:'1px solid '+accent,borderRadius:16,padding:22,marginTop:18}}>
   <h2>Panier et paiement à la livraison</h2>
   <p>Sélectionnez les articles de cette boutique. Le total final et les frais de livraison sont calculés par le serveur lors de la commande.</p>
   <p style={{fontSize:13,color:'#586b75'}}>Le panier conserve uniquement les références et quantités des produits dans ce navigateur pendant sept jours. Nom, téléphone et adresse ne sont jamais enregistrés localement par cette fonction.</p>
@@ -111,7 +113,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
    <label>Gouvernorat<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v}>{v}</option>)}</select></label>
    <label>Adresse de livraison<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
    <label>Code promo (facultatif)<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder="Code communiqué par le marchand" style={{display:'block',padding:10,width:'100%'}}/></label>
-   <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:'#126c65',color:'white',fontWeight:700}}>Commander · payer à la livraison</button>
+   <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:accent,color:accentText,fontWeight:700}}>Commander · payer à la livraison</button>
   </form>
  </section>;
 }
