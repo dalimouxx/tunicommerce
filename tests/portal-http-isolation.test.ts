@@ -67,8 +67,7 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
   assert.equal((await post('/api/auth/admin/logout',{},adminCookie)).status,200);
   assert.equal((await get('/mes-boutiques',merchantCookie)).status,200);
   const oldCookie=await post('/api/auth/merchant/login',{email:'admin@portal.example.test',password});
-  assert.equal(oldCookie.status,200);
-  const personal=oldCookie.headers.get('set-cookie')!.split(';')[0];
-  assert.equal((await get('/admin',personal)).headers.get('location'),'/connexion/admin');
+  assert.equal(oldCookie.status,401);
+  assert.equal(oldCookie.headers.get('set-cookie'),null);
  }finally{server?.kill('SIGTERM');await prisma.$disconnect();}
 });
