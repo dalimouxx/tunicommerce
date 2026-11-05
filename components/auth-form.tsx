@@ -51,6 +51,7 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
      <button className="primary" type="submit" disabled={busy}>{busy?'Connexion…':setup?'Créer le Super Admin':'Accéder à mon espace'}<ArrowRight size={16}/></button>
     </form>}
    <div className="auth-foot">
+    {!setup&&<p><a href="/connexion">Choisir mon espace de connexion</a></p>}
     {admin?<p><a href="/connexion/boutique">Accès indépendant : administration d’une boutique</a></p>:
      <p><a href="/connexion/admin">Accès réservé : Super Admin SaaS</a></p>}
     {!admin&&<p><a href="/inscription">Créer ma boutique gratuitement</a></p>}

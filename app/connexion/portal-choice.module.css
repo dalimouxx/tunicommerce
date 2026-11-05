@@ -1,0 +1,22 @@
+.shell{min-height:100dvh;background:linear-gradient(145deg,#ecf4f7 0%,#f7fafc 52%,#ecf8f2 100%);color:#142a3d;display:grid;place-items:center;padding:clamp(22px,5vw,70px);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+.wrap{width:min(100%,1090px)}
+.heading{text-align:center;max-width:740px;margin:0 auto 32px}
+.eyebrow{display:inline-block;font-size:12px;font-weight:900;letter-spacing:.16em;color:#126c65}
+.heading h1{font-size:clamp(30px,4.4vw,54px);line-height:1.08;letter-spacing:-.05em;margin:13px 0 18px}
+.heading p{color:#4a6372;line-height:1.7;font-size:16px}
+.options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.portal{display:flex;flex-direction:column;align-items:flex-start;gap:13px;padding:clamp(25px,3.2vw,39px);border:1px solid #d3e1e7;border-radius:22px;background:#fff;box-shadow:0 18px 42px #1334480c}
+.icon{display:grid;place-items:center;width:58px;height:58px;border-radius:17px;background:#e9f6f1;color:#126c65}
+.portal:first-child .icon{background:#edf1ff;color:#2a4aa0}
+.overline{font-size:11px;font-weight:900;letter-spacing:.12em;color:#657482;margin:4px 0 0}
+.portal h2{font-size:clamp(25px,3vw,32px);letter-spacing:-.045em;margin:0}
+.portal>p:not(.overline){color:#556a77;line-height:1.7;flex:1;margin:0}
+.primary{display:flex;gap:10px;align-items:center;justify-content:center;min-height:50px;padding:13px 17px;border-radius:11px;background:#125e58;color:#fff!important;text-decoration:none;font-weight:800;width:100%;text-align:center}
+.portal:first-child .primary{background:#283f84}
+.portal small{display:flex;align-items:center;gap:7px;color:#5d7081;line-height:1.45}
+.footer{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:26px;font-weight:750}
+.footer a{color:#176c64;text-underline-offset:4px}
+.shell a:focus-visible{outline:3px solid #55baa8;outline-offset:4px}
+@media(max-width:710px){.options{grid-template-columns:1fr}.heading{text-align:left}.portal{min-height:0}}
+@media(prefers-reduced-motion:no-preference){.portal{transition:transform .18s,box-shadow .18s}.portal:hover{transform:translateY(-3px);box-shadow:0 25px 55px #13344816}}
+@media(prefers-reduced-motion:reduce){.portal{transition:none}}

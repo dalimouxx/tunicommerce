@@ -8,6 +8,7 @@ on:
       - 'modules/platform/admin.ts'
       - 'app/api/auth/**'
       - 'app/connexion/**'
+      - 'tests/portal-entrypoints.test.ts'
       - 'app/admin/**'
       - 'app/page.tsx'
       - 'components/auth-form.tsx'
@@ -32,7 +33,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:generate
-      - run: node --import tsx --test tests/portal-session-isolation.test.ts
+      - run: node --import tsx --test tests/portal-session-isolation.test.ts tests/portal-entrypoints.test.ts
       - run: node --test tests/priority1-public-security-smoke.test.mjs
       - run: npm run typecheck
       - run: npm run build
