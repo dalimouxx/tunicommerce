@@ -39,7 +39,7 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
   <header className={styles.header}>
    <div><p className={styles.eyebrow}>PERSONNALISATION DE VOTRE VITRINE</p>
     <h2 id="storefront-theme-title">Les thèmes TuniCommerce Studio</h2>
-    <p>Sept univers professionnels avec mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
+    <p>Dix univers professionnels avec mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
    </div>
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}
     className={styles.previewLink}>Voir mon aperçu privé</Link>
@@ -70,15 +70,19 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
      <div className={styles.themeFooter}>
       <div><h3>{t.name} {active===code&&<span className={styles.activeTag}>Actif</span>}</h3>
        <p>{t.description}</p></div>
-      <button type="button" disabled={loading||busy||active===code}
-       onClick={()=>void save(code)}>
-       {active===code?'Thème sélectionné':busy?'Enregistrement…':'Utiliser ce thème'}
-      </button>
+      <div className={styles.themeActions}>
+       <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu?theme='+code}
+        className={styles.tryTheme}>Essayer sans enregistrer</Link>
+       <button type="button" disabled={loading||busy||active===code}
+        onClick={()=>void save(code)}>
+        {active===code?'Thème sélectionné':busy?'Enregistrement…':'Choisir ce thème'}
+       </button>
+      </div>
      </div>
     </article>;
    })}
   </div>
   {notice&&<p role="status" aria-live="polite" className={styles.notice}>{notice}</p>}
-  <p className={styles.footnote}>Les exemples ci-dessus illustrent le design ; les prix, visuels et produits réels viennent uniquement de votre propre boutique. Aucun CSS externe ou script marchand n’est exécuté.</p>
+  <p className={styles.footnote}>Chaque thème peut être essayé dans votre aperçu privé sans modifier la boutique publique. Les exemples ci-dessus illustrent le design ; les prix, visuels et produits réels viennent uniquement de votre propre boutique. Aucun CSS externe ou script marchand n’est exécuté.</p>
  </section>;
 }

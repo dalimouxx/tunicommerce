@@ -163,3 +163,27 @@
 .previewWarning a{color:#fff;font-weight:800;text-underline-offset:4px}
 .previewDisabled{padding:11px;border-radius:10px;border:1px solid var(--store-accent);background:transparent;color:var(--store-accent);font-weight:800;opacity:.75}
 @media(max-width:720px){.detailLayout{grid-template-columns:1fr}.detailMedia{min-height:260px;height:330px}.detailCopy h1{font-size:36px}.previewWarning{position:static}}
+
+/* Studio 2026: three distinct personalities; the mobile checkout retains AA buttons */
+.page[data-theme="ECLAT"] .hero{background:linear-gradient(135deg,#fff0ee 0%,#ffe9ed 48%,#fff9f5 100%);border-radius:36px;padding:clamp(25px,4vw,65px);margin-top:22px;gap:28px}
+.page[data-theme="ECLAT"] .heroCopy h1{font-family:Georgia,'Times New Roman',serif;font-weight:500;letter-spacing:-.06em}
+.page[data-theme="ECLAT"] .heroVisual{border-radius:180px 180px 28px 28px;min-height:450px}
+.page[data-theme="ECLAT"] .productCard{border-radius:26px;box-shadow:0 15px 36px #9827460d}
+.page[data-theme="ECLAT"] .productImageWrap{height:300px}
+.page[data-theme="URBAN"] .hero{grid-template-columns:1fr 1fr;gap:24px}
+.page[data-theme="URBAN"] .heroCopy h1{font-weight:950;text-transform:uppercase;line-height:.93;letter-spacing:-.075em}
+.page[data-theme="URBAN"] .heroVisual{border-radius:0;transform:skew(-2deg);background:#c9d9df}
+.page[data-theme="URBAN"] .productCard{border-radius:3px;box-shadow:none;border-width:2px}
+.page[data-theme="URBAN"] .productImageWrap{height:300px}
+.page[data-theme="URBAN"] .heroCategories span{border-radius:3px}
+.page[data-theme="ZEN"] .hero{grid-template-columns:minmax(0,1fr) minmax(0,.88fr);gap:clamp(35px,6vw,100px)}
+.page[data-theme="ZEN"] .heroCopy h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.05em}
+.page[data-theme="ZEN"] .heroVisual{border-radius:46% 46% 10px 10px;min-height:480px;background:linear-gradient(145deg,#d9e8d7,#fbfcf8)}
+.page[data-theme="ZEN"] .productCard{border-radius:4px;box-shadow:none;border-color:#d5dfd4}
+.page[data-theme="ZEN"] .productImageWrap{height:290px;background:#e9efe5}
+@media(max-width:720px){
+ .page[data-theme="ECLAT"] .hero,.page[data-theme="URBAN"] .hero,.page[data-theme="ZEN"] .hero{grid-template-columns:1fr;gap:24px;padding:32px 15px}
+ .page[data-theme="ECLAT"] .heroVisual,.page[data-theme="URBAN"] .heroVisual,.page[data-theme="ZEN"] .heroVisual{min-height:275px;transform:none;border-radius:18px}
+ .page[data-theme="ECLAT"] .productImageWrap,.page[data-theme="URBAN"] .productImageWrap,.page[data-theme="ZEN"] .productImageWrap{height:180px}
+}
+@media(prefers-reduced-motion:reduce){.page[data-theme="ECLAT"] *, .page[data-theme="URBAN"] *, .page[data-theme="ZEN"] *{animation:none!important;scroll-behavior:auto!important}}

@@ -41,3 +41,16 @@
 .miniSite[data-theme="POP"] .miniPhoto{border-radius:14px}
 @media(max-width:640px){.gallery{padding:14px}.grid{grid-template-columns:1fr}.themeFooter{align-items:flex-start}}
 @media(prefers-reduced-motion:no-preference){.themeCard{transition:transform .18s,box-shadow .18s}.themeCard:hover{transform:translateY(-3px)}}
+
+.themeActions{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;max-width:210px}
+.tryTheme{display:inline-flex;justify-content:center;align-items:center;text-align:center;border:1px solid #98b8b2;border-radius:10px;color:#125f55;padding:10px 12px;text-decoration:none;font-weight:750;font-size:12px}
+.tryTheme:hover{background:#eef8f5}
+.tryTheme:focus-visible{outline:3px solid #62bbab;outline-offset:2px}
+.miniSite[data-theme="ECLAT"] .miniHero{background:#ffe3e9;border-radius:20px;padding:9px}
+.miniSite[data-theme="ECLAT"] .miniHero strong{font-family:Georgia,serif;font-weight:500}
+.miniSite[data-theme="ECLAT"] .miniHeroVisual{border-radius:80px 80px 10px 10px}
+.miniSite[data-theme="URBAN"] .miniHero strong{text-transform:uppercase;font-weight:900}
+.miniSite[data-theme="URBAN"] .miniHeroVisual,.miniSite[data-theme="URBAN"] .miniProducts>div{border-radius:2px}
+.miniSite[data-theme="ZEN"] .miniHero strong{font-family:Georgia,serif;font-weight:400}
+.miniSite[data-theme="ZEN"] .miniHeroVisual{border-radius:80px 80px 5px 5px}
+@media(max-width:640px){.themeActions{max-width:none}}

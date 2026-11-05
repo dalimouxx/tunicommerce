@@ -4,12 +4,13 @@ import {notFound,redirect} from 'next/navigation';
 import {getCurrentUser} from '../../../../modules/auth/session';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../modules/shops/isolated-commerce';
 import {isolatedStorefrontPreview} from '../../../../modules/shops/storefront-preview';
+import {previewStorefrontTheme} from '../../../../modules/shops/storefront-themes';
 import {money} from '../../../../modules/commerce/types';
 import styles from '../../../vitrines/[slug]/storefront-premium.module.css';
 
 export const dynamic='force-dynamic';
 
-export default async function ShopStorefrontPreview({params}:{params:Promise<{shopId:string}>}){
+export default async function ShopStorefrontPreview({params,searchParams}:{params:Promise<{shopId:string}>;searchParams:Promise<{theme?:string|string[]}>}){
  const actor=await getCurrentUser();
  if(!actor)redirect('/login');
  const {shopId}=await params;
@@ -18,15 +19,17 @@ export default async function ShopStorefrontPreview({params}:{params:Promise<{sh
  const commerce=await readIsolatedCommerce(shopId,shop.name);
  if(!commerce.initialized)notFound();
  const catalog=isolatedStorefrontPreview(commerce.state);
- const theme=catalog.theme;
+ const query=await searchParams;
+ const selection=previewStorefrontTheme(catalog.theme.code,query.theme);
+ const theme=selection.theme;
  const vars={'--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
  const first=catalog.products.find(p=>p.imageUrl)||catalog.products[0];
  return <main className={styles.page} data-theme={theme.code} style={vars}>
   <div className={styles.previewWarning}>
-   <strong>APERÇU PRIVÉ · Thème {theme.name}</strong>
-   <span>Visible uniquement par le propriétaire. Les commandes sont désactivées ici.</span>
+   <strong>APERÇU PRIVÉ · Thème {theme.name}{selection.temporary?' · non enregistré':''}</strong>
+   <span>{selection.temporary?'Essai temporaire : votre thème actif reste inchangé.':'Visible uniquement par le propriétaire.'} Les commandes sont désactivées ici.</span>
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'#espace=growth'}>Retour à mes thèmes</Link>
   </div>
   <div className={styles.container}>
