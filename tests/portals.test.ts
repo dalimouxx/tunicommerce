@@ -23,8 +23,8 @@ const post=(path:string,cookie:string,body:unknown)=>fetch(base+path,{
  method:'POST',headers:{origin,cookie,'content-type':'application/json'},
  body:JSON.stringify(body),redirect:'manual'
 });
-async function cookieFor(email:string){
- const response=await post('/api/auth/login','',{email,password});
+async function cookieFor(email:string,portal:'ADMIN'|'MERCHANT'='MERCHANT'){
+ const response=await post(portal==='ADMIN'?'/api/auth/admin/login':'/api/auth/merchant/login','',{email,password});
  assert.equal(response.status,200);
  return response.headers.get('set-cookie')!.split(';')[0];
 }
@@ -60,7 +60,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
   await t.test('Anonymous visitors see login; no protected data leaked',async()=>{
    const root=await get('/');
    assert.equal(root.status,307);
-   assert.ok(root.headers.get('location')?.includes('/login'));
+   assert.ok(root.headers.get('location')?.includes('/connexion/boutique'));
    assert.equal((await get('/admin')).status,307);
    assert.equal((await get('/marchand')).status,307);
    assert.equal((await get('/mes-boutiques')).status,307);
@@ -71,7 +71,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
   assert.equal((await post('/api/auth/setup','',{
    email:'admin@example.test',name:'Platform Owner',password,token:setupToken
   })).status,201);
-  const adminCookie=await cookieFor('admin@example.test');
+  const adminCookie=await cookieFor('admin@example.test','ADMIN');
 
   await t.test('Superadministrator enters platform instead of a fake personal shop',async()=>{
    const home=await get('/',adminCookie);
@@ -79,10 +79,11 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(home.headers.get('location')?.endsWith('/admin'));
    const merchant=await get('/marchand',adminCookie);
    assert.equal(merchant.status,307);
-   assert.ok(merchant.headers.get('location')?.endsWith('/admin'));
+   assert.ok(merchant.headers.get('location')?.endsWith('/login'));
+   assert.equal((await get('/api/admin/plans',adminCookie)).status,200);
    const ownShops=await get('/mes-boutiques',adminCookie);
-   assert.equal(ownShops.status,200);
-   assert.ok((await ownShops.text()).includes('Aucune boutique associée'));
+   assert.equal(ownShops.status,307);
+   assert.equal(ownShops.headers.get('location'),'/login');
    const admin=await get('/admin',adminCookie);
    assert.equal(admin.status,200);
    const html=await admin.text();
@@ -107,9 +108,9 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
 
   await t.test('Merchant uses only private commerce and sees real public storefront',async()=>{
    assert.equal((await get('/',merchantCookie)).status,307);
-   assert.ok((await get('/',merchantCookie)).headers.get('location')?.endsWith('/marchand'));
+   assert.ok((await get('/',merchantCookie)).headers.get('location')?.endsWith('/mes-boutiques'));
    assert.equal((await get('/admin',merchantCookie)).status,307);
-   assert.ok((await get('/admin',merchantCookie)).headers.get('location')?.endsWith('/marchand'));
+   assert.ok((await get('/admin',merchantCookie)).headers.get('location')?.endsWith('/connexion/admin'));
    assert.equal((await get('/admin/gestion-boutiques',merchantCookie)).status,307);
    const merchant=await get('/marchand',merchantCookie);
    assert.equal(merchant.status,200);
@@ -124,7 +125,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(ownShopOverview.status,200);
    assert.ok((await ownShopOverview.text()).includes('COD non encaissé'));
    const crossShopOverview=await get('/mes-boutiques/'+merchantWorkspace.shop!.id,adminCookie);
-   assert.equal(crossShopOverview.status,404);
+   assert.equal(crossShopOverview.status,307);
    const personalShops=await get('/mes-boutiques',merchantCookie);
    assert.equal(personalShops.status,200);
    const personalHtml=await personalShops.text();
@@ -156,7 +157,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const path='/api/v1/shops/'+fresh.id+'/commerce';
    assert.equal((await get(path)).status,401,'anonymous forbidden');
    const forbidden=await get(path,adminCookie);
-   assert.equal(forbidden.status,404,'global admin has no implicit access');
+   assert.equal(forbidden.status,401,'global admin cookie is not a merchant session');
    const before=await get(path,merchantCookie);
    assert.equal(before.status,200);
    const freshState=await before.json() as {initialized:boolean;state:{orders:unknown[];products:unknown[]}};
@@ -164,7 +165,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(freshState.state.orders.length,0);
    assert.equal(freshState.state.products.length,0);
    assert.equal(await prisma.shopCommerce.count({where:{shopId:fresh.id}}),0,'GET must not persist');
-   assert.equal((await post(path,adminCookie,{action:'initialize'})).status,404);
+   assert.equal((await post(path,adminCookie,{action:'initialize'})).status,401);
    const first=await post(path,merchantCookie,{action:'initialize'});
    assert.equal(first.status,200);
    const firstVersion=(await first.json() as {version:number}).version;
@@ -176,8 +177,8 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    // Isolated inventory uses the dedicated ShopCommerce row, never the legacy Workspace.
    const inventoryPath='/api/v1/shops/'+fresh.id+'/inventory';
    assert.equal((await get(inventoryPath)).status,401);
-   assert.equal((await get(inventoryPath,adminCookie)).status,404);
-   assert.equal((await post(inventoryPath,adminCookie,{action:'stock',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174001'})).status,404);
+   assert.equal((await get(inventoryPath,adminCookie)).status,401);
+   assert.equal((await post(inventoryPath,adminCookie,{action:'stock',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174001'})).status,401);
    const requestId='123e4567-e89b-42d3-a456-426614174002';
    const productInput={action:'product',requestId,payload:{
     name:'Chemise',sku:'CHEMISE-01',category:'Mode',variant:'Bleu',
@@ -204,8 +205,8 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal((await merchantProductList.json() as {products:unknown[]}).products.length,1);
    const orderPath='/api/v1/shops/'+fresh.id+'/orders';
    assert.equal((await get(orderPath)).status,401);
-   assert.equal((await get(orderPath,adminCookie)).status,404);
-   assert.equal((await post(orderPath,adminCookie,{action:'createOrder',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174013'})).status,404);
+   assert.equal((await get(orderPath,adminCookie)).status,401);
+   assert.equal((await post(orderPath,adminCookie,{action:'createOrder',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174013'})).status,401);
    const orderRequest={action:'createOrder',requestId:'123e4567-e89b-42d3-a456-426614174014',payload:{
     name:'Commande pilote',phone:'22123456',city:'Gabès',address:'Rue des tests',
     source:'Manuel',items:[{productId:data.products[0].id,quantity:1}]
@@ -271,7 +272,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const viewerCookie=await cookieFor('viewer@example.test');
    const teamView=(shop:string,section:string)=>'/api/v1/shops/'+shop+'/team-view?section='+section;
    assert.equal((await get(teamView(fresh.id,'orders'))).status,401);
-   assert.equal((await get(teamView(fresh.id,'orders'),adminCookie)).status,404);
+   assert.equal((await get(teamView(fresh.id,'orders'),adminCookie)).status,401);
    assert.equal((await get(teamView(fresh.id,'finance'),stockCookie)).status,403);
    assert.equal((await get(teamView(fresh.id,'products'),financeCookie)).status,403);
    assert.equal((await get(teamView(fresh.id,'finance'),financeCookie)).status,200);

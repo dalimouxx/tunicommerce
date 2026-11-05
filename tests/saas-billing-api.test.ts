@@ -86,7 +86,7 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
   assert.equal((await post('/api/auth/setup',{
    name:'Opérateur TuniCommerce',email:'admin@example.test',password,token:setupToken
   })).status,201);
-  const adminLogin=await post('/api/auth/login',{email:'admin@example.test',password});
+  const adminLogin=await post('/api/auth/admin/login',{email:'admin@example.test',password});
   assert.equal(adminLogin.status,200);
   const adminCookie=adminLogin.headers.get('set-cookie')!.split(';')[0];
   const plan={
@@ -116,12 +116,12 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
    assert.equal(disabled.status,409,'No declarations before configuring official recipient');
    const before=(await (await get('/api/v1/subscription-payments',merchantA)).json()).methods;
    assert.equal(before.length,0);
-   assert.equal((await get('/api/admin/payment-reception',merchantA)).status,403);
+   assert.equal((await get('/api/admin/payment-reception',merchantA)).status,401);
    assert.equal((await post('/api/admin/payment-reception',{
     code:'D17',version:0,enabled:true,recipientName:'Compte test du bénéficiaire',
     identifier:'TEST-ONLY-D17-123',bankName:'',
     instructions:'Test seulement : virement simulé en environnement PostgreSQL isolé.'
-   },merchantA)).status,403);
+   },merchantA)).status,401);
    const setupD17=await post('/api/admin/payment-reception',{
     code:'D17',version:0,enabled:true,recipientName:'Compte test du bénéficiaire',
     identifier:'TEST-ONLY-D17-123',bankName:'',
@@ -168,7 +168,7 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
    assert.equal((await get('/api/v1/subscription-payments',merchantB)).status,200);
    assert.equal(((await (await get('/api/v1/subscription-payments',merchantB)).json()).payments.length),0);
    assert.equal((await get('/admin/paiements',merchantA)).status,307);
-   assert.equal((await post('/api/admin/subscription-payments',decision(firstId,'approve'),merchantA)).status,403);
+   assert.equal((await post('/api/admin/subscription-payments',decision(firstId,'approve'),merchantA)).status,401);
    const again=await post('/api/v1/subscription-payments',claim(requestId),merchantA);
    assert.equal(again.status,200);
    assert.equal((await again.json()).alreadySubmitted,true);

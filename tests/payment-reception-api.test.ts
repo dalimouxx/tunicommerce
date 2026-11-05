@@ -81,7 +81,7 @@ test('Official SaaS reception configuration: disabled defaults, safe publication
    name:'Administrateur des tests',email:'admin-reception@example.test',
    password,token:setupToken
   })).status,201);
-  const adminLogin=await post('/api/auth/login',{email:'admin-reception@example.test',password});
+  const adminLogin=await post('/api/auth/admin/login',{email:'admin-reception@example.test',password});
   assert.equal(adminLogin.status,200);
   const adminCookie=adminLogin.headers.get('set-cookie')!.split(';')[0];
   assert.equal((await post('/api/admin/plans',{
@@ -117,8 +117,8 @@ test('Official SaaS reception configuration: disabled defaults, safe publication
    },ownerA);
    assert.equal(cannotDeclare.status,409);
    assert.equal(await prisma.subscriptionPayment.count(),0);
-   assert.equal((await get('/api/admin/payment-reception',ownerA)).status,403);
-   assert.equal((await post('/api/admin/payment-reception',validD17(),ownerA)).status,403);
+   assert.equal((await get('/api/admin/payment-reception',ownerA)).status,401);
+   assert.equal((await post('/api/admin/payment-reception',validD17(),ownerA)).status,401);
   });
 
   await t.test('Cannot activate incomplete, forged or cross-origin bank coordinates',async()=>{
