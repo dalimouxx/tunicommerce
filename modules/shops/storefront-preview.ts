@@ -22,7 +22,7 @@ export function isolatedStorefrontPreview(state:State){
   products:catalog.products.map(product=>({
    id:product.id,name:product.name,category:product.category,variant:product.variant,
    price:product.price,description:product.description,imageUrl:publicProductImageUrl(product.imageUrl),
-   available:product.available
+   available:product.available,offers:product.offers
   }))
  };
 }

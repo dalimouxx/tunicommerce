@@ -15,7 +15,10 @@ test('Public catalogue uses an explicit allowlist and excludes private commerce 
  const {initialState}=await import('../modules/commerce/seed');
  const state=initialState();const publicData=publicCatalog(state);
  assert.deepEqual(Object.keys(publicData).sort(),['bannerUrl','demo','description','logoUrl','name','phone','products','shipping','zones']);
- assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','description','id','imageUrl','name','price','variant']);
+ assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','description','id','imageUrl','name','offers','price','variant']);
+ // Quantity offers expose only quantity, total price, label and saving (never cost or stock).
+ state.products[0].quantityOffers=[{quantity:2,price:state.products[0].price*2-1000,label:'Promo'}];
+ assert.deepEqual(Object.keys(publicCatalog(state).products[0].offers[1]).sort(),['label','price','quantity','saving']);
  assert.equal(JSON.stringify(publicData).includes('customerSnapshot'),false);
  const shop={published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date('2030-01-01')};
  assert.equal(isOpen(shop,new Date('2026-01-01')),true);

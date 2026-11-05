@@ -88,7 +88,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      <p className={styles.detailAvailability} aria-live="polite">{product.available?t.inStock:'● '+t.outOfStock}</p>
      {product.available?<ProductCodForm slug={slug} productId={product.id} productName={product.name}
       unitPrice={product.price} zones={store.zones} defaultShipping={store.shipping}
-      deliveryDays={fastestDeliveryDays(store.zones)} whatsapp={marketing.whatsapp} lang={lang}/>:
+      deliveryDays={fastestDeliveryDays(store.zones)} whatsapp={marketing.whatsapp} lang={lang} offers={product.offers}/>:
       <div className={styles.codUnavailable}>
        <strong>{t.unavailableTitle}</strong>
        <p>{t.unavailableText}</p>

@@ -4,7 +4,7 @@ import {governors} from '../../../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../../../modules/shops/public-tracking-link';
 import {
  PRODUCT_FORM_MAX_QUANTITY,clampQuantity,formatTunisianPhone,isValidTunisianMobile,
- normalizeTunisianPhone,productOrderSummary,type PublicDeliveryZone
+ normalizeTunisianPhone,productOrderSummary,type PublicDeliveryZone,type PublicOffer
 } from '../../../../../modules/shops/product-cod-form';
 import {whatsappLink} from '../../../../../modules/shops/storefront-marketing';
 import {trackStorefront} from '../../storefront-pixels';
@@ -12,7 +12,7 @@ import {formatStorefrontMoney,governorateLabel,storefrontDictionary,type Storefr
 import styles from '../../storefront-premium.module.css';
 
 type Props={slug:string;productId:string;productName:string;unitPrice:number;
- zones:PublicDeliveryZone[];defaultShipping:number;deliveryDays:number|null;whatsapp?:string;lang?:StorefrontLang};
+ zones:PublicDeliveryZone[];defaultShipping:number;deliveryDays:number|null;whatsapp?:string;lang?:StorefrontLang;offers?:PublicOffer[]};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
 type Field='name'|'phone'|'city'|'address';
 
@@ -25,7 +25,7 @@ function validate(values:Record<Field,string>,t:StorefrontDictionary):Partial<Re
  return errors;
 }
 
-export default function ProductCodForm({slug,productId,productName,unitPrice,zones,defaultShipping,deliveryDays,whatsapp='',lang='fr'}:Props){
+export default function ProductCodForm({slug,productId,productName,unitPrice,zones,defaultShipping,deliveryDays,whatsapp='',lang='fr',offers=[]}:Props){
  const t=storefrontDictionary(lang);
  const tnd=(millimes:number)=>formatStorefrontMoney(millimes,lang);
  const [quantity,setQuantity]=useState(1);
@@ -38,11 +38,14 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
  const [accepted,setAccepted]=useState<Result|null>(null);
  const [copied,setCopied]=useState('');
  const [formVisible,setFormVisible]=useState(true);
+ const [customQuantity,setCustomQuantity]=useState(false);
  const requestId=useRef<string|null>(null);
  const formRef=useRef<HTMLDivElement>(null);
  const nameRef=useRef<HTMLInputElement>(null);
 
- const summary=productOrderSummary(unitPrice,quantity,values.city,zones,defaultShipping);
+ const summary=productOrderSummary(unitPrice,quantity,values.city,zones,defaultShipping,offers);
+ const hasOffers=offers.length>1;
+ const bestSaving=Math.max(0,...offers.map(o=>o.saving||0));
  const errors=validate(values,t);
  const shown=(field:Field)=>touched[field]?errors[field]:undefined;
 
@@ -128,14 +131,37 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
     <p>{t.orderNowText}</p>
    </div>
    <form onSubmit={e=>void submit(e)} noValidate className={styles.codForm}>
-    <div className={styles.codQuantityRow}>
-     <span id="cod-qty-label">{t.quantity}</span>
+    {hasOffers&&<div className={styles.offerGroup} role="radiogroup" aria-labelledby="cod-offers-label">
+     <span id="cod-offers-label" className={styles.offerTitle}>{t.offersTitle}</span>
+     {offers.map(offer=>{
+      const selected=quantity===offer.quantity;
+      const best=(offer.saving||0)>0&&offer.saving===bestSaving;
+      return <button key={offer.quantity} type="button" role="radio" aria-checked={selected}
+       className={styles.offerCard} data-selected={selected}
+       onClick={()=>{changeQuantity(offer.quantity);setCustomQuantity(false);}}>
+       <span className={styles.offerRadio} aria-hidden="true"/>
+       <span className={styles.offerMain}>
+        <strong>{t.pieces(offer.quantity)}</strong>
+        {(offer.label||best)&&<em className={styles.offerBadge}>{offer.label||t.bestOffer}</em>}
+        {offer.quantity>1&&<small>{t.perPiece(tnd(Math.round(offer.price/offer.quantity)))}</small>}
+       </span>
+       <span className={styles.offerPrice}>
+        <strong>{tnd(offer.price)}</strong>
+        {(offer.saving||0)>0&&<s>{tnd(unitPrice*offer.quantity)}</s>}
+        {(offer.saving||0)>0&&<small className={styles.offerSave}>{t.save(tnd(offer.saving||0))}</small>}
+       </span>
+      </button>;
+     })}
+     {!customQuantity&&<button type="button" className={styles.codLink} onClick={()=>setCustomQuantity(true)}>{t.otherQuantity}</button>}
+    </div>}
+    {(!hasOffers||customQuantity)&&<div className={styles.codQuantityRow}>
+     <span id="cod-qty-label">{hasOffers?t.otherQuantity:t.quantity}</span>
      <div className={styles.codStepper} role="group" aria-labelledby="cod-qty-label">
       <button type="button" onClick={()=>changeQuantity(quantity-1)} disabled={quantity<=1} aria-label={t.decrease}>−</button>
       <output aria-live="polite">{quantity}</output>
       <button type="button" onClick={()=>changeQuantity(quantity+1)} disabled={quantity>=PRODUCT_FORM_MAX_QUANTITY} aria-label={t.increase}>+</button>
      </div>
-    </div>
+    </div>}
     <label className={styles.codField}>
      <span>{t.fullName}</span>
      <input ref={nameRef} name="name" autoComplete="name" maxLength={160} value={values.name}
@@ -176,7 +202,8 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
     </label>:<button type="button" className={styles.codLink} onClick={()=>setCouponOpen(true)}>{t.couponToggle}</button>}
 
     <dl className={styles.codSummary}>
-     <div><dt><bdi>{productName}</bdi> × {summary.quantity}</dt><dd>{tnd(summary.subtotal)}</dd></div>
+     <div><dt><bdi>{productName}</bdi> × {summary.quantity}</dt><dd>{tnd(summary.full)}</dd></div>
+     {summary.saving>0&&<div className={styles.codSaving}><dt>{t.offerDiscount(summary.quantity)}</dt><dd>−{tnd(summary.saving)}</dd></div>}
      <div><dt>{t.delivery}</dt><dd>{summary.delivery.free?t.free:tnd(summary.delivery.fee)+(summary.delivery.known?'':t.estimated)}</dd></div>
      <div className={styles.codTotal}><dt>{t.totalCod}</dt><dd>{tnd(summary.total)}</dd></div>
     </dl>

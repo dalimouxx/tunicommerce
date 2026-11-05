@@ -125,7 +125,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
    {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd}
     shipping={catalog.shipping} zones={catalog.zones} lang={lang}
     products={catalog.products.map(product=>({id:product.id,name:product.name,
-     variant:product.variant,price:product.price,available:product.available}))}
+     variant:product.variant,price:product.price,available:product.available,offers:product.offers}))}
     theme={theme}/>}
    {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappFloat} aria-label={t.whatsappLabel}>
     <span aria-hidden="true">💬</span><b>WhatsApp</b></a>}

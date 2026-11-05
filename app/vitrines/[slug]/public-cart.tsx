@@ -4,9 +4,10 @@ import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../.
 import {governors} from '../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
 import {trackStorefront} from './storefront-pixels';
+import {offerLineTotal} from '../../../modules/shops/product-cod-form';
 import {formatStorefrontMoney,governorateLabel,storefrontDictionary,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 
-type Product={id:string;name:string;variant:string;price:number;available:boolean};
+type Product={id:string;name:string;variant:string;price:number;available:boolean;offers?:{quantity:number;price:number}[]};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
 type CartTheme={accent:string;accentText:string;surface:string;foreground:string;muted:string};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
@@ -54,7 +55,8 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   }catch{ /* no persistent cart if storage is disabled */ }
  },[hydrated,slug,products,quantities]);
  const selected=products.filter(p=>p.available&&quantities[p.id]>0).map(p=>({...p,quantity:quantities[p.id]}));
- const subtotal=selected.reduce((n,p)=>n+p.price*p.quantity,0);
+ // Quantity offers mirror the server computation (exact quantity, must be cheaper).
+ const subtotal=selected.reduce((n,p)=>n+offerLineTotal(p.price,p.quantity,p.offers).total,0);
  const zone=zones.find(zone=>zone.governorates.includes(city));
  const delivery=zone?(zone.freeAbove!==null&&subtotal>=zone.freeAbove?0:zone.fee):shipping;
  const estimatedTotal=subtotal+delivery;

@@ -37,11 +37,21 @@ export function estimateDelivery(subtotal:number,city:string,zones:PublicDeliver
  return {fee:free?0:zone.fee,free:free||zone.fee===0,estimatedDays:zone.estimatedDays,known:true};
 }
 
-export function productOrderSummary(unitPrice:number,quantity:number,city:string,zones:PublicDeliveryZone[],defaultFee:number){
+export type PublicOffer={quantity:number;price:number;label?:string;saving?:number};
+
+/** Line total with the exact-quantity offer, mirroring the server rule (offer must be cheaper). */
+export function offerLineTotal(unitPrice:number,quantity:number,offers:PublicOffer[]=[]){
+ const full=unitPrice*quantity;
+ const match=quantity>1?offers.find(item=>item.quantity===quantity&&item.price<full):undefined;
+ return {full,total:match?match.price:full,saving:match?full-match.price:0};
+}
+
+export function productOrderSummary(unitPrice:number,quantity:number,city:string,zones:PublicDeliveryZone[],defaultFee:number,offers:PublicOffer[]=[]){
  const qty=clampQuantity(quantity);
- const subtotal=unitPrice*qty;
- const delivery=estimateDelivery(subtotal,city,zones,defaultFee);
- return {quantity:qty,subtotal,delivery,total:subtotal+delivery.fee};
+ const line=offerLineTotal(unitPrice,qty,offers);
+ // Free-delivery thresholds use the amount after the offer, as on the server.
+ const delivery=estimateDelivery(line.total,city,zones,defaultFee);
+ return {quantity:qty,full:line.full,saving:line.saving,subtotal:line.total,delivery,total:line.total+delivery.fee};
 }
 
 /** Fastest announced delivery across zones, used for the reassurance badge. */

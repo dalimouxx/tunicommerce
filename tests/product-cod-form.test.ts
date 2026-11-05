@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- clampQuantity,estimateDelivery,fastestDeliveryDays,formatTunisianPhone,
+ offerLineTotal,clampQuantity,estimateDelivery,fastestDeliveryDays,formatTunisianPhone,
  isValidTunisianMobile,normalizeTunisianPhone,productOrderSummary
 } from '../modules/shops/product-cod-form';
 
@@ -45,4 +45,15 @@ test('order summary multiplies the unit price and adds delivery',()=>{
  assert.equal(productOrderSummary(80000,2,'Tunis',zones,8000).total,160000);
  assert.equal(fastestDeliveryDays(zones),1);
  assert.equal(fastestDeliveryDays([]),null);
+});
+
+test('quantity offers lower the displayed subtotal exactly like the server',()=>{
+ const offers=[{quantity:2,price:89000},{quantity:3,price:119000}];
+ assert.deepEqual(offerLineTotal(49000,2,offers),{full:98000,total:89000,saving:9000});
+ assert.equal(offerLineTotal(49000,4,offers).saving,0);
+ assert.equal(offerLineTotal(40000,3,[{quantity:3,price:125000}]).saving,0);
+ const summary=productOrderSummary(49000,3,'Sfax',zones,8000,offers);
+ assert.equal(summary.subtotal,119000);assert.equal(summary.saving,28000);assert.equal(summary.total,128000);
+ // free delivery threshold (150) is checked after the offer: 3 × 52 = 156 but offer 140 → paid delivery
+ assert.equal(productOrderSummary(52000,3,'Tunis',zones,8000,[{quantity:3,price:140000}]).delivery.fee,7000);
 });

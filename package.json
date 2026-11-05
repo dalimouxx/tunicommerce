@@ -13,7 +13,7 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:generate": "prisma generate",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/commerce.test.mjs tests/migration.test.mjs && node --import tsx --test tests/security.test.ts tests/product-cod-form.test.ts tests/storefront-marketing.test.ts tests/storefront-i18n.test.ts",
+    "test": "node --test tests/commerce.test.mjs tests/migration.test.mjs && node --import tsx --test tests/security.test.ts tests/product-cod-form.test.ts tests/storefront-marketing.test.ts tests/storefront-i18n.test.ts tests/quantity-offers.test.ts",
     "test:integration": "node --import tsx --test tests/postgres.test.ts"
   },
   "dependencies": {

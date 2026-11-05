@@ -278,3 +278,25 @@
  .nav>a:first-child:not(.navCart):not(.langSwitch){display:none}
  .langSwitch{min-height:36px;padding:6px 11px;font-size:13px}
 }
+
+/* Quantity offers (radio cards in the COD form) */
+.offerGroup{display:grid;gap:9px}
+.offerTitle{font-size:14px;font-weight:800}
+.offerCard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:13px 14px;border:1.5px solid color-mix(in srgb,var(--store-text) 16%,transparent);border-radius:14px;background:var(--store-surface);color:var(--store-text);font:inherit;text-align:start;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.offerCard:hover{border-color:color-mix(in srgb,var(--store-accent) 60%,transparent)}
+.offerCard:active{transform:scale(.99)}
+.offerCard[data-selected="true"]{border-color:var(--store-accent);background:color-mix(in srgb,var(--store-accent) 8%,var(--store-surface));box-shadow:0 0 0 1px var(--store-accent)}
+.offerRadio{width:20px;height:20px;border-radius:50%;border:2px solid color-mix(in srgb,var(--store-text) 35%,transparent);display:grid;place-items:center}
+.offerCard[data-selected="true"] .offerRadio{border-color:var(--store-accent)}
+.offerCard[data-selected="true"] .offerRadio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--store-accent)}
+.offerMain{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
+.offerMain strong{font-size:15px}
+.offerMain small{flex-basis:100%;color:var(--store-muted);font-size:12px}
+.offerBadge{font-style:normal;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--store-accent);color:var(--store-accent-text)}
+.offerPrice{display:grid;justify-items:end;gap:1px;white-space:nowrap}
+.offerPrice strong{font-size:16px}
+.offerPrice s{font-size:12px;color:var(--store-muted)}
+.offerSave{font-size:11px;font-weight:800;color:#157a41}
+.codSaving dt,.codSaving dd{color:#157a41!important;font-weight:750}
+@media(max-width:380px){.offerCard{padding:11px 10px;gap:9px}.offerPrice strong{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.offerCard{transition:none}.offerCard:active{transform:none}}

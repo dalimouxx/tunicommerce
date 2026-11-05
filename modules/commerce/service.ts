@@ -10,11 +10,13 @@ import {updateCart} from '../cart/service';
 import {initialState} from './seed';
 import {catalogImportPayload} from './catalog-import';
 import {marketingSettings} from '../shops/storefront-marketing';
+import {assertValidOffers,linePrice,quantityOffersPayload} from '../shops/quantity-offers';
 import {applyWarehouseMovement,applyWarehouseOperation,releaseOrderWarehousePicks} from '../warehouse/ledger';
 import {transitions,labels,governors,type State,type Status} from './types';
 const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0).max(1000000000);const qty=z.number().int().min(1).max(10000);
 const schemas={
  marketing:marketingSettings,
+ quantityOffers:quantityOffersPayload,
  createOrder:z.object({name:str,phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/, 'Numéro tunisien invalide'),city:z.enum(governors as [string,...string[]]),address:str,source:z.enum(['Boutique','Facebook','Instagram','WhatsApp','TikTok','Manuel']),items:z.array(z.object({productId:str,quantity:qty})).min(1).max(100),coupon:z.string().trim().max(50).optional(),notes:z.string().max(2000).optional()}),
  transition:z.object({id:str,status:z.string(),carrier:z.string().max(160).optional(),carrierId:z.string().optional(),tracking:z.string().max(160).optional(),callbackAt:z.string().optional(),restock:z.boolean().optional()}),
  product:z.object({description:z.string().max(4000).optional(),imageUrl:productImageUrl,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
@@ -176,12 +178,15 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='createOrder'){
   const merged=new Map<string,number>();for(const it of p.items)merged.set(it.productId,(merged.get(it.productId)||0)+it.quantity);
   const items=[...merged].map(([productId,quantity])=>{const product=s.products.find(p=>p.id===productId&&p.active);if(!product)throw Error('Produit indisponible');if(quantity>product.stock)throw Error('Stock insuffisant : '+product.name);return {productId,quantity,name:product.name,variant:product.variant,price:product.price,cost:product.cost};});
-  const subtotal=items.reduce((n,it)=>n+it.price*it.quantity,0);let discount=0;
-  if(p.coupon){const coupon=s.coupons.find(c=>c.code===p.coupon.toUpperCase()&&c.active);if(!coupon||coupon.used>=coupon.limit)throw Error('Coupon invalide ou épuisé');discount=Math.round(subtotal*coupon.percent/100);coupon.used++;}
+  const subtotal=items.reduce((n,it)=>n+it.price*it.quantity,0);
+  // Quantity offers are applied first; a coupon then applies to the already-reduced amount.
+  const offerLines=items.map(it=>({it,line:linePrice({price:it.price,quantityOffers:s.products.find(x=>x.id===it.productId)?.quantityOffers},it.quantity)})).filter(x=>x.line.offer);
+  const offerDiscount=offerLines.reduce((n,x)=>n+x.line.saving,0);let discount=offerDiscount;
+  if(p.coupon){const coupon=s.coupons.find(c=>c.code===p.coupon.toUpperCase()&&c.active);if(!coupon||coupon.used>=coupon.limit)throw Error('Coupon invalide ou épuisé');discount+=Math.round((subtotal-offerDiscount)*coupon.percent/100);coupon.used++;}
   const phone=p.phone.replace(/^\+216/,'');let customer=s.customers.find(c=>c.phone===phone);if(!customer){customer={id:id(),name:p.name,phone,city:p.city,address:p.address,notes:''};s.customers.push(customer);}else{customer.name=p.name;customer.city=p.city;customer.address=p.address;}
   const oid=id();for(const it of items)move(it.productId,-it.quantity,'Réservation commande',oid);
   const reference='TC-'+String(1001+s.orders.length);const shipping=quoteDelivery(s,p.city,subtotal-discount);const riskSignals=orderSignals(s,customer.id,items,p.address); 
-  s.orders.unshift({id:oid,reference,customerId:customer.id,customerSnapshot:structuredClone(customer),items,status:'TO_CONFIRM',source:p.source,subtotal,discount,shipping:shipping.fee,shippingZone:shipping.zoneName,riskSignals,deliveryCost:7000,total:subtotal-discount+shipping.fee,collected:0,carrier:'',tracking:'',notes:p.notes||'',createdAt:now,updatedAt:now,callbackAt:'',events:[{at:now,label:'Commande créée · Stock réservé'}]});log('Création '+reference);
+  s.orders.unshift({id:oid,reference,customerId:customer.id,customerSnapshot:structuredClone(customer),items,status:'TO_CONFIRM',source:p.source,subtotal,discount,shipping:shipping.fee,shippingZone:shipping.zoneName,riskSignals,deliveryCost:7000,total:subtotal-discount+shipping.fee,collected:0,carrier:'',tracking:'',notes:p.notes||'',createdAt:now,updatedAt:now,callbackAt:'',...(offerDiscount?{offerDiscount}:{}),events:[{at:now,label:'Commande créée · Stock réservé'},...offerLines.map(x=>({at:now,label:'Offre quantité : '+x.it.quantity+' × '+x.it.name+' à '+(x.line.total/1000).toFixed(3)+' TND (−'+(x.line.saving/1000).toFixed(3)+' TND)'}))]});log('Création '+reference);
  }
  if(action==='transition'){
   const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');if(!transitions[o.status].includes(p.status as Status))throw Error('Transition interdite');
@@ -205,6 +210,7 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='settlement'){const o=s.orders.find(o=>o.id===p.id);if(!o||o.status!=='DELIVERED')throw Error('Commande non livrée');if(p.amount>o.total-o.collected)throw Error('Le montant dépasse le COD restant');o.collected+=p.amount;s.settlements.unshift({id:id(),orderId:o.id,amount:p.amount,reference:p.reference,at:now});o.events.push({at:now,label:'Encaissement COD : '+(p.amount/1000).toFixed(3)+' TND'});log('Encaissement '+o.reference);}
  if(action==='coupon'){if(s.coupons.some(c=>c.code===p.code.toUpperCase()))throw Error('Code déjà utilisé');s.coupons.push({...p,id:id(),code:p.code.toUpperCase(),used:0,active:true});log('Coupon : '+p.code);}
  if(action==='settings'){s.shop={...s.shop,...p};log('Paramètres boutique modifiés');}
+ if(action==='quantityOffers'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');product.quantityOffers=assertValidOffers(product.price,p.offers);log('Offres de quantité modifiées · '+product.name);}
  if(action==='marketing'){s.shop={...s.shop,marketing:p};log('Pixels publicitaires et WhatsApp modifiés');}
  if(action==='note'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:p.note});log('Note ajoutée à '+o.reference);}
  return s;
