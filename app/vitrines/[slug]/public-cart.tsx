@@ -4,14 +4,16 @@ import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../.
 import {governors} from '../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
 import {trackStorefront} from './storefront-pixels';
+import {formatStorefrontMoney,governorateLabel,storefrontDictionary,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
 type CartTheme={accent:string;accentText:string;surface:string;foreground:string;muted:string};
 type Result={accepted?:boolean;alreadyApplied?:boolean;reference?:string;totalMillimes?:number;trackingToken?:string;error?:string};
-const amount=(v:number)=>(v/1000).toFixed(3);
 
-export default function PublicCart({slug,products,shipping,zones,initialProductId,theme}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string;theme?:CartTheme}){
+export default function PublicCart({slug,products,shipping,zones,initialProductId,theme,lang='fr'}:{slug:string;products:Product[];shipping:number;zones:Zone[];initialProductId?:string;theme?:CartTheme;lang?:StorefrontLang}){
+ const t=storefrontDictionary(lang);
+ const money=(v:number)=>formatStorefrontMoney(v,lang);
  const accent=theme?.accent||'#126c65',accentText=theme?.accentText||'#ffffff';
  const [quantities,setQuantities]=useState<Record<string,number>>(()=>initialProductId&&products.some(p=>p.id===initialProductId&&p.available)?{[initialProductId]:1}:{});
  const [hydrated,setHydrated]=useState(false);
@@ -30,9 +32,9 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   if(!trackingPath)return;
   try{
    await navigator.clipboard.writeText(window.location.origin+trackingPath);
-   setTrackingNotice('Lien privé copié. Conservez-le personnellement : toute personne le possédant pourra consulter votre commande.');
+   setTrackingNotice(t.copiedPrivate);
   }catch{
-   setTrackingNotice('Copie indisponible. Ouvrez votre suivi et copiez son adresse depuis le navigateur.');
+   setTrackingNotice(t.copyUnavailable);
   }
  }
  useEffect(()=>{
@@ -62,9 +64,9 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
  }
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
-  if(!selected.length){setNotice('Ajoutez au moins un produit.');return;}
-  if(selected.reduce((n,p)=>n+p.quantity,0)>30){setNotice('Panier limité à 30 articles.');return;}
-  if(selected.length>15){setNotice('Panier limité à 15 références différentes.');return;}
+  if(!selected.length){setNotice(t.addOne);return;}
+  if(selected.reduce((n,p)=>n+p.quantity,0)>30){setNotice(t.maxUnits);return;}
+  if(selected.length>15){setNotice(t.maxRefs);return;}
   const id=requestId.current||crypto.randomUUID();requestId.current=id;
   setBusy(true);setNotice('');
   const tracked=selected.map(p=>({id:p.id,price:p.price,quantity:p.quantity}));
@@ -75,49 +77,49 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
     body:JSON.stringify({requestId:id,name,phone,city,address,coupon:coupon.trim()?coupon.trim().toUpperCase():undefined,items:selected.map(p=>({productId:p.id,quantity:p.quantity}))})
    });
    const result=await response.json() as Result;
-   if(!response.ok)throw new Error(result.error||'Commande refusée');
+   if(!response.ok)throw new Error(lang==='ar'?t.errRefused+(result.error?' ('+result.error+')':''):result.error||t.errRefused);
    setAccepted(result);
    if(!result.alreadyApplied)trackStorefront({name:'Purchase',items:tracked,value:result.totalMillimes??estimatedTotal,eventId:id});
    setTrackingNotice('');
    setQuantities({});
    requestId.current=null;
-  }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier les données.');}
+  }catch(error){setNotice(error instanceof Error&&error.message!=='Failed to fetch'?error.message:t.errNetwork);}
   finally{setBusy(false);}
  }
  if(accepted?.accepted)return <section id="panier" style={{background:theme?.surface||'#f0faf7',color:theme?.foreground||'#172338',padding:24,borderRadius:16}}>
-  <h2>Commande reçue</h2>
-  <p>Votre demande de paiement à la livraison a été enregistrée. Le marchand doit encore la confirmer.</p>
-  {accepted.reference&&<p>Référence : <strong>{accepted.reference}</strong></p>}
-  {trackingPath&&<p><a href={trackingPath} referrerPolicy="no-referrer">Consulter le suivi de ma commande</a></p>}
-  {trackingPath&&<button type="button" onClick={()=>void copyTrackingLink()}>Copier mon lien de suivi confidentiel</button>}
+  <h2>{t.orderReceived}</h2>
+  <p>{t.orderReceivedText}</p>
+  {accepted.reference&&<p>{t.reference} <strong dir="ltr">{accepted.reference}</strong></p>}
+  {trackingPath&&<p><a href={trackingPath} referrerPolicy="no-referrer">{t.viewTracking}</a></p>}
+  {trackingPath&&<button type="button" onClick={()=>void copyTrackingLink()}>{t.copyPrivate}</button>}
   {trackingNotice&&<p role="status" aria-live="polite">{trackingNotice}</p>}
-  {trackingPath&&<p>Conservez ce lien privé. Il donne accès au statut sans connexion ; ne le publiez pas sur les réseaux sociaux.</p>}
-  {typeof accepted.totalMillimes==='number'&&<p>Total enregistré : {amount(accepted.totalMillimes)} TND</p>}
-  {accepted.alreadyApplied&&<p>Cette demande avait déjà été reçue : aucun doublon créé.</p>}
-  <button type="button" onClick={()=>{setAccepted(null);setTrackingNotice('');}}>Nouvelle commande</button>
+  {trackingPath&&<p>{t.keepPrivate}</p>}
+  {typeof accepted.totalMillimes==='number'&&<p>{t.savedTotal} {money(accepted.totalMillimes)}</p>}
+  {accepted.alreadyApplied&&<p>{t.duplicate}</p>}
+  <button type="button" onClick={()=>{setAccepted(null);setTrackingNotice('');}}>{t.newOrder}</button>
  </section>;
  return <section id="panier" style={{background:theme?.surface||'#fff',color:theme?.foreground||'#172338',border:'1px solid '+accent,borderRadius:16,padding:22,marginTop:18}}>
-  <h2>Panier et paiement à la livraison</h2>
-  <p>Sélectionnez les articles de cette boutique. Le total final et les frais de livraison sont calculés par le serveur lors de la commande.</p>
-  <p style={{fontSize:13,color:'#586b75'}}>Le panier conserve uniquement les références et quantités des produits dans ce navigateur pendant sept jours. Nom, téléphone et adresse ne sont jamais enregistrés localement par cette fonction.</p>
+  <h2>{t.cartTitle}</h2>
+  <p>{t.cartIntro}</p>
+  <p style={{fontSize:13,color:'#586b75'}}>{t.cartStorage}</p>
   {products.filter(p=>p.available).map(p=><label key={p.id} style={{display:'flex',justifyContent:'space-between',gap:14,padding:'10px 0',borderBottom:'1px solid #edf0f4'}}>
-   <span>{p.name} · {amount(p.price)} TND</span>
-   <input aria-label={'Quantité '+p.name} type="number" min="0" max="10" step="1" value={quantities[p.id]||0}
+   <span><bdi>{p.name}</bdi> · {money(p.price)}</span>
+   <input aria-label={t.quantityOf(p.name)} type="number" min="0" max="10" step="1" value={quantities[p.id]||0}
     onChange={e=>updateQuantity(p.id,Math.min(10,Math.max(0,Number.isFinite(Number(e.target.value))?Math.floor(Number(e.target.value)):0)))}
     style={{padding:8,width:72}}/>
   </label>)}
-  <p aria-live="polite">{selected.length} référence(s) · {selected.reduce((n,p)=>n+p.quantity,0)} unité(s). Maximum : 15 références et 30 unités.</p>
-  <p>Sous-total : <strong>{amount(subtotal)} TND</strong> · livraison : {amount(delivery)} TND · total estimé : <strong>{amount(estimatedTotal)} TND</strong></p>
-  <p>Les tarifs et les stocks sont revérifiés par le serveur lors de la commande. Aucun paiement n'est demandé en ligne.</p>
-  {coupon.trim()&&<p>Le total estimé ci-dessus est affiché avant réduction. Le coupon sera validé et appliqué au montant final côté serveur.</p>}
+  <p aria-live="polite">{t.cartCount(selected.length,selected.reduce((n,p)=>n+p.quantity,0))}</p>
+  <p>{t.subtotal} : <strong>{money(subtotal)}</strong> · {t.delivery} : {money(delivery)} · {t.estimatedTotal} : <strong>{money(estimatedTotal)}</strong></p>
+  <p>{t.serverCheck}</p>
+  {coupon.trim()&&<p>{t.couponNotice}</p>}
   {notice&&<p role="alert">{notice}</p>}
   <form onSubmit={e=>void submit(e)} style={{display:'grid',gap:12,maxWidth:420}}>
-   <label>Nom complet<input required minLength={2} maxLength={160} value={name} onChange={e=>{setName(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
-   <label>Téléphone tunisien<input required type="tel" inputMode="tel" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
-   <label>Gouvernorat<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v}>{v}</option>)}</select></label>
-   <label>Adresse de livraison<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
-   <label>Code promo (facultatif)<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder="Code communiqué par le marchand" style={{display:'block',padding:10,width:'100%'}}/></label>
-   <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:accent,color:accentText,fontWeight:700}}>Commander · payer à la livraison</button>
+   <label>{t.fullName}<input required minLength={2} maxLength={160} value={name} onChange={e=>{setName(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>{t.phoneTn}<input required type="tel" dir="ltr" inputMode="tel" value={phone} onChange={e=>{setPhone(e.target.value);requestId.current=null;}} placeholder="22123456" style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>{t.governorate}<select value={city} onChange={e=>{setCity(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}>{governors.map(v=><option key={v} value={v}>{governorateLabel(v,lang)}</option>)}</select></label>
+   <label>{t.address}<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
+   <label>{t.couponOptional}<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder={t.couponPlaceholder} style={{display:'block',padding:10,width:'100%'}}/></label>
+   <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:accent,color:accentText,fontWeight:700}}>{t.cartSubmit}</button>
   </form>
  </section>;
 }

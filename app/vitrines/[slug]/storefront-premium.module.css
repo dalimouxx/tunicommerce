@@ -34,7 +34,7 @@
 .heroImage{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;object-position:center}
 .heroAbstract{width:75%;height:75%;position:relative;display:grid;place-items:center;border-radius:50%;border:1px solid color-mix(in srgb,var(--store-accent) 35%,transparent);font-size:clamp(70px,13vw,170px);font-weight:900;color:var(--store-accent);background:color-mix(in srgb,var(--store-accent) 8%,var(--store-surface))}
 .heroAbstract span:last-child{font-size:12px;letter-spacing:.5em;position:absolute;bottom:12%;left:50%;transform:translateX(-50%)}
-.featuredBadge{position:absolute;right:20px;bottom:18px;max-width:min(84%,275px);padding:15px 19px;display:grid;gap:5px;border-radius:15px;color:var(--store-text);background:var(--store-surface);box-shadow:0 14px 45px #00000018;overflow-wrap:anywhere}
+.featuredBadge{position:absolute;inset-inline-end:20px;bottom:18px;max-width:min(84%,275px);padding:15px 19px;display:grid;gap:5px;border-radius:15px;color:var(--store-text);background:var(--store-surface);box-shadow:0 14px 45px #00000018;overflow-wrap:anywhere}
 .featuredBadge span{font-size:10px;color:var(--store-muted)}
 .featuredBadge strong{font-size:15px}
 .featuredBadge small{font-size:14px;font-weight:850;color:var(--store-accent)}
@@ -63,7 +63,7 @@
 .productImageWrap img{display:block;width:100%;height:100%;object-fit:contain;padding:16px;transition:transform .35s}
 .productCard:hover img{transform:scale(1.045)}
 .productPlaceholder{height:100%;display:grid;place-items:center;font-size:76px;color:var(--store-accent);opacity:.5}
-.outOfStock{position:absolute;left:12px;top:12px;background:#fff;color:#6b2830;font-size:11px;font-weight:800;padding:8px 10px;border-radius:20px}
+.outOfStock{position:absolute;inset-inline-start:12px;top:12px;background:#fff;color:#6b2830;font-size:11px;font-weight:800;padding:8px 10px;border-radius:20px}
 .productBody{padding:20px;display:flex;flex-direction:column;gap:8px;flex:1}
 .productCategory{font-size:10px;font-weight:850;letter-spacing:.13em;text-transform:uppercase;color:var(--store-accent)}
 .productBody h3{font-size:17px;line-height:1.28;letter-spacing:-.025em;margin:2px 0}
@@ -204,7 +204,7 @@
 .codField small[role="alert"]{color:#c62828;font-weight:650;font-size:12px}
 .codPhone{display:flex;align-items:center;gap:10px;padding:0 0 0 14px}
 .codPhone b{font-weight:800;color:var(--store-muted);font-size:15px}
-.codPhone input{border:0!important;min-height:46px;padding-left:0;outline-offset:0}
+.codPhone input{border:0!important;min-height:46px;padding-inline-start:0;outline-offset:0}
 .codLink{justify-self:start;background:none;border:0;padding:4px 0;color:var(--store-accent);font:inherit;font-size:13px;font-weight:800;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
 .codSummary{margin:4px 0 0;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--store-accent) 7%,var(--store-surface));display:grid;gap:9px;font-size:14px}
 .codSummary div{display:flex;justify-content:space-between;gap:12px}
@@ -249,13 +249,32 @@
 @media(prefers-reduced-motion:reduce){.codSubmit{transition:none}.codSubmit:hover,.codSubmit:active{transform:none}}
 
 /* WhatsApp contact (configured by the merchant) */
-.whatsappFloat{position:fixed;right:18px;bottom:18px;z-index:40;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 18px 0 14px;border-radius:999px;background:#1f9d55;color:#fff!important;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 10px 28px #0f5c3240;transition:transform .15s}
+.whatsappFloat{position:fixed;inset-inline-end:18px;bottom:18px;z-index:40;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 18px 0 14px;border-radius:999px;background:#1f9d55;color:#fff!important;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 10px 28px #0f5c3240;transition:transform .15s}
 .whatsappFloat span{font-size:21px}
 .whatsappFloat:hover{transform:translateY(-2px)}
 .whatsappInline{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 16px;border-radius:12px;border:1.5px solid #1f9d55;color:#157a41!important;background:#f1fbf5;text-decoration:none;font-weight:800;font-size:14px}
 @media(max-width:720px){
- .whatsappFloat{right:14px;bottom:14px;min-height:50px;padding:0 14px}
+ .whatsappFloat{inset-inline-end:14px;bottom:14px;min-height:50px;padding:0 14px}
  .whatsappFloat b{display:none}
  .whatsappFloatRaised{bottom:calc(88px + env(safe-area-inset-bottom))}
 }
 @media(prefers-reduced-motion:reduce){.whatsappFloat{transition:none}.whatsappFloat:hover{transform:none}}
+
+/* Language switch and Arabic (RTL) storefront */
+.langSwitch{display:inline-flex;align-items:center;min-height:38px;padding:7px 13px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--store-text) 22%,transparent);text-decoration:none;font-size:14px;font-weight:800;white-space:nowrap}
+.langSwitch[lang="ar"]{font-family:var(--store-font-arabic),'Segoe UI',Tahoma,sans-serif;font-size:15px}
+.langSwitch:hover{border-color:var(--store-accent);color:var(--store-accent)!important}
+.page[dir="rtl"]{font-family:var(--store-font-arabic),'Segoe UI',Tahoma,'Geeza Pro',sans-serif}
+/* Themes set Latin display fonts on headings; Arabic needs its own font. Letter-spacing breaks Arabic letter joining. */
+.page[dir="rtl"] *{letter-spacing:0!important;font-family:var(--store-font-arabic),'Segoe UI',Tahoma,'Geeza Pro',sans-serif!important}
+.page[dir="rtl"] .kicker,.page[dir="rtl"] .announcement{font-size:12px}
+.page[dir="rtl"] .detailDescription,.page[dir="rtl"] .heroDescription{line-height:1.9}
+.page[dir="rtl"] .codPhone{direction:ltr}
+.page[dir="rtl"] .codPhone input{text-align:left}
+.page[dir="rtl"] input[type="tel"]{text-align:right}
+.page[dir="rtl"] .codPhone input[type="tel"]{text-align:left}
+@media(max-width:720px){
+ .nav{flex-shrink:0}
+ .nav>a:first-child:not(.navCart):not(.langSwitch){display:none}
+ .langSwitch{min-height:36px;padding:6px 11px;font-size:13px}
+}

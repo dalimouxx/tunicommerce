@@ -6,9 +6,9 @@ import {normalizeTunisianPhone} from './product-cod-form';
  * Advertising pixels and WhatsApp contact for one isolated shop.
  * Only identifiers are stored: no access token, so nothing secret reaches the storefront.
  */
-export type StorefrontMarketing={metaPixelId:string;tiktokPixelId:string;whatsapp:string;whatsappMessage:string};
+export type StorefrontMarketing={metaPixelId:string;tiktokPixelId:string;whatsapp:string;whatsappMessage:string;language:'fr'|'ar'};
 
-export const emptyMarketing:StorefrontMarketing={metaPixelId:'',tiktokPixelId:'',whatsapp:'',whatsappMessage:''};
+export const emptyMarketing:StorefrontMarketing={metaPixelId:'',tiktokPixelId:'',whatsapp:'',whatsappMessage:'',language:'fr'};
 
 const metaPixelId=z.string().trim().regex(/^(|[0-9]{10,20})$/,'Identifiant Pixel Meta invalide : 10 à 20 chiffres');
 const tiktokPixelId=z.string().trim().toUpperCase().regex(/^(|[A-Z0-9]{15,30})$/,'Identifiant Pixel TikTok invalide : 15 à 30 lettres ou chiffres');
@@ -17,7 +17,9 @@ const whatsapp=z.string().trim().max(30).transform(value=>value?normalizeTunisia
 
 export const marketingSettings=z.object({
  metaPixelId,tiktokPixelId,whatsapp,
- whatsappMessage:z.string().trim().max(300,'Message WhatsApp trop long (300 caractères maximum)')
+ whatsappMessage:z.string().trim().max(300,'Message WhatsApp trop long (300 caractères maximum)'),
+ /** Default language of the public storefront; buyers can still switch. */
+ language:z.enum(['fr','ar']).default('fr')
 }).strict();
 
 export const marketingMutation=z.object({
@@ -28,7 +30,8 @@ export function storefrontMarketing(state:State):StorefrontMarketing{
  const value=state.shop.marketing;
  return {
   metaPixelId:value?.metaPixelId||'',tiktokPixelId:value?.tiktokPixelId||'',
-  whatsapp:value?.whatsapp||'',whatsappMessage:value?.whatsappMessage||''
+  whatsapp:value?.whatsapp||'',whatsappMessage:value?.whatsappMessage||'',
+  language:value?.language==='ar'?'ar':'fr'
  };
 }
 
@@ -39,8 +42,8 @@ export function whatsappLink(number:string,message?:string):string{
  return 'https://wa.me/216'+number+(text?'?text='+encodeURIComponent(text):'');
 }
 
-export function productWhatsappMessage(marketing:StorefrontMarketing,productName:string,pageUrl?:string){
- const intro=marketing.whatsappMessage||'Bonjour, je suis intéressé(e) par';
+export function productWhatsappMessage(marketing:StorefrontMarketing,productName:string,pageUrl?:string,defaultIntro='Bonjour, je suis intéressé(e) par'){
+ const intro=marketing.whatsappMessage||defaultIntro;
  return (intro+' : '+productName+(pageUrl?'\n'+pageUrl:'')).slice(0,600);
 }
 
