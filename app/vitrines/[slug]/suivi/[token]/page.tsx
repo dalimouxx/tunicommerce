@@ -30,6 +30,19 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
   </header>
   <section className={styles.card}>
    <h2>Suivi de votre commande</h2>
+   <p>{order.progress.note}</p>
+   {order.progress.steps.length>0&&<ol aria-label="Progression de la commande"
+    style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:10,padding:0,listStyle:'none',margin:'16px 0'}}>
+    {order.progress.steps.map(step=><li key={step.id}
+     aria-current={step.state==='CURRENT'?'step':undefined}
+     style={{border:'1px solid '+(step.state==='CURRENT'?'#126c65':'#dce5eb'),
+      borderRadius:12,padding:12,background:step.state==='CURRENT'?'#edf9f6':'#fff'}}>
+     <strong>{step.label}</strong>
+     <span style={{display:'block',fontSize:13,marginTop:5}}>
+      {step.state==='DONE'?'Étape déclarée accomplie':step.state==='CURRENT'?'Statut actuel':'À venir'}
+     </span>
+    </li>)}
+   </ol>}
    <p>Commande reçue le {new Date(order.createdAt).toLocaleDateString('fr-TN')}. Dernière mise à jour le {new Date(order.updatedAt).toLocaleDateString('fr-TN')}.</p>
    <p>Montant enregistré : <strong>{(order.totalMillimes/1000).toFixed(3)} TND</strong> · paiement à la livraison.</p>
    <ul>{order.items.map((item,index)=><li key={index}>{item.name}{item.variant?' · '+item.variant:''} × {item.quantity}</li>)}</ul>

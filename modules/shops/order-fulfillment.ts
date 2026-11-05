@@ -1,5 +1,6 @@
 import {labels,type State,type Status} from '../commerce/types';
 import {canRequest} from '../platform/tracking';
+import {publicTrackingProgress} from './public-tracking-progress';
 
 export const fulfillmentStatuses=['CONFIRMED','PREPARING','READY','SHIPPED'] as const;
 export function fulfillmentQueue<T extends {status:string;createdAt:string}>(orders:readonly T[]):T[]{
@@ -19,6 +20,7 @@ export function publicTrackingView(state:State,token:string){
   reference:order.reference,
   status:order.status,
   statusLabel:labels[order.status as Status],
+  progress:publicTrackingProgress(order.status),
   createdAt:order.createdAt,
   updatedAt:order.updatedAt,
   totalMillimes:order.total,

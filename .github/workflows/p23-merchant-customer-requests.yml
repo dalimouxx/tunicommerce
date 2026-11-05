@@ -6,6 +6,8 @@ on:
       - 'modules/shops/customer-request-queue.ts'
       - 'tests/merchant-customer-request-queue.test.ts'
       - 'modules/shops/order-fulfillment.ts'
+      - 'modules/shops/public-tracking-progress.ts'
+      - 'tests/public-tracking-progress.test.ts'
       - 'app/mes-boutiques/[shopId]/shop-customer-requests.tsx'
       - 'app/mes-boutiques/[shopId]/merchant-shop-workspace.tsx'
       - 'app/vitrines/[slug]/suivi/[token]/page.tsx'
@@ -27,6 +29,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: node --import tsx --test tests/isolated-customer-request-resolution.test.ts tests/isolated-public-customer-request.test.ts tests/merchant-customer-request-queue.test.ts
+      - run: node --import tsx --test tests/isolated-customer-request-resolution.test.ts tests/isolated-public-customer-request.test.ts tests/merchant-customer-request-queue.test.ts tests/public-tracking-progress.test.ts
       - run: npm run typecheck
       - run: npm run build
