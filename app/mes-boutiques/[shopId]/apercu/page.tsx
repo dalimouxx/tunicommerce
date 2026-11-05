@@ -12,7 +12,7 @@ export const dynamic='force-dynamic';
 
 export default async function ShopStorefrontPreview({params,searchParams}:{params:Promise<{shopId:string}>;searchParams:Promise<{theme?:string|string[]}>}){
  const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);
  if(!shop)notFound();

@@ -35,6 +35,10 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
   assert.equal((await get('/connexion/admin')).status,200);
   assert.equal((await get('/connexion/boutique')).status,200);
   assert.equal((await get('/admin')).headers.get('location'),'/connexion/admin');
+  assert.equal((await get('/mes-boutiques')).headers.get('location'),'/connexion/boutique');
+  assert.equal((await get('/marchand')).headers.get('location'),'/connexion/boutique');
+  assert.equal((await get('/mon-abonnement')).headers.get('location'),'/connexion/boutique');
+  assert.equal((await get('/equipe')).headers.get('location'),'/connexion/boutique');
 
   const setup=await post('/api/auth/setup',{
    name:'Plateforme Admin',email:'admin@portal.example.test',password,token:setupToken

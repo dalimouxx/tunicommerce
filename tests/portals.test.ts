@@ -79,11 +79,11 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.ok(home.headers.get('location')?.endsWith('/admin'));
    const merchant=await get('/marchand',adminCookie);
    assert.equal(merchant.status,307);
-   assert.ok(merchant.headers.get('location')?.endsWith('/login'));
+   assert.ok(merchant.headers.get('location')?.endsWith('/connexion/boutique'));
    assert.equal((await get('/api/admin/plans',adminCookie)).status,200);
    const ownShops=await get('/mes-boutiques',adminCookie);
    assert.equal(ownShops.status,307);
-   assert.equal(ownShops.headers.get('location'),'/login');
+   assert.equal(ownShops.headers.get('location'),'/connexion/boutique');
    const admin=await get('/admin',adminCookie);
    assert.equal(admin.status,200);
    const html=await admin.text();
