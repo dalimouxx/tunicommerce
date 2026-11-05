@@ -23,7 +23,7 @@ function capacity(used:number,cap:number|null){
 }
 export default async function MySubscription(){
  const user=await getCurrentUser();
- if(!user)redirect('/login');
+ if(!user)redirect('/connexion/boutique');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
  const [plan,quotas,photos,availablePlans,payments,methods,shopCount,staffMemberships,linkedShop,isolatedStates]=await Promise.all([

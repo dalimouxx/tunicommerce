@@ -18,7 +18,7 @@ export const dynamic='force-dynamic';
 
 export default async function MerchantShopOverview({params}:{params:Promise<{shopId:string}>}){
  const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const membership=await prisma.membership.findUnique({
   where:{shopId_userId:{shopId,userId:actor.userId}},

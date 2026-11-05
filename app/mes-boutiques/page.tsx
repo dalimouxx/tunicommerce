@@ -13,7 +13,7 @@ export const dynamic='force-dynamic';
 
 export default async function MyShops(){
  const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ if(!actor)redirect('/connexion/boutique');
  const [legacy, memberships]=await Promise.all([
   prisma.workspace.findUnique({
    where:{ownerId:actor.userId},

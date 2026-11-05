@@ -8,7 +8,7 @@ export const dynamic='force-dynamic';
 
 export default async function MerchantDashboard(){
  const user=await getCurrentUser();
- if(!user)redirect('/login');
+ if(!user)redirect('/connexion/boutique');
  // Administrators may manage only their OWN legacy boutique here; global management stays at /admin.
 
  const workspace=await prisma.workspace.findUnique({
