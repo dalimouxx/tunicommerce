@@ -2,6 +2,7 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../../../modules/shops/public-cart-recovery';
 import {governors} from '../../../modules/commerce/types';
+import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
 
 type Product={id:string;name:string;variant:string;price:number;available:boolean};
 type Zone={governorates:string[];fee:number;freeAbove:number|null;estimatedDays:number};
@@ -19,7 +20,18 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
  const [accepted,setAccepted]=useState<Result|null>(null);
+ const [trackingNotice,setTrackingNotice]=useState('');
  const requestId=useRef<string|null>(null);
+ const trackingPath=accepted?.trackingToken?privateTrackingPath(slug,accepted.trackingToken):null;
+ async function copyTrackingLink(){
+  if(!trackingPath)return;
+  try{
+   await navigator.clipboard.writeText(window.location.origin+trackingPath);
+   setTrackingNotice('Lien privé copié. Conservez-le personnellement : toute personne le possédant pourra consulter votre commande.');
+  }catch{
+   setTrackingNotice('Copie indisponible. Ouvrez votre suivi et copiez son adresse depuis le navigateur.');
+  }
+ }
  useEffect(()=>{
   try{
    const recovered=restoreCartQuantities(window.localStorage.getItem(cartStorageKey(slug)),products);
@@ -60,6 +72,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
    const result=await response.json() as Result;
    if(!response.ok)throw new Error(result.error||'Commande refusée');
    setAccepted(result);
+   setTrackingNotice('');
    setQuantities({});
    requestId.current=null;
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau. Réessayez sans modifier les données.');}
@@ -69,11 +82,13 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
   <h2>Commande reçue</h2>
   <p>Votre demande de paiement à la livraison a été enregistrée. Le marchand doit encore la confirmer.</p>
   {accepted.reference&&<p>Référence : <strong>{accepted.reference}</strong></p>}
-  {accepted.trackingToken&&<p><a href={'/vitrines/'+encodeURIComponent(slug)+'/suivi/'+encodeURIComponent(accepted.trackingToken)}>Consulter le suivi de ma commande</a></p>}
-  {accepted.trackingToken&&<p>Conservez votre lien de suivi confidentiel. Il permet de consulter le statut sans connexion.</p>}
+  {trackingPath&&<p><a href={trackingPath} referrerPolicy="no-referrer">Consulter le suivi de ma commande</a></p>}
+  {trackingPath&&<button type="button" onClick={()=>void copyTrackingLink()}>Copier mon lien de suivi confidentiel</button>}
+  {trackingNotice&&<p role="status" aria-live="polite">{trackingNotice}</p>}
+  {trackingPath&&<p>Conservez ce lien privé. Il donne accès au statut sans connexion ; ne le publiez pas sur les réseaux sociaux.</p>}
   {typeof accepted.totalMillimes==='number'&&<p>Total enregistré : {amount(accepted.totalMillimes)} TND</p>}
   {accepted.alreadyApplied&&<p>Cette demande avait déjà été reçue : aucun doublon créé.</p>}
-  <button type="button" onClick={()=>setAccepted(null)}>Nouvelle commande</button>
+  <button type="button" onClick={()=>{setAccepted(null);setTrackingNotice('');}}>Nouvelle commande</button>
  </section>;
  return <section id="panier" style={{background:'#fff',border:'1px solid #dbe5eb',borderRadius:16,padding:22,marginTop:18}}>
   <h2>Panier et paiement à la livraison</h2>
