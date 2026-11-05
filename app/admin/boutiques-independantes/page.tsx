@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {redirect} from 'next/navigation';
-import {getCurrentUser} from '../../../modules/auth/session';
+import {getSuperAdminUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
 import {independentShopAdminSummary,independentShopPublicAccess} from '../../../modules/platform/independent-shop-admin';
 import IndependentBillingActions from './independent-billing-actions';
@@ -8,8 +8,8 @@ import styles from '../platform.module.css';
 
 export const dynamic='force-dynamic';
 export default async function IndependentShopAdmin(){
- const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ const actor=await getSuperAdminUser();
+ if(!actor)redirect('/connexion/admin');
  if(actor.role!=='ADMIN')redirect('/marchand');
  const [records,enabledPlans]=await Promise.all([prisma.shop.findMany({
   where:{legacyWorkspaceId:null},

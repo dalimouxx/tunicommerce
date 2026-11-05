@@ -12,7 +12,7 @@ Le test ne consulte aucun compte marchand, n'expose aucun secret, ne déclenche 
 
 Le même workflow exécute `scripts/priority1-public-security-smoke.mjs` après la disponibilité :
 GET anonyme `/api/commerce` et `/api/admin/subscriptions/export` doivent répondre 401 ;
-`/admin` doit rediriger vers `/login` (même origine HTTPS). Aucune session
+`/admin` doit rediriger vers `/connexion/admin` (même origine HTTPS). Aucune session
 utilisateur, commande ou donnée privée n'est employée. Cette surveillance
 complète les tests HTTP sur PostgreSQL jetable, mais ne remplace pas une recette
 connectée avec des comptes de démonstration distincts.
@@ -25,4 +25,4 @@ connectée avec des comptes de démonstration distincts.
 
 ## P1 — Vérification des nouvelles pages d'administration
 
-Le contrôle de sécurité anonyme vérifie maintenant également `/admin/lancement`, `/admin/fiabilite` et `/admin/integrations`, qui doivent toutes rediriger vers `/login` sans cookie ni session. Le nombre de points d'accès vérifiés passe de six à neuf. Les vérifications ne lisent aucun secret, ne consultent aucun compte marchand et n'altèrent aucune commande. Ce contrôle valide uniquement la barrière aux visiteurs anonymes ; l'autorisation des rôles est vérifiée séparément dans les tests multi-boutiques.
+Le contrôle de sécurité anonyme vérifie maintenant également `/admin/lancement`, `/admin/fiabilite` et `/admin/integrations`, qui doivent toutes rediriger vers `/connexion/admin` sans cookie ni session. Le nombre de points d'accès vérifiés passe de six à neuf. Les vérifications ne lisent aucun secret, ne consultent aucun compte marchand et n'altèrent aucune commande. Ce contrôle valide uniquement la barrière aux visiteurs anonymes ; l'autorisation des rôles est vérifiée séparément dans les tests multi-boutiques.

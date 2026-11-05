@@ -10,7 +10,7 @@ test('protected API and admin pages reject anonymous clients without sending coo
   assert.equal(options.method,'GET');
   assert.equal(options.redirect,'manual');
   assert.equal(options.headers.Cookie,undefined);
-  return response(new URL(url).pathname.startsWith('/admin')?307:401,new URL(url).pathname.startsWith('/admin')?'/login':null);
+  return response(new URL(url).pathname.startsWith('/admin')?307:401,new URL(url).pathname.startsWith('/admin')?'/connexion/admin':null);
  }});
  assert.deepEqual(result,{ok:true,checks:9});
  assert.equal(seen.length,9);
@@ -28,7 +28,7 @@ test('all merchant APIs remain covered by anonymous read-only smoke checks',asyn
  const calls=[];
  await checkAnonymousBoundaries({delay,fetcher:async(url,options)=>{
   calls.push({url,options});
-  return response(new URL(url).pathname.startsWith('/admin')?307:401,new URL(url).pathname.startsWith('/admin')?'/login':null);
+  return response(new URL(url).pathname.startsWith('/admin')?307:401,new URL(url).pathname.startsWith('/admin')?'/connexion/admin':null);
  }});
  for(const suffix of ['/orders','/dispatch-manifest','/cod-exceptions']){
   assert.ok(calls.some(call=>call.url.endsWith(suffix)));
@@ -44,7 +44,7 @@ test('global ADMIN launch, integrator and integrity screens reject anonymous bro
   calls.push(pathname);
   assert.equal(options.headers.Cookie,undefined);
   return response(pathname.startsWith('/admin')?307:401,
-   pathname.startsWith('/admin')?'/login':null);
+   pathname.startsWith('/admin')?'/connexion/admin':null);
  }});
  for(const page of ['/admin','/admin/lancement','/admin/fiabilite','/admin/integrations'])
   assert.ok(calls.includes(page));

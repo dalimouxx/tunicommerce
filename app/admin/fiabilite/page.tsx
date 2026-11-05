@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {redirect,notFound} from 'next/navigation';
-import {getCurrentUser} from '../../../modules/auth/session';
+import {getSuperAdminUser} from '../../../modules/auth/session';
 import {prisma} from '../../../modules/storage/client';
 import {mergeCommerceIntegrity,parseIntegrityPage,integrityTotalPages,INTEGRITY_PAGE_SIZE} from '../../../modules/platform/commerce-integrity';
 import type {State} from '../../../modules/commerce/types';
@@ -19,8 +19,8 @@ const labels={
  NEGATIVE_WAREHOUSE_BALANCE:'Quantités négatives par dépôt'
 } as const;
 export default async function PlatformIntegrityPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
- const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ const actor=await getSuperAdminUser();
+ if(!actor)redirect('/connexion/admin');
  if(actor.role!=='ADMIN')redirect('/marchand');
  let currentPage:number;
  try{currentPage=parseIntegrityPage(await searchParams);}catch{notFound();}
