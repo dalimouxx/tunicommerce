@@ -7,6 +7,8 @@ import {isPublicIsolatedShop} from '../../../../../modules/shops/publication';
 import {normalizeState} from '../../../../../modules/commerce/normalize';
 import {money,type State} from '../../../../../modules/commerce/types';
 import {publicProductDetail} from '../../../../../modules/shops/public-product-detail';
+import {fastestDeliveryDays} from '../../../../../modules/shops/product-cod-form';
+import ProductCodForm from './product-cod-form';
 import styles from '../../storefront-premium.module.css';
 
 export const dynamic='force-dynamic';
@@ -67,14 +69,21 @@ export default async function PublicProductPage({params}:Context){
      <p className={styles.kicker}>{product.category||'Notre sélection'}</p>
      <h1>{product.name}</h1>
      {product.variant&&<p className={styles.variant}>Variante : {product.variant}</p>}
-     {product.description&&<p className={styles.detailDescription}>{product.description}</p>}
      <p className={styles.detailPrice}>{money(product.price)} TND</p>
-     <p className={styles.detailAvailability} aria-live="polite">{product.available?'● Disponible à la commande':'● Rupture de stock'}</p>
-     <p className={styles.detailNote}>Frais de livraison et éventuels coupons confirmés au passage de commande. Aucun paiement bancaire en ligne n’est demandé.</p>
-     {product.available&&<Link className={styles.primaryAction}
-      href={base+'?produit='+encodeURIComponent(product.id)+'#panier'}>
-      Ajouter au panier et commander <span aria-hidden="true">↗</span></Link>}
-     <Link href={base+'#catalogue'} className={styles.secondaryAction}>Continuer mes achats</Link>
+     <p className={styles.detailAvailability} aria-live="polite">{product.available?'● En stock · commande sans compte':'● Rupture de stock'}</p>
+     {product.available?<ProductCodForm slug={slug} productId={product.id} productName={product.name}
+      unitPrice={product.price} zones={store.zones} defaultShipping={store.shipping}
+      deliveryDays={fastestDeliveryDays(store.zones)}/>:
+      <div className={styles.codUnavailable}>
+       <strong>Ce produit est momentanément indisponible.</strong>
+       <p>Découvrez les autres articles de la boutique.</p>
+       <Link href={base+'#catalogue'} className={styles.secondaryAction}>Voir le catalogue</Link>
+      </div>}
+     {product.description&&<section className={styles.detailDescriptionBlock} aria-labelledby="product-description">
+      <h2 id="product-description">Description</h2>
+      <p className={styles.detailDescription}>{product.description}</p>
+     </section>}
+     <Link href={base+'#catalogue'} className={styles.codLink}>← Continuer mes achats</Link>
     </div>
    </article>
    {similar.length>0&&<section className={styles.similar} aria-labelledby="similar-title">

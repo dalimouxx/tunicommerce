@@ -13,11 +13,11 @@ import {assertPlanForNewCommerce} from './plan-growth-policy';
 
 export const publicCodCheckoutInput=z.object({
  requestId:z.string().uuid().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
- name:z.string().trim().min(2).max(160),
- phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/),
- city:z.enum(governors as [string,...string[]]),
- address:z.string().trim().min(3).max(160),
- coupon:z.string().trim().min(2).max(30).regex(/^[A-Za-z0-9_-]+$/).optional(),
+ name:z.string().trim().min(2,'Indiquez votre nom et prénom').max(160,'Nom trop long'),
+ phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/,'Numéro de téléphone tunisien invalide'),
+ city:z.enum(governors as [string,...string[]],{errorMap:()=>({message:'Gouvernorat invalide'})}),
+ address:z.string().trim().min(3,'Adresse de livraison trop courte').max(160,'Adresse trop longue'),
+ coupon:z.string().trim().min(2,'Code promo invalide').max(30,'Code promo invalide').regex(/^[A-Za-z0-9_-]+$/,'Code promo invalide').optional(),
  items:z.array(z.object({productId:z.string().min(1).max(160),quantity:z.number().int().min(1).max(10)}).strict()).min(1).max(15)
 }).strict();
 
