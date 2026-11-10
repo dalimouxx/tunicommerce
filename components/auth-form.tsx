@@ -6,6 +6,7 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [done,setDone]=useState(false);
+ const [requiresMfa,setRequiresMfa]=useState(false);
  const admin=setup||portal==='ADMIN';
  const loginPath=admin?'/api/auth/admin/login':'/api/auth/merchant/login';
  const landing=admin?'/admin':'/mes-boutiques';
@@ -35,7 +36,8 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
       const response=await fetch(setup?'/api/auth/setup':loginPath,{
        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values)
       });
-      const data=await response.json() as {error?:string};
+      const data=await response.json() as {error?:string;requiresMfa?:boolean};
+      if(data.requiresMfa)setRequiresMfa(true);
       if(!response.ok)throw Error(data.error||'Connexion refusée');
       if(setup)setDone(true);
       else window.location.assign(landing);
@@ -45,12 +47,14 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
      {setup&&<label>Nom du propriétaire<input name="name" autoComplete="name" required minLength={2} maxLength={100}/></label>}
      <label>Adresse e-mail<input name="email" type="email" autoComplete="username" required maxLength={254} placeholder={admin?'admin@tunicommerce.tn':'vous@boutique.tn'}/></label>
      <label>Mot de passe<input name="password" type="password" autoComplete={setup?'new-password':'current-password'} required minLength={setup?12:1} maxLength={128}/></label>
+     {requiresMfa&&!setup&&<label>Code de l’application ou code de secours<input name="otp" autoComplete="one-time-code" required maxLength={32}/></label>}
      {setup&&<><label>Clé d’initialisation<input name="token" type="password" autoComplete="off" required minLength={32} maxLength={256}/></label>
       <small>Clé SETUP_TOKEN du serveur Render ; mot de passe de 12 caractères minimum.</small></>}
      {error&&<p className="auth-error" role="alert">{error}</p>}
      <button className="primary" type="submit" disabled={busy}>{busy?'Connexion…':setup?'Créer le Super Admin':'Accéder à mon espace'}<ArrowRight size={16}/></button>
     </form>}
    <div className="auth-foot">
+    {!setup&&<p><a href={'/compte/recuperer?portail='+portal}>Mot de passe oublié ?</a></p>}
     {!setup&&<p><a href="/connexion">Choisir mon espace de connexion</a></p>}
     {admin?<p><a href="/connexion/boutique">Accès indépendant : administration d’une boutique</a></p>:
      <p><a href="/connexion/admin">Accès réservé : Super Admin SaaS</a></p>}
