@@ -133,6 +133,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    </section>}
    {isolated?.initialized&&<section className={styles.card}>
     <h2>Ma vitrine · Aperçu privé</h2>
+    <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/pages'}>Créer et publier les pages de ma boutique</Link></p>
     <ShopPublication shopId={shopId} slug={shop.slug} initialPublished={shop.status==='PUBLISHED'}/>
     <p>Prévisualisez votre catalogue ou publiez-le pour accepter des commandes COD. La publication nécessite un abonnement marchand valide.</p>
     <div className={styles.actions}><Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}>Prévisualiser la boutique</Link></div>

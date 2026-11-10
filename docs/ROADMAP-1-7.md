@@ -42,3 +42,9 @@ Les changements sont préparés en branche et en proposition de revue. Aucun cho
 Le bloc 1 est implémenté et testé localement ; les blocs 4 et 7 disposent d'un premier socle. Le chantier 1 à 7 n'est pas terminé. L'absence de prestataires empêche les connexions réelles des blocs 3 et 5, sans empêcher le travail interne des autres blocs.
 
 Validation : 330 tests unitaires réussis ; les 18 suites PostgreSQL/HTTP ont réussi (130 tests), puis la suite comptes a été enrichie de deux contrôles supplémentaires et ses 12 tests ont réussi. TypeScript, compilation de production et comparaison du schéma Prisma réussis ; audit npm à zéro vulnérabilité déclarée. Aucun test de délivrabilité réelle ni déploiement n'a été effectué. Les détails d'exploitation sont dans `docs/account-security-worker.md`.
+
+## Deuxième lot — pages de boutique
+
+Le bloc 6 dispose maintenant d'un éditeur de pages complémentaires pour le propriétaire d'une boutique indépendante initialisée. Il comprend cinq types de sections réordonnables, le français/arabe, l'aperçu privé, les instantanés brouillon/publié, le retrait de publication et les liens dans la navigation publique. Une version attendue protège les écritures concurrentes ; la publication de la boutique et la validité de l'abonnement sont recontrôlées sur chaque accès public.
+
+Le plafond est de dix pages par boutique et douze sections par page. Les domaines personnalisés, les images de section, l'historique de restauration et la composition de la page d'accueil restent à développer. La migration ajoute `ShopPage` sans changer les données commerciales existantes. Le détail du parcours et des limites figure dans `docs/shop-pages.md`.
