@@ -17,3 +17,12 @@ test('billing indicators are separate categories, never implied payment',()=>{
   {status:'CANCELLED',endsAt:new Date('2027-01-01')}
  ],now),{VALID:1,DUE_SOON:1,EXPIRED:1,SUSPENDED:1});
 });
+
+test('unknown statuses never show as valid and renewal boundaries are exact',()=>{
+ const deadline=new Date(now.getTime()+30*86400000);
+ assert.equal(billingBucket({status:'UNKNOWN',endsAt:deadline},now,30),'EXPIRED');
+ assert.equal(billingBucket({status:'ACTIVE',endsAt:now},now,30),'EXPIRED');
+ assert.equal(billingBucket({status:'TRIAL',endsAt:deadline},now,30),'DUE_SOON');
+ assert.equal(billingBucket({status:'ACTIVE',endsAt:new Date(deadline.getTime()+1)},now,30),'VALID');
+ assert.equal(billingBucket({status:'CANCELLED',endsAt:deadline},now,30),'SUSPENDED');
+});

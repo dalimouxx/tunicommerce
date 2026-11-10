@@ -28,6 +28,16 @@ test('Arabic dictionary covers every French key with real Arabic text',()=>{
  }
 });
 
+test('navigation keeps the chosen language before anchors and replaces previous choices',()=>{
+ assert.equal(storefrontLangHref('/vitrines/x#catalogue','ar'),'/vitrines/x?lang=ar#catalogue');
+ const link=storefrontLangHref('/vitrines/x?produit=a%2Fb&lang=fr&lang=fr#panier','ar');
+ const url=new URL(link,'https://example.test');
+ assert.equal(url.searchParams.get('produit'),'a/b');
+ assert.deepEqual(url.searchParams.getAll('lang'),['ar']);
+ assert.equal(url.hash,'#panier');
+ assert.equal(storefrontLangHref(link,'fr'),'/vitrines/x?produit=a%2Fb&lang=fr#panier');
+});
+
 test('all 24 governorates have an Arabic label and amounts keep Western digits',()=>{
  for(const name of governors)assert.match(governorateLabel(name,'ar'),/^[؀-ۿ ]+$/,name);
  assert.equal(governorateLabel('Sfax','fr'),'Sfax');

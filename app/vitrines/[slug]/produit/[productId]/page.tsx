@@ -52,6 +52,8 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
  const base='/vitrines/'+encodeURIComponent(slug);
  const marketing=store.marketing;
  const lang=resolveStorefrontLang(query.lang,(await cookies()).get(STOREFRONT_LANG_COOKIE)?.value,marketing.language);
+ const catalogHref=storefrontLangHref(base,lang);
+ const collectionHref=storefrontLangHref(base+'#catalogue',lang);
  const t=storefrontDictionary(lang);
  const productPath=base+'/produit/'+encodeURIComponent(product.id);
  const whatsappHref=whatsappLink(marketing.whatsapp,productWhatsappMessage(marketing,product.name,undefined,t.whatsappProductIntro));
@@ -63,15 +65,15 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
   <div className={styles.announcement}>{t.announcementProduct}</div>
   <div className={styles.container}>
    <header className={styles.storeHeader}>
-    <Link className={styles.identity} href={base}><span className={styles.fallbackLogo}>{store.name.slice(0,1)}</span>
+    <Link className={styles.identity} href={catalogHref}><span className={styles.fallbackLogo}>{store.name.slice(0,1)}</span>
      <span className={styles.brandText}><strong>{store.name}</strong><small>{t.backToCatalog}</small></span></Link>
-    <nav className={styles.nav} aria-label={t.productNav}><Link href={base}>{t.navAllProducts}</Link>
+    <nav className={styles.nav} aria-label={t.productNav}><Link href={catalogHref}>{t.navAllProducts}</Link>
      <LanguageSwitch lang={lang} label={t.switchTo} ariaLabel={t.switchLabel}
       href={storefrontLangHref(productPath,lang==='ar'?'fr':'ar')}/></nav>
    </header>
    <nav className={styles.breadcrumb} aria-label={t.breadcrumb}>
-    <Link href={base}>{t.breadcrumbHome}</Link><span aria-hidden="true">/</span>
-    <Link href={base+'#catalogue'}>{product.category||t.collection}</Link><span aria-hidden="true">/</span>
+    <Link href={catalogHref}>{t.breadcrumbHome}</Link><span aria-hidden="true">/</span>
+    <Link href={collectionHref}>{product.category||t.collection}</Link><span aria-hidden="true">/</span>
     <bdi aria-current="page">{product.name}</bdi>
    </nav>
    <article className={styles.detailLayout}>
@@ -92,7 +94,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
       <div className={styles.codUnavailable}>
        <strong>{t.unavailableTitle}</strong>
        <p>{t.unavailableText}</p>
-       <Link href={base+'#catalogue'} className={styles.secondaryAction}>{t.seeCatalog}</Link>
+       <Link href={collectionHref} className={styles.secondaryAction}>{t.seeCatalog}</Link>
       </div>}
      {product.description&&<section className={styles.detailDescriptionBlock} aria-labelledby="product-description">
       <h2 id="product-description">{t.description}</h2>
@@ -100,14 +102,14 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      </section>}
      {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappInline}>
       <span aria-hidden="true">💬</span> {t.whatsappQuestion}</a>}
-     <Link href={base+'#catalogue'} className={styles.codLink}>{t.continueShopping}</Link>
+     <Link href={collectionHref} className={styles.codLink}>{t.continueShopping}</Link>
     </div>
    </article>
    {similar.length>0&&<section className={styles.similar} aria-labelledby="similar-title">
     <div className={styles.sectionHeading}><div><p className={styles.kicker}>{t.similarKicker}</p>
      <h2 id="similar-title">{t.similarTitle}</h2></div></div>
     <div className={styles.similarList}>{similar.map(item=><Link key={item.id}
-     href={base+'/produit/'+encodeURIComponent(item.id)}>
+     href={storefrontLangHref(base+'/produit/'+encodeURIComponent(item.id),lang)}>
      <strong dir="auto">{item.name}</strong><span>{formatStorefrontMoney(item.price,lang)}</span>
     </Link>)}</div>
    </section>}

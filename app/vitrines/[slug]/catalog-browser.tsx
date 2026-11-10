@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {useState} from 'react';
 import {catalogCategories,selectCatalogProducts,type CatalogProduct,type CatalogSort} from '../../../modules/shops/public-catalog-filters';
-import {formatStorefrontMoney,storefrontDictionary,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
+import {formatStorefrontMoney,storefrontDictionary,storefrontLangHref,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 import styles from './storefront-premium.module.css';
 export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;products:CatalogProduct[];lang?:StorefrontLang}){
  const t=storefrontDictionary(lang);
@@ -57,7 +57,7 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
   <p className={styles.catalogCount} aria-live="polite">{t.count(matching.length,shown.length)}</p>
   <div className={styles.productGrid}>
    {shown.map(product=><article key={product.id} className={styles.productCard}>
-    <Link className={styles.productImageWrap} href={shopPath+'/produit/'+encodeURIComponent(product.id)}
+    <Link className={styles.productImageWrap} href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}
      aria-label={t.view(product.name)}>
      {product.imageUrl?<img src={product.imageUrl} alt={t.photoOf(product.name)}
       loading="lazy" decoding="async" referrerPolicy="no-referrer"/>:
@@ -66,15 +66,15 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
     </Link>
     <div className={styles.productBody}>
      <span className={styles.productCategory}>{product.category||t.collection}</span>
-     <h3 dir="auto"><Link href={shopPath+'/produit/'+encodeURIComponent(product.id)}>{product.name}</Link></h3>
+     <h3 dir="auto"><Link href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}>{product.name}</Link></h3>
      {product.variant&&<p className={styles.variant}>{product.variant}</p>}
      {product.description&&<p className={styles.description} dir="auto">{product.description}</p>}
      <p className={styles.productPrice}>{formatStorefrontMoney(product.price,lang)}</p>
      <div className={styles.productButtons}>
       {product.available&&<Link className={styles.productBuy} href={
-       shopPath+'?produit='+encodeURIComponent(product.id)+'#panier'
+       storefrontLangHref(shopPath+'?produit='+encodeURIComponent(product.id)+'#panier',lang)
       }>{t.addToCart}</Link>}
-      <Link className={styles.productDetail} href={shopPath+'/produit/'+encodeURIComponent(product.id)}>
+      <Link className={styles.productDetail} href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}>
        {t.details} <span aria-hidden="true">↗</span>
       </Link>
      </div>

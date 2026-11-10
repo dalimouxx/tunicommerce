@@ -4,14 +4,13 @@ import {useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Search,CalendarClock,ArrowUpRight} from 'lucide-react';
 import type {PlatformShopRow} from '../modules/platform/admin-overview';
+import {billingBucket} from '../modules/platform/saas-billing-health';
 import styles from '../app/admin/platform.module.css';
 
 function subscriptionCondition(shop:PlatformShopRow,now:number){
- if(shop.subscriptionStatus==='SUSPENDED'||shop.subscriptionStatus==='CANCELLED')return 'suspended';
- const end=shop.subscriptionEndsAt?new Date(shop.subscriptionEndsAt).getTime():0;
- if(end<=now)return 'expired';
- if(end-now<=7*86400000)return 'expiring';
- return 'valid';
+ const bucket=billingBucket({status:shop.subscriptionStatus,
+  endsAt:shop.subscriptionEndsAt?new Date(shop.subscriptionEndsAt):null},new Date(now));
+ return {SUSPENDED:'suspended',EXPIRED:'expired',DUE_SOON:'expiring',VALID:'valid'}[bucket];
 }
 export default function AdminSubscriptions({
  shops,total,initialFilter='all'

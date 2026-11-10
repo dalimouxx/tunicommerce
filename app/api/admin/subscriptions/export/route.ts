@@ -11,11 +11,14 @@ export async function GET(request:Request){
  try{
   await requireAdmin();
   const input=new URL(request.url).searchParams;
+  const now=new Date();
   const query=subscriptionDirectoryQuery({
    statut:input.get('statut')||undefined,
    recherche:input.get('recherche')||undefined,
+   offre:input.get('offre')||undefined,
+   jours:input.get('jours')||undefined,
    page:input.get('page')||undefined
-  });
+  },now);
   const count=await prisma.workspace.count({where:query.where});
   const paging=directoryPage(query.page,count);
   const records=await prisma.workspace.findMany({
@@ -32,7 +35,7 @@ export async function GET(request:Request){
   ])+records.map(row=>csvRow([
    row.id,row.shop?.name||'',row.slug||'',row.owner.name,row.owner.email,
    row.plan,row.subscriptionStatus,
-   billingBucket({status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt}),
+   billingBucket({status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt},now,query.windowDays),
    row.subscriptionEndsAt?.toISOString()||''
   ])).join('');
   return new Response(csv,{headers:{

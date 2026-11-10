@@ -6,14 +6,18 @@ import styles from '../../platform.module.css';
 
 export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
-type Search={statut?:string;recherche?:string;page?:string};
+type Search={statut?:string;recherche?:string;page?:string;offre?:string;jours?:string};
 const statusLabels:{[key:string]:string}={
  VALID:'Valide',DUE_SOON:'Échéance sous 7 jours',
  EXPIRED:'Expiré',SUSPENDED:'Suspendu ou résilié'
 };
 export default async function FullSubscriptionDirectory({searchParams}:{searchParams:Promise<Search>}){
- const query=subscriptionDirectoryQuery(await searchParams);
- const count=await prisma.workspace.count({where:query.where});
+ const now=new Date();
+ const query=subscriptionDirectoryQuery(await searchParams,now);
+ const [count,plans]=await Promise.all([
+  prisma.workspace.count({where:query.where}),
+  prisma.subscriptionPlan.findMany({select:{code:true,name:true},orderBy:{code:'asc'}})
+ ]);
  const paging=directoryPage(query.page,count);
  const rows=await prisma.workspace.findMany({
   where:query.where,
@@ -37,8 +41,16 @@ export default async function FullSubscriptionDirectory({searchParams}:{searchPa
     <label>Recherche <input className={styles.simpleSelect} name="recherche" maxLength={100} defaultValue={query.search} placeholder="Marchand, e-mail, slug, offre, boutique"/></label>
     <label>État <select className={styles.simpleSelect} name="statut" defaultValue={query.status}>
      <option value="all">Tous</option><option value="valid">Valides</option>
-     <option value="expiring">Sous 7 jours</option><option value="expired">Expirés</option>
+     <option value="expiring">Échéances proches</option><option value="expired">Expirés</option>
      <option value="suspended">Suspendus / résiliés</option>
+    </select></label>
+    <label>Offre <select className={styles.simpleSelect} name="offre" defaultValue={query.plan}>
+     <option value="">Toutes les offres</option>
+     {query.plan&&!plans.some(plan=>plan.code===query.plan)&&<option value={query.plan}>{query.plan} (ancienne offre)</option>}
+     {plans.map(plan=><option key={plan.code} value={plan.code}>{plan.name} · {plan.code}</option>)}
+    </select></label>
+    <label>Horizon des échéances <select className={styles.simpleSelect} name="jours" defaultValue={String(query.windowDays)}>
+     <option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option>
     </select></label>
     <button className={styles.primary} type="submit">Rechercher</button>
     <Link className={styles.secondary} href={url('/api/admin/subscriptions/export',paging.page)}>Exporter cette page (CSV)</Link>
@@ -46,7 +58,8 @@ export default async function FullSubscriptionDirectory({searchParams}:{searchPa
    <div className={styles.tableWrap}><table className={styles.table}>
     <thead><tr><th>Boutique</th><th>Marchand</th><th>Plan</th><th>Statut</th><th>Échéance</th><th>Action</th></tr></thead>
     <tbody>{rows.map(row=>{
-     const label=statusLabels[billingBucket({status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt})];
+     const bucket=billingBucket({status:row.subscriptionStatus,endsAt:row.subscriptionEndsAt},now,query.windowDays);
+     const label=bucket==='DUE_SOON'?'Échéance sous '+query.windowDays+' jours':statusLabels[bucket];
      return <tr key={row.id}>
       <td><strong>{row.shop?.name||row.slug||'Boutique sans lien'}</strong><small>{row.slug||'Slug non défini'}</small></td>
       <td>{row.owner.name}<small>{row.owner.email}</small></td>

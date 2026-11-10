@@ -74,7 +74,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   </div>
   <div className={styles.container}>
    <header className={styles.storeHeader}>
-    <Link className={styles.identity} href={publicBase} aria-label={t.home(shopName)}>
+    <Link className={styles.identity} href={storefrontLangHref(publicBase,lang)} aria-label={t.home(shopName)}>
      {catalog.logoUrl?<img src={catalog.logoUrl} alt="" width={52} height={52}
       referrerPolicy="no-referrer" className={styles.logo}/>:
       <span className={styles.fallbackLogo}>{shopName.slice(0,1).toLocaleUpperCase('fr')}</span>}
