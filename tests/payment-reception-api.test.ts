@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
-import {spawn,type ChildProcess} from 'node:child_process';
+import {spawn,spawnSync,type ChildProcess} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const database=process.env.TEST_DATABASE_URL;
@@ -188,7 +188,7 @@ test('Official SaaS reception configuration: disabled defaults, safe publication
    assert.ok(!page.includes('TEST-D17-123456'));
    // Already submitted claims remain payable after the method is switched off.
    const approved=await post('/api/admin/subscription-payments',{
-    id:pendingId,action:'approve',adminNote:'Relevé externe fictif contrôlé'
+    id:pendingId,action:'approve',adminNote:'Relevé externe fictif contrôlé',receivedConfirmed:true
    },adminCookie);
    assert.equal(approved.status,200);
    assert.equal((await approved.json()).payment.status,'APPROVED');
@@ -210,7 +210,8 @@ test('Official SaaS reception configuration: disabled defaults, safe publication
   });
 
  }finally{
-  server?.kill('SIGTERM');
+  if(process.platform==='win32'&&server?.pid)spawnSync('taskkill',['/pid',String(server.pid),'/T','/F'],{stdio:'ignore'});
+  else server?.kill('SIGTERM');
   await prisma.$disconnect();
  }
 });

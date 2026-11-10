@@ -5,17 +5,22 @@ import {assertSameOrigin,readJson,respond,HttpError} from '../../../../modules/a
 import {subscriptionDecisionInput} from '../../../../modules/billing/validation';
 import {decideSubscriptionRequest} from '../../../../modules/billing/service';
 import {prisma} from '../../../../modules/storage/client';
+import {PAYMENT_PAGE_SIZE,paymentDirectoryPage,paymentDirectoryQuery} from '../../../../modules/billing/payment-directory';
 
 export const dynamic='force-dynamic';
 
-export async function GET(){
+export async function GET(request:Request){
  try{
   await requireAdmin();
+  const query=paymentDirectoryQuery(Object.fromEntries(new URL(request.url).searchParams));
+  const total=await prisma.subscriptionPayment.count({where:query.where});
+  const paging=paymentDirectoryPage(query.page,total);
   const payments=await prisma.subscriptionPayment.findMany({
-   orderBy:{createdAt:'desc'},take:200,
+   where:query.where,orderBy:[{createdAt:'asc'},{id:'asc'}],
+   skip:(paging.page-1)*PAYMENT_PAGE_SIZE,take:PAYMENT_PAGE_SIZE,
    include:{workspace:{select:{slug:true,owner:{select:{name:true,email:true}}}}}
   });
-  return respond({payments});
+  return respond({payments,total,page:paging.page,pages:paging.pages,pageSize:PAYMENT_PAGE_SIZE});
  }catch(e){
   if(e instanceof HttpError)return respond({error:e.message},e.status);
   return respond({error:'Dossiers indisponibles'},503);

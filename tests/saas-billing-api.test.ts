@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
-import {spawn,type ChildProcess} from 'node:child_process';
+import {spawn,spawnSync,type ChildProcess} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const database=process.env.TEST_DATABASE_URL;
@@ -28,7 +28,7 @@ function claim(requestId:string,reference='D17-ORIGINAL-2026'){
   transferReference:reference,merchantNote:'Transfert externe déclaré'};
 }
 function decision(id:string,action:'approve'|'reject',adminNote='Réception vérifiée dans les relevés'){
- return {id,action,adminNote};
+ return {id,action,adminNote,receivedConfirmed:action==='approve'};
 }
 async function clean(){
  await prisma.paymentReceptionAudit.deleteMany();
@@ -201,6 +201,21 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
   });
 
   let approvedId='';
+  await t.test('Approving requires explicit receipt confirmation and a verification note',async()=>{
+   const response=await post('/api/v1/subscription-payments',claim(randomUUID(),'D17-VERIFY-ONLY'),merchantA);
+   assert.equal(response.status,201);
+   const id=(await response.json()).payment.id;
+   for(const receivedConfirmed of [undefined,false]){
+    assert.equal((await post('/api/admin/subscription-payments',{
+     id,action:'approve',adminNote:'Fonds contrôlés',receivedConfirmed
+    },adminCookie)).status,400);
+   }
+   assert.equal((await post('/api/admin/subscription-payments',{
+    ...decision(id,'approve'),adminNote:''
+   },adminCookie)).status,400);
+   assert.equal((await prisma.subscriptionPayment.findUniqueOrThrow({where:{id}})).status,'PENDING');
+   assert.equal((await post('/api/admin/subscription-payments',decision(id,'reject','Dossier de test clos'),adminCookie)).status,200);
+  });
   await t.test('Plan and amount snapshot do not change after merchant submits a second request',async()=>{
    const response=await post('/api/v1/subscription-payments',
     claim(randomUUID(),'D17-SNAPSHOT-2026'),merchantA);
@@ -216,13 +231,16 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
 
   await t.test('Two admin approvals are idempotent, extend expiry only once and preserve commercial data',async()=>{
    const prior=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceA.id}});
-   const response=await post('/api/admin/subscription-payments',
-    decision(approvedId,'approve'),adminCookie);
-   assert.equal(response.status,200);
-   const data=await response.json();
+   const responses=await Promise.all([1,2].map(()=>post('/api/admin/subscription-payments',decision(approvedId,'approve'),adminCookie)));
+   assert.deepEqual(responses.map(response=>response.status),[200,200]);
+   const decisions=await Promise.all(responses.map(response=>response.json()));
+   assert.equal(decisions.filter(data=>data.alreadyDecided).length,1);
+   const data=decisions.find(data=>!data.alreadyDecided)!;
    assert.equal(data.payment.status,'APPROVED');
    assert.equal(data.payment.priceMillimes,69000);
    assert.equal(data.payment.durationDays,15);
+   assert.ok(data.payment.periodStartsAt);
+   assert.ok(data.payment.periodEndsAt);
    const after=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceA.id}});
    assert.equal(after.plan,'BILLING_TEST');
    assert.equal(after.subscriptionStatus,'ACTIVE');
@@ -280,8 +298,62 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
    assert.equal(await prisma.subscriptionPayment.count({where:{status:'APPROVED'}}),2);
   });
 
+  await t.test('Receipt approval cannot override a suspended or cancelled merchant',async()=>{
+   const response=await post('/api/v1/subscription-payments',{
+    requestId:randomUUID(),planCode:'BILLING_TEST',method:'CASH',transferReference:'',merchantNote:'Vérification suspension'
+   },merchantB);
+   assert.equal(response.status,201);
+   const id=(await response.json()).payment.id;
+   const previous=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceB.id}});
+   for(const subscriptionStatus of ['SUSPENDED','CANCELLED']){
+    await prisma.workspace.update({where:{id:workspaceB.id},data:{subscriptionStatus}});
+    assert.equal((await post('/api/admin/subscription-payments',decision(id,'approve'),adminCookie)).status,409);
+    const current=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceB.id}});
+    assert.equal(current.subscriptionStatus,subscriptionStatus);
+    assert.equal(current.subscriptionEndsAt?.getTime(),previous.subscriptionEndsAt?.getTime());
+    assert.equal((await prisma.subscriptionPayment.findUniqueOrThrow({where:{id}})).status,'PENDING');
+   }
+   assert.equal((await post('/api/admin/subscription-payments',decision(id,'reject','Compte toujours résilié'),adminCookie)).status,200);
+  });
+
+  await t.test('Server pagination and CSV find old dossiers beyond the former 200-record cutoff',async()=>{
+   const marker='TC-DIR-'+randomUUID();
+   try{
+    await prisma.subscriptionPayment.createMany({data:Array.from({length:205},(_,i)=>({
+     reference:marker+'-'+String(i).padStart(3,'0'),workspaceId:workspaceA.id,
+     requesterId:ownerA.id,requestId:randomUUID(),planCode:'BILLING_TEST',planName:'Offre pagination',
+     priceMillimes:69000,durationDays:15,method:'CASH',status:'REJECTED',
+     createdAt:new Date(Date.UTC(2020,0,1)+i*1000)
+    }))});
+    await prisma.subscriptionPayment.create({data:{
+     reference:marker+'-pending',workspaceId:workspaceA.id,requesterId:ownerA.id,requestId:randomUUID(),
+     planCode:'BILLING_TEST',planName:'Ancien dossier en attente',priceMillimes:69000,
+     durationDays:15,method:'CASH',status:'PENDING',createdAt:new Date('2019-01-01')
+    }});
+    const params='status=REJECTED&method=CASH&recherche='+encodeURIComponent(marker);
+    const response=await get('/api/admin/subscription-payments?'+params+'&page=999',adminCookie);
+    assert.equal(response.status,200);
+    const data=await response.json();
+    assert.equal(data.total,205);assert.equal(data.page,5);assert.equal(data.pages,5);
+    assert.equal(data.payments.length,5);
+    assert.ok(data.payments.every((row:{reference:string})=>row.reference.startsWith(marker)));
+    const csv=await get('/api/admin/subscription-payments/export?'+params+'&page=5',adminCookie);
+    assert.equal(csv.status,200);
+    const text=await csv.text();
+    assert.equal(text.trim().split('\r\n').length,6);
+    for(const row of data.payments)assert.ok(text.includes(row.reference));
+    assert.ok(text.includes('Debut periode (UTC)'));
+    assert.equal((await get('/admin/paiements?'+params+'&page=5',adminCookie)).status,200);
+    const pending=await (await get('/api/admin/subscription-payments',adminCookie)).json();
+    assert.ok(pending.payments.every((row:{status:string})=>row.status==='PENDING'));
+    assert.ok(pending.payments.some((row:{reference:string})=>row.reference===marker+'-pending'));
+    assert.equal((await get('/api/admin/subscription-payments?'+params,merchantA)).status,401);
+   }finally{await prisma.subscriptionPayment.deleteMany({where:{reference:{startsWith:marker}}});}
+  });
+
  }finally{
-  child?.kill('SIGTERM');
+  if(process.platform==='win32'&&child?.pid)spawnSync('taskkill',['/pid',String(child.pid),'/T','/F'],{stdio:'ignore'});
+  else child?.kill('SIGTERM');
   await prisma.$disconnect();
  }
 });

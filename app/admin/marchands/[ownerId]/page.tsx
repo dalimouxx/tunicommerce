@@ -27,7 +27,7 @@ export default async function GlobalMerchantDossier({params}:{params:Promise<{ow
    select:{userId:true,active:true,shopId:true}}),
   merchant.workspace?prisma.subscriptionPayment.findMany({where:{workspaceId:merchant.workspace.id},
    orderBy:{createdAt:'desc'},take:20,select:{id:true,reference:true,planName:true,priceMillimes:true,
-    method:true,status:true,createdAt:true,decidedAt:true}}):Promise.resolve([]),
+    method:true,status:true,createdAt:true,decidedAt:true,periodStartsAt:true,periodEndsAt:true}}):Promise.resolve([]),
   merchant.workspace?prisma.subscriptionPayment.aggregate({where:{workspaceId:merchant.workspace.id,status:'APPROVED'},
    _count:{_all:true},_sum:{priceMillimes:true}}):Promise.resolve(null),
   merchant.workspace?prisma.subscriptionPayment.aggregate({where:{workspaceId:merchant.workspace.id,status:'PENDING'},
@@ -63,7 +63,7 @@ export default async function GlobalMerchantDossier({params}:{params:Promise<{ow
     <p>Déclarations en attente (non encaissées) : <strong>{pending?toTnd(pending._sum.priceMillimes||0):'0 TND'}</strong> ({pending?pending._count._all:0} demande(s)).</p>
     <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
      <Link href={'/admin/gestion-boutiques?shop='+merchant.workspace.id}>Gérer la configuration du compte</Link>
-     <Link href="/admin/paiements">Vérifier les règlements</Link>
+     <Link href={'/admin/paiements?status=ALL&recherche='+encodeURIComponent(merchant.email)}>Voir les règlements de ce marchand</Link>
      <Link href="/admin/boutiques-independantes">Superviser les nouvelles boutiques</Link>
     </div>
    </div>:<p style={{padding:16}}>Aucun Workspace de facturation : créez un compte marchand depuis l'administration. Aucune demande de paiement ne peut être attribuée ici.</p>}
@@ -85,10 +85,12 @@ export default async function GlobalMerchantDossier({params}:{params:Promise<{ow
    <div className={styles.panelHead}><div><h2>Dernières demandes de règlement</h2>
     <p>Historique administratif ; les validations ne prouvent pas à elles seules le rapprochement bancaire.</p></div></div>
    <div className={styles.tableWrap}><table className={styles.table}>
-    <thead><tr><th>Référence</th><th>Offre</th><th>Montant</th><th>Canal</th><th>Décision</th></tr></thead>
+    <thead><tr><th>Référence</th><th>Offre</th><th>Montant</th><th>Canal</th><th>Décision</th><th>Période créditée</th></tr></thead>
     <tbody>{payments.map(p=><tr key={p.id}>
      <td>{p.reference}</td><td>{p.planName}</td><td>{toTnd(p.priceMillimes)}</td>
      <td>{p.method}</td><td>{paymentStatusLabel(p.status)}</td>
+     <td>{p.status==='APPROVED'&&p.periodStartsAt&&p.periodEndsAt?
+      p.periodStartsAt.toLocaleDateString('fr-TN')+' → '+p.periodEndsAt.toLocaleDateString('fr-TN'):'—'}</td>
     </tr>)}</tbody>
    </table></div>
    {!payments.length&&<p>Aucune demande enregistrée pour ce compte.</p>}

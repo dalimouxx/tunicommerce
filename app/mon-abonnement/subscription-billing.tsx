@@ -119,7 +119,8 @@ export default function SubscriptionBilling({
      </span>
     </div>
     <small>{payment.reference} · {new Date(payment.createdAt).toLocaleString('fr-TN')} · {paymentMethodLabel(payment.method)}</small>
-    {payment.status==='APPROVED'&&payment.periodEndsAt&&<small>Abonnement prolongé jusqu'au {new Date(payment.periodEndsAt).toLocaleDateString('fr-TN')}</small>}
+    {payment.status==='APPROVED'&&payment.periodEndsAt&&<small>Période créditée {payment.periodStartsAt?'du '+new Date(payment.periodStartsAt).toLocaleDateString('fr-TN')+' ':''}jusqu'au {new Date(payment.periodEndsAt).toLocaleDateString('fr-TN')}</small>}
+    {payment.decidedAt&&<small>Décision de l’administration du {new Date(payment.decidedAt).toLocaleDateString('fr-TN')}</small>}
     {payment.status==='REJECTED'&&<small>Motif : {payment.adminNote}</small>}
     <a href={'/mon-abonnement/justificatif/'+payment.id} className={styles.paymentDocument}>Consulter le document et l'imprimer</a>
    </article>)}</div>}

@@ -16,8 +16,13 @@ export type SubscriptionRequestInput=z.infer<typeof subscriptionRequestInput>;
 export const subscriptionDecisionInput=z.object({
  id:z.string().uuid(),
  action:z.enum(['approve','reject']),
+ receivedConfirmed:z.boolean().optional(),
  adminNote:z.string().trim().max(500).default('')
 }).strict().superRefine((input,ctx)=>{
+ if(input.action==='approve'&&input.receivedConfirmed!==true)
+  ctx.addIssue({code:'custom',path:['receivedConfirmed'],message:'Confirmez la vérification de la réception des fonds'});
+ if(input.action==='approve'&&input.adminNote.length<5)
+  ctx.addIssue({code:'custom',path:['adminNote'],message:'Précisez la vérification du règlement (au moins 5 caractères)'});
  if(input.action==='reject'&&input.adminNote.length<5)
   ctx.addIssue({code:'custom',path:['adminNote'],message:'Motif du refus requis (au moins 5 caractères)'});
 });
