@@ -30,6 +30,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <Link href="/admin/paiements"><Banknote size={18}/> Règlements SaaS</Link>
     <Link href="/admin/finances-saas"><CircleDollarSign size={18}/> Finance et échéances SaaS</Link>
     <Link href="/admin/integrations"><Settings2 size={18}/> Intégrations externes</Link>
+    <Link href="/admin/taches"><Activity size={18}/> Tâches en arrière-plan</Link>
     <Link href="/admin/coordonnees-paiement"><Landmark size={18}/> Coordonnées de paiement</Link>
     <Link href="/admin/plans"><CircleDollarSign size={18}/> Offres et quotas</Link>
     <Link href="/admin/journal"><Activity size={18}/> Journal d’activité</Link>
@@ -42,6 +43,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
    <nav className={styles.navigation}>
     {ownWorkspace&&<Link href="/connexion/boutique"><ArrowLeftRight size={18}/> Ma boutique personnelle · autre connexion</Link>}
     <Link href="/admin/gestion-boutiques"><Settings2 size={18}/> Configuration des boutiques</Link>
+    <Link href="/compte/securite?portail=ADMIN"><ShieldCheck size={18}/> Sécurité de mon compte</Link>
    </nav>
    <div className={styles.identity}>
     <span className={styles.identityIcon}><ShieldCheck size={19}/></span>

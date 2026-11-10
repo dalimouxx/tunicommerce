@@ -17,6 +17,16 @@ model User {
   workspace    Workspace?
   memberships  Membership[]
   ownedOrganizations Organization[] @relation("OrganizationOwner")
+  emailVerifiedAt DateTime?
+  accountTokens AccountActionToken[]
+  securityEvents AccountSecurityEvent[]
+  authVersion Int @default(0)
+  mfaSecret String?
+  mfaEnabledAt DateTime?
+  mfaLastStep Int?
+  mfaPendingSecret String?
+  mfaPendingExpiresAt DateTime?
+  recoveryCodes MfaRecoveryCode[]
 }
 model Session {
   tokenHash String @id
@@ -24,6 +34,7 @@ model Session {
   user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+  authVersion Int @default(0)
   @@index([userId])
   @@index([expiresAt])
 }
@@ -282,4 +293,54 @@ model ShopCommerce {
   version   Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AccountActionToken {
+ tokenHash String @id
+ userId String
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ purpose String
+ email String
+ expiresAt DateTime
+ consumedAt DateTime?
+ createdAt DateTime @default(now())
+ @@unique([userId,purpose])
+ @@index([expiresAt])
+}
+
+model AccountSecurityEvent {
+ id String @id @default(uuid())
+ userId String
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ kind String
+ createdAt DateTime @default(now())
+ @@index([userId,createdAt])
+}
+
+model BackgroundJob {
+ id String @id @default(uuid())
+ kind String
+ status String @default("PENDING")
+ subjectKey String
+ dedupKey String @unique
+ payload String?
+ attempts Int @default(0)
+ maxAttempts Int @default(4)
+ availableAt DateTime @default(now())
+ leaseId String?
+ lockedUntil DateTime?
+ errorCode String?
+ createdAt DateTime @default(now())
+ finishedAt DateTime?
+ @@index([status,availableAt])
+ @@index([subjectKey,status])
+}
+
+model MfaRecoveryCode {
+ codeHash String @id
+ userId String
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ usedAt DateTime?
+ createdAt DateTime @default(now())
+ @@index([userId])
 }

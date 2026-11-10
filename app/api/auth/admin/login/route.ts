@@ -6,8 +6,8 @@ export async function POST(request:Request){
  try{
   assertSameOrigin(request);
   const input=credentials.parse(await readJson(request,8000));
-  const user=await authenticate(input.email,input.password,'ADMIN');
-  await createSession(user.id,'ADMIN');
+  const user=await authenticate(input.email,input.password,'ADMIN',input.otp);
+  await createSession(user.id,'ADMIN',user.authVersion);
   return respond({ok:true,next:'/admin'});
  }catch(error){return authError(error);}
 }
