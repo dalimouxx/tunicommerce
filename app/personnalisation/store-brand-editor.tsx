@@ -109,7 +109,7 @@ export default function StoreBrandEditor(){
 
  return <div className={styles.shell}>
   <header className={styles.header}>
-   <Link href="/marchand" className={styles.brand}><span><Store size={19}/></span>TuniCommerce <small>Studio créatif</small></Link>
+   <Link href="/marchand" className={styles.brand}><span><Store size={19}/></span>Tunicom <small>Studio créatif</small></Link>
    <Link href="/marchand" className={styles.back}><ArrowLeft size={15}/> Tableau de bord</Link>
   </header>
   <main className={styles.main}>

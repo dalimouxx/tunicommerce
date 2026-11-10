@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
 import {applyAction} from '../modules/commerce/service';
 import {isolatedStorefrontPreview} from '../modules/shops/storefront-preview';
-import {storefrontPalette,storefrontThemeInput,previewStorefrontTheme,storefrontSectors,storefrontThemesForSector} from '../modules/shops/storefront-themes';
+import {storefrontThemeCodes,storefrontPalette,storefrontThemeInput,previewStorefrontTheme,storefrontSectors,storefrontThemesForSector} from '../modules/shops/storefront-themes';
 
 test('default theme remains safe for older shop records',()=>{
  const state=initialState(false);
@@ -29,8 +29,8 @@ test('strict payload refuses arbitrary CSS and extra properties',()=>{
  assert.equal(storefrontThemeInput.safeParse({...request,payload:{...request.payload,css:'body{display:none}'}}).success,false);
 });
 
-test('ten premium themes preserve existing codes and expose safe fixed palettes',()=>{
- const codes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN'];
+test('fourteen themes preserve existing codes and expose safe fixed palettes',()=>{
+ const codes=storefrontThemeCodes;
  for(const code of codes){
   const theme=storefrontPalette(code);
   assert.equal(theme.code,code);
@@ -54,7 +54,7 @@ test('theme CTA button colors maintain WCAG AA contrast',()=>{
    .map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);
   return normalized[0]*.2126+normalized[1]*.7152+normalized[2]*.0722;
  };
- for(const code of ['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN']){
+ for(const code of storefrontThemeCodes){
   const palette=storefrontPalette(code);
   const a=luminance(palette.accent),b=luminance(palette.accentText);
   const contrast=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
@@ -83,7 +83,7 @@ test('private temporary theme preview never changes persisted storefront selecti
 
 test('studio sector gallery provides safe curated choices without hiding saved themes',()=>{
  const all=storefrontThemesForSector('ALL');
- assert.equal(all.length,10);
+ assert.equal(all.length,14);
  assert.equal(storefrontSectors.length,7);
  for(const item of storefrontSectors){
   const suggestions=storefrontThemesForSector(item.id);
@@ -94,6 +94,6 @@ test('studio sector gallery provides safe curated choices without hiding saved t
  assert.ok(storefrontThemesForSector('FASHION').includes('URBAN'));
  assert.ok(storefrontThemesForSector('BEAUTY').includes('ECLAT'));
  assert.ok(storefrontThemesForSector('WELLNESS').includes('ZEN'));
- assert.equal(storefrontThemesForSector('url(javascript:alert(1))').length,10);
- assert.equal(storefrontThemesForSector({payload:'CUSTOM_CSS'}).length,10);
+ assert.equal(storefrontThemesForSector('url(javascript:alert(1))').length,14);
+ assert.equal(storefrontThemesForSector({payload:'CUSTOM_CSS'}).length,14);
 });

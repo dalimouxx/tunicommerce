@@ -17,7 +17,7 @@ export default async function GlobalAdministration(){
  return <>
   <div className={styles.head}>
    <div>
-    <span className={styles.eyebrow}>CENTRE DE CONTRÔLE · TUNICOMMERCE</span>
+    <span className={styles.eyebrow}>CENTRE DE CONTRÔLE · TUNICOM</span>
     <h1>Vue globale de la plateforme</h1>
     <p>Supervisez les comptes marchands, les boutiques, les abonnements et les événements administratifs. Votre boutique personnelle dispose de son propre espace indépendant.</p>
    </div>

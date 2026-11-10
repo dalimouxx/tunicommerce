@@ -106,13 +106,13 @@ export default function SetupWizard(){
 
  return <div className={styles.shell}>
   <header className={styles.header}>
-   <Link href="/marchand" className={styles.brand}><span className={styles.brandIcon}><Store size={19}/></span>TuniCommerce <small>Créateur de boutique</small></Link>
+   <Link href="/marchand" className={styles.brand}><span className={styles.brandIcon}><Store size={19}/></span>Tunicom <small>Créateur de boutique</small></Link>
    <Link href="/marchand" className={styles.back}>Mon espace marchand <ArrowRight size={15}/></Link>
   </header>
 
   <main className={styles.main}>
    <div className={styles.hero}>
-    <span className={styles.eyebrow}>BIENVENUE SUR TUNICOMMERCE</span>
+    <span className={styles.eyebrow}>BIENVENUE SUR TUNICOM</span>
     <h1>Lancez votre boutique en ligne</h1>
     <p>Personnalisez vos informations, ajoutez votre premier produit, puis ouvrez votre boutique aux clients avec le paiement à la livraison.</p>
    </div>

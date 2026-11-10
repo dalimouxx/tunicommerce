@@ -1,12 +1,13 @@
 import {redirect} from 'next/navigation';
 import {getCurrentUser,getSuperAdminUser} from '../modules/auth/session';
+import TunicomLanding from '../components/tunicom-landing';
 
 export const dynamic='force-dynamic';
 
-// The entry point only chooses the user's space; it never creates a merchant
-// workspace for the platform super-administrator.
+// Visitors discover Tunicom; signed-in users retain their separate portal routing.
+// Rendering the public page never creates a merchant workspace.
 export default async function Home(){
  if(await getSuperAdminUser())redirect('/admin');
  if(await getCurrentUser())redirect('/mes-boutiques');
- redirect('/connexion/boutique');
+ return <TunicomLanding/>;
 }

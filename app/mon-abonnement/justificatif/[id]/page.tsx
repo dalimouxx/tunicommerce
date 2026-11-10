@@ -29,7 +29,7 @@ export default async function SubscriptionPaymentDocument({
   <article className={styles.paper}>
    <header className={styles.header}>
     <div>
-     <span className={styles.brand}>TuniCommerce</span>
+     <span className={styles.brand}>Tunicom</span>
      <h1>{approved?'Attestation de validation administrative':'Déclaration de règlement SaaS'}</h1>
      <p>Document informatif interne — ne constitue pas une facture fiscale, ni un justificatif émis par D17 ou une banque.</p>
     </div>
@@ -56,7 +56,7 @@ export default async function SubscriptionPaymentDocument({
    {payment.adminNote&&<p className={styles.note}><strong>Note administrative :</strong> {payment.adminNote}</p>}
    <footer className={styles.footer}>
     <p>{approved
-      ?'L’administration TuniCommerce a enregistré et validé manuellement cette déclaration. Cette attestation ne remplace pas une facture fiscale ni le justificatif original de transfert.'
+      ?'L’administration Tunicom a enregistré et validé manuellement cette déclaration. Cette attestation ne remplace pas une facture fiscale ni le justificatif original de transfert.'
       :'Cette demande a été déclarée par le commerçant. La réception effective des fonds n’est pas établie par ce document et aucun abonnement n’est prolongé tant que la déclaration n’est pas approuvée.'}</p>
     <p>Pour une facture légale, les coordonnées fiscales de l’émetteur, les mentions légales, les taxes applicables et une numérotation réglementaire doivent être configurées.</p>
    </footer>

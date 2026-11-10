@@ -107,7 +107,7 @@ export default function TeamClient({userId,userName}:{userId:string,userName:str
 
  return <div className={styles.shell}>
   <header className={styles.header}>
-   <a href="/" className={styles.brand}><span className={styles.mark}>T</span><span>TuniCommerce</span></a>
+   <a href="/" className={styles.brand}><span className={styles.mark}>T</span><span>Tunicom</span></a>
    <div className={styles.actions}><a href="/mes-boutiques" className={styles.back}>Mes boutiques</a><a href="/" className={styles.back}>← Tableau de bord</a></div>
   </header>
   <section className={styles.intro}>
@@ -151,7 +151,7 @@ export default function TeamClient({userId,userName}:{userId:string,userName:str
    {selected&&manager&&<>
     <section className={styles.panel}>
      <h2>Inviter un collaborateur</h2>
-     <p className={styles.help}>Accès à « {selected.name} » seulement. L’invité retrouvera son invitation après connexion à son compte TuniCommerce.</p>
+     <p className={styles.help}>Accès à « {selected.name} » seulement. L’invité retrouvera son invitation après connexion à son compte Tunicom.</p>
      <form className={styles.form} onSubmit={e=>void invite(e)}>
       <div className={styles.formLine}>
        <div className={styles.field}><label htmlFor="invite-email">Adresse e-mail</label>

@@ -32,7 +32,7 @@ export default function ShopCallCenterAlerts({shopId}:{shopId:string}){
       setNewOrders(count=>count+fresh.length);
       setStatus(fresh.length+' nouvelle(s) commande(s) à confirmer détectée(s) dans cette boutique.');
       if(prefs.current.desktop&&typeof Notification!=='undefined'&&Notification.permission==='granted'){
-       try{new Notification('TuniCommerce · Nouvelle commande',{body:fresh.length+' commande(s) à confirmer. Ouvrez le centre de confirmation.'});}catch{}
+       try{new Notification('Tunicom · Nouvelle commande',{body:fresh.length+' commande(s) à confirmer. Ouvrez le centre de confirmation.'});}catch{}
       }
       if(prefs.current.sound&&audio.current){
        try{

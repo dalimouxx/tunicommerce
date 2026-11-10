@@ -1,4 +1,4 @@
-# TuniCommerce — GitHub / Render (0.4.0)
+# Tunicom — GitHub / Render (0.4.0)
 
 Version autonome de l’application de test : React / Next.js sur Node.js, PostgreSQL et Prisma. Le code métier de la version privée 0.3 est conservé. Cette livraison prépare le transfert hors de Sites ; elle ne constitue pas encore le SaaS complet du cahier des charges.
 

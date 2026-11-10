@@ -6,7 +6,7 @@ import {emailConfigured} from '../../../modules/messaging/email';
 import {encryptionConfigured} from '../../../modules/security/envelope';
 import AccountSecurity from '../../../components/account-security';
 export const dynamic='force-dynamic';
-export const metadata={title:'Sécurité de mon compte · TuniCommerce',robots:{index:false,follow:false}};
+export const metadata={title:'Sécurité de mon compte · Tunicom',robots:{index:false,follow:false}};
 export default async function SecurityPage({searchParams}:{searchParams:Promise<{portail?:string}>}){
  const portal=(await searchParams).portail==='ADMIN'?'ADMIN':'MERCHANT';
  const actor=portal==='ADMIN'?await getSuperAdminUser():await getCurrentUser();

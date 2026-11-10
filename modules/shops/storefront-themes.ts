@@ -2,7 +2,7 @@ import {z} from 'zod';
 import type {State} from '../commerce/types';
 
 /** Presets only: tenants can select a theme, never submit executable CSS. */
-export const storefrontThemeCodes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN'] as const;
+export const storefrontThemeCodes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN','PULSE','SORBET','CHROME','GROOVE'] as const;
 export type StorefrontThemeCode=(typeof storefrontThemeCodes)[number];
 export const storefrontThemeInput=z.object({
  action:z.literal('saveStorefrontTheme'),requestId:z.string().uuid(),
@@ -33,7 +33,11 @@ const palettes:Record<StorefrontThemeCode,Palette>={
  URBAN:{name:'Urban',description:'Streetwear et sport · contraste graphique urbain',background:'#edf1f3',
   foreground:'#182b36',accent:'#204153',accentText:'#ffffff',surface:'#ffffff',muted:'#566b75'},
  ZEN:{name:'Zen',description:'Bien-être et décoration · minimalisme naturel',background:'#f3f6f0',
-  foreground:'#25392c',accent:'#35694b',accentText:'#ffffff',surface:'#ffffff',muted:'#5f7566'}
+  foreground:'#25392c',accent:'#35694b',accentText:'#ffffff',surface:'#ffffff',muted:'#5f7566'},
+ PULSE:{name:'Pulse',description:'Énergie néon · streetwear, sport et drops',background:'#121610',foreground:'#f7faef',accent:'#c9ff4a',accentText:'#141812',surface:'#20271d',muted:'#bec8b7'},
+ SORBET:{name:'Sorbet',description:'Pêche et cerise · beauté, accessoires et créateurs',background:'#fff2e8',foreground:'#3c2127',accent:'#b52e45',accentText:'#ffffff',surface:'#fffaf5',muted:'#80616a'},
+ CHROME:{name:'Chrome',description:'Bleu glacé · tech, audio et objets connectés',background:'#eaf2f9',foreground:'#142b42',accent:'#1749c5',accentText:'#ffffff',surface:'#ffffff',muted:'#52697f'},
+ GROOVE:{name:'Groove',description:'Lavande expressive · lifestyle et collections créatives',background:'#eee8ff',foreground:'#302251',accent:'#5e35b6',accentText:'#ffffff',surface:'#faf7ff',muted:'#70618d'}
 };
 export function storefrontPalette(value:unknown){
  const code:StorefrontThemeCode=storefrontThemeCodes.includes(value as StorefrontThemeCode)?
@@ -63,13 +67,14 @@ export const storefrontSectors=[
 ] as const;
 export type StorefrontSector=(typeof storefrontSectors)[number]['id'];
 const sectorPresets:Record<Exclude<StorefrontSector,'ALL'>,readonly StorefrontThemeCode[]>={
- FASHION:['ATELIER','URBAN','POP','PRESTIGE'],
- BEAUTY:['ECLAT','POP','OASIS','PRESTIGE'],
- TECH:['NOVA','MINUIT','URBAN'],
- HOME:['SABLE','ZEN','ATELIER','OASIS'],
+ FASHION:['PULSE','GROOVE','ATELIER','URBAN','POP','PRESTIGE'],
+ BEAUTY:['SORBET','GROOVE','ECLAT','POP','OASIS','PRESTIGE'],
+ TECH:['CHROME','PULSE','NOVA','MINUIT','URBAN'],
+ HOME:['SABLE','ZEN','ATELIER','OASIS','GROOVE'],
  LUXURY:['PRESTIGE','ECLAT','MINUIT'],
  WELLNESS:['ZEN','OASIS','SABLE','ECLAT']
 };
+export function animatedStorefrontTheme(code:unknown){return ['PULSE','SORBET','CHROME','GROOVE'].includes(String(code));}
 /** Only predetermined theme codes, no tenant-submitted CSS or remote assets. */
 export function storefrontThemesForSector(sector:unknown):readonly StorefrontThemeCode[]{
  if(sector==='ALL')return storefrontThemeCodes;

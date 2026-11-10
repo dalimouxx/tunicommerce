@@ -16,7 +16,7 @@ export default async function MediaLibraryPage(){
   <div style={{maxWidth:1080,margin:'0 auto'}}>
    <Link href="/marchand" style={{fontSize:12,color:'#247952'}}>← Retour au tableau de bord</Link>
    <div style={{padding:'25px 0'}}>
-    <div style={{color:'#438b67',fontSize:11,letterSpacing:'1.5px',fontWeight:800}}>TUNICOMMERCE · MÉDIATHÈQUE</div>
+    <div style={{color:'#438b67',fontSize:11,letterSpacing:'1.5px',fontWeight:800}}>TUNICOM · MÉDIATHÈQUE</div>
     <h1 style={{fontSize:29,margin:'9px 0'}}>Photothèque des produits</h1>
     <p style={{color:'#728779',fontSize:13,lineHeight:1.7}}>Importez des photos optimisées pour votre catalogue. Ensuite, ouvrez Produits dans votre tableau de bord pour associer une photo à chaque article.</p>
    </div>

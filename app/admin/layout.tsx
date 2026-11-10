@@ -19,7 +19,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
   <aside className={styles.sidebar}>
    <Link href="/admin" className={styles.logo}>
     <span className={styles.logoIcon}><Layers size={20}/></span>
-    <span>TuniCommerce<small>Centre de contrôle SaaS</small></span>
+    <span>Tunicom<small>Centre de contrôle SaaS</small></span>
    </Link>
    <div className={styles.sectionLabel}>PILOTAGE PLATEFORME</div>
    <nav className={styles.navigation} aria-label="Administration globale">
@@ -52,7 +52,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
   </aside>
   <main className={styles.main}>
    <header className={styles.top}>
-    <span className={styles.breadcrumb}>TuniCommerce / <strong>Administration globale</strong></span>
+    <span className={styles.breadcrumb}>Tunicom / <strong>Administration globale</strong></span>
     <span className={styles.security}><ShieldCheck size={15}/> Accès plateforme sécurisé</span>
    </header>
    <div className={styles.content}>{children}</div>

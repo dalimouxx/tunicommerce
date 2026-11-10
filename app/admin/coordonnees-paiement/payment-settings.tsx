@@ -24,7 +24,7 @@ function MethodEditor({initial}:{initial:MethodConfig}){
  async function save(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   if(busy)return;
-  if(settings.enabled&&!window.confirm('Vous confirmez que ces coordonnées sont OFFICIELLES et peuvent être communiquées aux commerçants de TuniCommerce ?'))return;
+  if(settings.enabled&&!window.confirm('Vous confirmez que ces coordonnées sont OFFICIELLES et peuvent être communiquées aux commerçants de Tunicom ?'))return;
   setBusy(true);setError('');setSuccess('');
   try{
    const response=await fetch('/api/admin/payment-reception',{

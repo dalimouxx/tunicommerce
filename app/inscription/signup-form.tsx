@@ -36,7 +36,7 @@ export default function SignupForm(){
 
  return <div className={styles.shell}>
   <aside className={styles.story}>
-   <Link href="/boutiques" className={styles.brand}><span><ShoppingBag size={21}/></span>TuniCommerce</Link>
+   <Link href="/boutiques" className={styles.brand}><span><ShoppingBag size={21}/></span>Tunicom</Link>
    <div className={styles.storyMain}>
     <div className={styles.tag}>PLATEFORME E-COMMERCE TUNISIENNE</div>
     <h1>Votre boutique.<br/><em>Votre croissance.</em></h1>
@@ -52,7 +52,7 @@ export default function SignupForm(){
   <main className={styles.main}>
    <div className={styles.card}>
     <div className={styles.icon}><Store size={24}/></div>
-    <p className={styles.eyebrow}>COMMENCER AVEC TUNICOMMERCE</p>
+    <p className={styles.eyebrow}>COMMENCER AVEC TUNICOM</p>
     <h2>Créez votre boutique</h2>
     <p className={styles.description}>Configurez votre espace marchand et préparez votre première vente. Aucun paiement n’est demandé à l’inscription.</p>
     <form onSubmit={submit} className={styles.form}>

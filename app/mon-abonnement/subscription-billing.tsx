@@ -60,7 +60,7 @@ export default function SubscriptionBilling({
  return <div className={styles.billingLayout}>
   <section className={styles.card}>
    <h2><Banknote size={20}/> Déclarer un règlement</h2>
-   <p>Cette démarche permet de <strong>signaler un paiement réalisé en dehors de TuniCommerce</strong>. Elle ne débite pas de compte et ne confirme aucun transfert automatiquement.</p>
+   <p>Cette démarche permet de <strong>signaler un paiement réalisé en dehors de Tunicom</strong>. Elle ne débite pas de compte et ne confirme aucun transfert automatiquement.</p>
    {!plans.length?<div className={styles.billingWarning}><ShieldAlert size={17}/> Aucun tarif payant n'est encore configuré. Contactez l'administration pour un renouvellement manuel.</div>:
     pending?<div className={styles.billingWarning}><Clock3 size={17}/> Une déclaration est déjà en attente. L'administration doit la traiter avant une autre demande.</div>:
     !available?<div className={styles.billingWarning}><ShieldAlert size={17}/> Aucun moyen de paiement officiel n'est encore activé. Aucun transfert ne doit être effectué sur la base d'informations non vérifiées ; contactez l'administration.</div>:
@@ -77,14 +77,14 @@ export default function SubscriptionBilling({
       </select>
      </label>
      <div className={styles.billingDestination} role="region" aria-label="Coordonnées de réception officielles">
-      <strong>Coordonnées de réception communiquées par TuniCommerce</strong>
+      <strong>Coordonnées de réception communiquées par Tunicom</strong>
       <dl>
        <dt>Bénéficiaire</dt><dd>{available.recipientName}</dd>
        {available.code==='BANK_TRANSFER'&&<><dt>Banque</dt><dd>{available.bankName}</dd></>}
        {available.code!=='CASH'&&<><dt>{available.code==='D17'?'Numéro D17':'RIB ou IBAN'}</dt><dd>{available.identifier}</dd></>}
       </dl>
       <p>{available.instructions}</p>
-      <small>Avant de transférer de l'argent, vérifiez l'identité du bénéficiaire et le montant exact. TuniCommerce ne vérifie pas automatiquement la réception des fonds.</small>
+      <small>Avant de transférer de l'argent, vérifiez l'identité du bénéficiaire et le montant exact. Tunicom ne vérifie pas automatiquement la réception des fonds.</small>
      </div>
      {available.code!=='CASH'&&<label>Référence de la transaction
       <input required minLength={6} maxLength={120} value={reference}

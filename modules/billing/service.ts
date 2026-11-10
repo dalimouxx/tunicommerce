@@ -41,7 +41,7 @@ export async function submitSubscriptionRequest(ownerId:string,input:Subscriptio
   });
   if(!plan||!plan.enabled)throw new HttpError(409,'Cette offre n’est plus disponible');
   if(plan.priceMillimes<=0)
-   throw new HttpError(409,'Cette offre ne dispose pas encore de tarif. Contactez TuniCommerce pour une attribution manuelle.');
+   throw new HttpError(409,'Cette offre ne dispose pas encore de tarif. Contactez Tunicom pour une attribution manuelle.');
 
   const payment=await tx.subscriptionPayment.create({
    data:{

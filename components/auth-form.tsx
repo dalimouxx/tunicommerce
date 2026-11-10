@@ -12,14 +12,14 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
  const landing=admin?'/admin':'/mes-boutiques';
  return <div className="auth-shell">
   <section className="auth-story">
-   <div className="auth-brand">{admin?<ShieldCheck/>:<ShoppingBag/>}TuniCommerce<span>TN</span></div>
+   <div className="auth-brand">{admin?<ShieldCheck/>:<ShoppingBag/>}Tunicom<span>TN</span></div>
    <div>
     <p className="auth-eyebrow">{admin?'SUPER ADMIN · ACCÈS GLOBAL':'MA BOUTIQUE · ESPACE PRIVÉ'}</p>
     <h1>{admin?<>Pilotez la plateforme.<br/>En toute sécurité.</>:<>Votre boutique.<br/>Votre croissance.</>}</h1>
     <p>{admin?'Gérez les marchands, abonnements, offres et contrôles du SaaS. La gestion d’une boutique utilise une autre connexion.':'Gérez vos produits, commandes, clients, paiements COD et livraisons dans votre espace marchand.'}</p>
     <div className="auth-chips">{admin?<><span>Supervision</span><span>Abonnements</span><span>Sécurité</span></>:<><span>Catalogue</span><span>Commandes</span><span>Livraisons</span></>}</div>
    </div>
-   <small>TuniCommerce · Connexions indépendantes</small>
+   <small>Tunicom · Connexions indépendantes</small>
   </section>
   <section className="auth-panel"><div className="auth-card">
    <div className="auth-lock">{admin?<ShieldCheck size={22}/>:<Store size={22}/>}</div>

@@ -5,7 +5,7 @@ import {listShopPages} from '../../../../modules/shops/page-service';
 import ShopPageEditor from '../../../../components/shop-page-editor';
 import styles from '../../../../components/shop-pages.module.css';
 export const dynamic='force-dynamic';
-export const metadata={title:'Pages de ma boutique · TuniCommerce',robots:{index:false,follow:false}};
+export const metadata={title:'Pages de ma boutique · Tunicom',robots:{index:false,follow:false}};
 export default async function Pages({params}:{params:Promise<{shopId:string}>}){
  const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;const data=await listShopPages(actor.userId,shopId).catch(()=>null);if(!data)notFound();

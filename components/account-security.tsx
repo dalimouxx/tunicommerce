@@ -44,7 +44,7 @@ export default function AccountSecurity({email,verified,mfaEnabled,emailReady,mf
    {!mfaReady?<p>La double authentification attend la configuration du chiffrement par l’administration.</p>:<div style={{display:'grid',gap:12,maxWidth:520}}>
     <label>Mot de passe actuel<input type="password" autoComplete="current-password" maxLength={128} value={password} onChange={event=>setPassword(event.target.value)} style={{display:'block',padding:10,width:'100%'}}/></label>
     {(!mfaEnabled&&!secret)?<button type="button" className="primary" disabled={busy||!password} onClick={()=>void mfa('begin')}>Préparer la double authentification</button>:<>
-     {secret&&<div><p>Dans votre application d’authentification, ajoutez un compte TOTP : TuniCommerce, {email}. Saisissez cette clé manuellement :</p>
+     {secret&&<div><p>Dans votre application d’authentification, ajoutez un compte TOTP : Tunicom, {email}. Saisissez cette clé manuellement :</p>
       <code style={{display:'block',overflowWrap:'anywhere',padding:12}}>{secret}</code><p>Code à 6 chiffres, renouvelé toutes les 30 secondes.</p></div>}
      <label>{secret?'Code à 6 chiffres de l’application':'Code d’application ou code de secours'}<input autoComplete="one-time-code" maxLength={32} value={otp} onChange={event=>setOtp(event.target.value)} style={{display:'block',padding:10,width:'100%'}}/></label>
      {secret?<button type="button" className="primary" disabled={busy||!password||!otp} onClick={()=>void mfa('confirm')}>Confirmer l’activation</button>:<>
