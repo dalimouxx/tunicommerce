@@ -107,3 +107,25 @@
 .shell[data-theme="prestige"] .announcement{color:var(--store-accent-text,#fff)}
 
 .shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform .notice){background:var(--skin-panel);color:var(--skin-ink);border:1px solid var(--skin-line)}
+
+/* Live storefront motion: works with uploaded images and empty catalogues. */
+
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero){position:relative;isolation:isolate;overflow:hidden;border-block:1px solid var(--skin-line);margin-block:24px 38px;padding:64px 240px 58px 28px;border-radius:24px;background:linear-gradient(125deg,var(--skin-panel),var(--skin-bg))}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::before,.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::after{position:absolute;pointer-events:none;z-index:-1;color:var(--store-accent)}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::before{content:'';width:200px;aspect-ratio:1;inset-inline-end:12px;top:calc(50% - 100px);border:1px dashed currentColor;border-radius:50%;animation:liveOrbit 26s linear infinite}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::after{content:'✳';display:grid;place-items:center;width:170px;height:170px;inset-inline-end:27px;top:calc(50% - 85px);font-size:140px;line-height:1;animation:liveDrift 6s ease-in-out infinite}
+.shell[data-theme=sorbet] :global(.platform-hero)::before{border-radius:48% 48% 18% 18%;border-style:solid;animation:liveBloom 8s ease-in-out infinite}
+.shell[data-theme=chrome] :global(.platform-hero)::before{border-radius:28%;border-style:double;border-width:5px;animation-duration:36s}
+.shell[data-theme=groove] :global(.platform-hero)::before{border-radius:36% 64% 60% 40%;border-width:2px;animation-duration:20s}
+.shell[data-theme=groove] :global(.platform-hero)::after{content:'✦';animation-duration:7s}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) .announcement span:nth-child(2){display:inline-block;animation:liveOrbit 14s linear infinite;opacity:1}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.product-tile){transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.product-tile:focus-within){border-color:var(--store-accent);box-shadow:0 12px 32px color-mix(in srgb,var(--store-accent) 12%,transparent)}
+@media(hover:hover){.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.product-tile:hover){transform:translateY(-5px);border-color:var(--store-accent);box-shadow:0 15px 36px #00000018}}
+@keyframes liveOrbit{to{rotate:360deg}}
+@keyframes liveDrift{0%,100%{translate:0 -9px;rotate:-8deg}50%{translate:0 10px;rotate:12deg}}
+@keyframes liveBloom{0%,100%{scale:.88;rotate:-12deg}50%{scale:1;rotate:12deg}}
+.shell[data-motion=paused] *,.shell[data-motion=paused] *::before,.shell[data-motion=paused] *::after{animation-play-state:paused!important}
+@media(max-width:790px){.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero){padding:135px 22px 30px;margin-block:20px 28px}.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::before{width:96px;top:18px;inset-inline-end:24px}.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::after{width:80px;height:80px;font-size:70px;top:26px;inset-inline-end:32px}}
+@media(prefers-reduced-motion:reduce){.shell *,.shell *::before,.shell *::after{animation:none!important;transition:none!important}}
+
