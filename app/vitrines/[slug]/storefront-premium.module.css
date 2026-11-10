@@ -315,3 +315,22 @@
 .codSaving dt,.codSaving dd{color:#157a41!important;font-weight:750}
 @media(max-width:380px){.offerCard{padding:11px 10px;gap:9px}.offerPrice strong{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.offerCard{transition:none}.offerCard:active{transform:none}}
+
+/* Live storefront motion: works with uploaded images and empty catalogues. */
+
+.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .heroVisual::before{z-index:1;animation:studioFrame 7s ease-in-out infinite}
+.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .heroVisual::after{content:'✳';position:absolute;z-index:1;inset-inline-end:20px;top:20px;width:68px;height:68px;display:grid;place-items:center;font-size:49px;line-height:1;border:1px solid var(--store-accent);border-radius:50%;color:var(--store-accent);background:var(--store-surface);pointer-events:none;animation:studioOrbit 24s linear infinite}
+.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .heroImage{animation:studioPhoto 12s ease-in-out infinite}
+.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .featuredBadge{z-index:2}
+.page[data-theme="SORBET"] .heroVisual::after{border-radius:45% 45% 14% 14%;animation:studioBloom 7s ease-in-out infinite}
+.page[data-theme="CHROME"] .heroVisual::after{content:'✧';border-radius:18px;animation-duration:32s;box-shadow:inset 0 0 16px #1749c518}
+.page[data-theme="GROOVE"] .heroVisual::after{content:'✦';border-radius:35% 65% 60% 40%;animation-duration:18s}
+.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .productCard:focus-within{border-color:var(--store-accent);box-shadow:0 10px 25px color-mix(in srgb,var(--store-accent) 15%,transparent)}
+@keyframes studioOrbit{to{rotate:360deg}}
+@keyframes studioPhoto{0%,100%{transform:scale(1.02)}50%{transform:scale(1.09)}}
+@keyframes studioFrame{0%,100%{scale:.94;opacity:.45}50%{scale:1;opacity:1}}
+@keyframes studioBloom{0%,100%{rotate:-10deg;translate:0 0}50%{rotate:10deg;translate:0 8px}}
+.page[data-motion="paused"] *,.page[data-motion="paused"] *::before,.page[data-motion="paused"] *::after{animation-play-state:paused!important}
+@media(max-width:720px){.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .heroVisual::after{width:52px;height:52px;font-size:36px;top:15px;inset-inline-end:15px}}
+@media(prefers-reduced-motion:reduce){.page *,.page *::before,.page *::after{animation:none!important;transition:none!important}}
+

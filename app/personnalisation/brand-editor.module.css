@@ -117,3 +117,14 @@
 .mock:is([data-theme=classic],[data-theme=prestige]) .mockAnnouncement{color:var(--brand-preview-text,#fff)}
 
 .mock:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) .mockFooter{background:var(--mock-card);color:var(--mock-muted)}
+
+/* Live storefront motion: works with uploaded images and empty catalogues. */
+
+.mock:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) .mockHero{position:relative;isolation:isolate;overflow:hidden;padding-top:72px}
+.mock:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) .mockHero::after{content:'✳';position:absolute;z-index:-1;top:12px;right:22px;font-size:48px;line-height:1;color:var(--brand-preview);animation:previewLiveOrbit 18s linear infinite;pointer-events:none}
+.mock[data-theme=groove] .mockHero::after{content:'✦'}.mock[data-theme=chrome] .mockHero::after{content:'✧'}
+.mock:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) .mockProduct>img{animation:previewPhoto 9s ease-in-out infinite}
+@keyframes previewLiveOrbit{to{rotate:360deg}}@keyframes previewPhoto{50%{filter:saturate(1.2);object-position:55% 50%}}
+.mock[data-motion=paused] *,.mock[data-motion=paused] *::before,.mock[data-motion=paused] *::after{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){.mock *,.mock *::before,.mock *::after{animation:none!important;transition:none!important}}
+
