@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {Activity,ShieldCheck} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
 import {legacyShopName} from '../../../modules/platform/admin-overview';
@@ -20,6 +21,7 @@ function describe(raw:string){
  }
 }
 export default async function GlobalAudit(){
+ await requireSuperAdminPage();
  const [events,count]=await Promise.all([
   prisma.platformAudit.findMany({take:100,orderBy:{createdAt:'desc'},
    select:{id:true,actorId:true,workspaceId:true,detail:true,createdAt:true}}),

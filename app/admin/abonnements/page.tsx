@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {CalendarClock,Receipt,ShieldAlert} from 'lucide-react';
 import Link from 'next/link';
 import {loadPlatformStats,loadShopRows} from '../../../modules/platform/admin-overview';
@@ -8,6 +9,7 @@ export const dynamic='force-dynamic';
 export default async function Abonnements({
  searchParams
 }:{searchParams:Promise<{statut?:string}>}){
+ await requireSuperAdminPage();
  const [stats,shops,{statut}]=await Promise.all([loadPlatformStats(),loadShopRows(200),searchParams]);
  return <>
   <div className={styles.head}>

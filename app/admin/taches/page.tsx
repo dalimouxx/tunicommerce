@@ -1,11 +1,11 @@
-import {requireAdmin} from '../../../modules/platform/admin';
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {prisma} from '../../../modules/storage/client';
 import {emailConfigured} from '../../../modules/messaging/email';
 import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 const labels:Record<string,string>={PENDING:'En attente',PROCESSING:'En traitement',SUCCEEDED:'Traité',FAILED:'Échec',CANCELLED:'Annulé'};
 export default async function JobsPage(){
- await requireAdmin();
+ await requireSuperAdminPage();
  const [rows,pending,failed]=await Promise.all([
   prisma.backgroundJob.findMany({orderBy:[{createdAt:'desc'},{id:'desc'}],take:50,select:{
    id:true,kind:true,status:true,attempts:true,maxAttempts:true,errorCode:true,createdAt:true,availableAt:true,finishedAt:true}}),

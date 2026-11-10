@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import Link from 'next/link';
 import {prisma} from '../../../modules/storage/client';
 import {billingBucket} from '../../../modules/platform/saas-billing-health';
@@ -5,16 +6,13 @@ import {toTnd} from '../../../modules/billing/validation';
 import {financialReportQuery,previousFinancialReportQuery,FinancialReportInputError,type FinancialReportInput} from '../../../modules/billing/financial-report';
 import {loadFinancialReport} from '../../../modules/billing/financial-report-service';
 import SaasMonthlyFinance from '../../../components/saas-monthly-finance';
-import {getSuperAdminUser} from '../../../modules/auth/session';
 import {redirect} from 'next/navigation';
 import styles from '../platform.module.css';
 
 export const dynamic='force-dynamic';
 
 export default async function SaasBillingCommandCenter({searchParams}:{searchParams:Promise<FinancialReportInput>}){
- const actor=await getSuperAdminUser();
- if(!actor)redirect('/connexion/admin');
- if(actor.role!=='ADMIN')redirect('/marchand');
+ const actor=await requireSuperAdminPage();
  const now=new Date();
  let query;
  try{query=financialReportQuery(await searchParams,now);}

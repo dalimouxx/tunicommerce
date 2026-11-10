@@ -15,6 +15,7 @@ const config: NextConfig = {
     {key:'Referrer-Policy',value:'same-origin'},
     {key:'X-Frame-Options',value:'DENY'}
    ]},
+   ...['/admin/:path*','/marchand/:path*','/mes-boutiques/:path*','/equipe/:path*','/personnalisation/:path*','/demarrage/:path*','/mon-abonnement/:path*','/mediatheque/:path*','/connexion/:path*','/login','/setup','/api/admin/:path*','/api/commerce','/api/v1/commerce','/api/auth/:path*'].map(source=>({source,headers:privateTrackingHeaders})),
    {source:'/vitrines/:slug/suivi/:token',headers:privateTrackingHeaders},
    {source:'/suivi/:token',headers:privateTrackingHeaders},
    {source:'/compte/:path*',headers:privateTrackingHeaders},

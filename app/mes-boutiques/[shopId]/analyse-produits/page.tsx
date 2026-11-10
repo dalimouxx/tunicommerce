@@ -7,7 +7,7 @@ export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 const money=(value:number)=>(value/1000).toFixed(3)+' TND';
 export default async function ProductAnalyticsPage({params}:{params:Promise<{shopId:string}>}){
- const actor=await getCurrentUser();if(!actor)redirect('/login');
+ const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);if(!shop)notFound();
  const commerce=await readIsolatedCommerce(shopId,shop.name);

@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 // Database suites reset shared tables: always run them serially on a disposable DB.
 const integration=new Set([
+ 'platform-route-audit.test.ts',
  'landing-theme-http.test.ts',
  'shop-pages-api.test.ts',
  'account-security-api.test.ts',
@@ -42,3 +43,4 @@ const result=spawnSync(process.execPath,[
 ],{cwd:root,stdio:'inherit',env});
 if(result.error)throw result.error;
 process.exitCode=result.status??1;
+

@@ -191,7 +191,9 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
   });
 
   await t.test('Subscription staff seats cover all shops and cannot be bypassed by reactivation',async()=>{
-   // Establish an existing merchant Workspace using the historical API, preserving its data.
+   // Provision the existing workspace explicitly; GET is read-only.
+   const {readWorkspace}=await import('../modules/storage/repository');
+   await readWorkspace(owner.id);
    assert.equal((await get('/api/commerce',ownerCookie)).status,200);
    const workspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});
    const oldPlan=await prisma.subscriptionPlan.findUniqueOrThrow({where:{code:workspace.plan}});

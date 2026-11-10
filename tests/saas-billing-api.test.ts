@@ -381,7 +381,7 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
     const before=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceA.id}});
     const response=await get(exportPath,adminCookie);
     assert.equal(response.status,200);
-    assert.equal(response.headers.get('cache-control'),'private, no-store');
+    assert.match(response.headers.get('cache-control')||'',/private, no-store(?:, max-age=0)?/);
     const csv=await response.text();
     assert.equal(csv.trim().split('\r\n').length,5,'One header and four unique source groups');
     assert.ok(csv.includes('"D17","APPROVED","Décision","2","92.001"'));
@@ -408,3 +408,4 @@ test('Offline SaaS billing: merchant claims, admin reconciliation, audit, receip
   await prisma.$disconnect();
  }
 });
+

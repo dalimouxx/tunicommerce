@@ -1,10 +1,12 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {integrationReadiness} from '../../../modules/platform/integration-readiness';
 import styles from '../platform.module.css';
 
 export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 export default async function IntegrationReadinessPage(){
- // The parent layout enforces the global ADMIN role before this page is rendered.
+ await requireSuperAdminPage();
+
  const rows=integrationReadiness(process.env);
  return <div>
   <div className={styles.head}><div>

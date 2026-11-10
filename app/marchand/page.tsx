@@ -23,6 +23,7 @@ export default async function MerchantDashboard(){
    where:{userId:user.userId,active:true},select:{id:true}
   });
   if(membership)redirect('/equipe');
+  redirect('/mes-boutiques');
  }
  const shopSlug=workspace?.slug&&isOpen({
   published:workspace.published,
@@ -30,5 +31,5 @@ export default async function MerchantDashboard(){
   subscriptionEndsAt:workspace.subscriptionEndsAt
  })?workspace.slug:null;
 
- return <CommerceApp admin={user.role==='ADMIN'} shopSlug={shopSlug}/>;
+ return <CommerceApp shopSlug={shopSlug}/>;
 }

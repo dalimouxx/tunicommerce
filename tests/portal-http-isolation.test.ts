@@ -32,7 +32,7 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
    await sleep(250);
   }
   assert.equal(ready,true);
-  assert.equal((await get('/connexion')).status,200);
+  assert.equal((await get('/connexion')).headers.get('location'),'/connexion/boutique');
   assert.equal((await get('/connexion/admin')).status,200);
   assert.equal((await get('/connexion/boutique')).status,200);
   assert.equal((await get('/admin')).headers.get('location'),'/connexion/admin');
@@ -41,10 +41,12 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
   assert.equal((await get('/mon-abonnement')).headers.get('location'),'/connexion/boutique');
   assert.equal((await get('/equipe')).headers.get('location'),'/connexion/boutique');
 
+  assert.equal((await get('/setup')).status,200);
   const setup=await post('/api/auth/setup',{
    name:'Plateforme Admin',email:'admin@portal.example.test',password,token:setupToken
   });
   assert.equal(setup.status,201);
+  assert.equal((await get('/setup')).status,404);
   const signup=await post('/api/auth/register',{
    name:'Marchand Client',email:'shop@portal.example.test',password,
    shopName:'Boutique Test',slug:'boutique-test'

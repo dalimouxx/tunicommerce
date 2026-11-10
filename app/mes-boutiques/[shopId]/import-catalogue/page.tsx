@@ -7,7 +7,7 @@ export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 export default async function ImportCataloguePage({params}:{params:Promise<{shopId:string}>}){
  const actor=await getCurrentUser();
- if(!actor)redirect('/login');
+ if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);
  if(!shop)notFound();

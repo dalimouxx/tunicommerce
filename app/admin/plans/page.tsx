@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {CircleDollarSign,ShieldAlert} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
 import {modulesSchema} from '../../../modules/subscriptions/validation';
@@ -7,6 +8,7 @@ import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function SubscriptionCatalog(){
+ await requireSuperAdminPage();
  const [rows,counts]=await Promise.all([
   prisma.subscriptionPlan.findMany({orderBy:{code:'asc'}}),
   prisma.workspace.groupBy({by:['plan'],_count:{_all:true}})

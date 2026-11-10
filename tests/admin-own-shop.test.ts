@@ -98,6 +98,10 @@ test('Super-admin can manage only their own legacy boutique and still access glo
 
   // The old ADMIN account has an existing personal commerce workspace in production.
   // Simulate this existing state via the established legacy workspace creation route.
+  assert.equal((await get('/api/commerce',shopCookie)).status,403);
+  const existingAdmin=await prisma.user.findUniqueOrThrow({where:{email:'platform@example.test'}});
+  const {readWorkspace}=await import('../modules/storage/repository');
+  await readWorkspace(existingAdmin.id);
   const legacy=await get('/api/commerce',shopCookie);
   assert.equal(legacy.status,200);
   const ownedAdminState=(await legacy.json()).state;
@@ -119,7 +123,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
    assert.ok(adminHtml.includes('/connexion/boutique'));
    assert.equal((await get('/api/admin/plans',shopCookie)).status,401);
    const merchantHtml=await (await get('/marchand',shopCookie)).text();
-   assert.ok(merchantHtml.includes('Super Admin · connexion indépendante'));
+   assert.equal(merchantHtml.includes('Super Admin · connexion indépendante'),false);
    assert.deepEqual((await (await get('/api/commerce',shopCookie)).json()).state,ownedAdminState);
   });
 

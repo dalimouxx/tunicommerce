@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {ShieldCheck,Clock3} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
 import PaymentSettings,{type MethodConfig} from './payment-settings';
@@ -6,6 +7,7 @@ import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function OfficialReceptionSettings(){
+ await requireSuperAdminPage();
  const [methods,changes]=await Promise.all([
   prisma.paymentReceptionMethod.findMany({orderBy:{code:'asc'}}),
   prisma.paymentReceptionAudit.findMany({

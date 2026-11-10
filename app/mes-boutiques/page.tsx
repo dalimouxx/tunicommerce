@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PortalLogout from '../../components/portal-logout';
 import {redirect} from 'next/navigation';
 import {getCurrentUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
@@ -51,7 +52,7 @@ export default async function MyShops(){
    <header className={styles.header}>
     <div><span className={styles.eyebrow}>ESPACE MARCHAND</span><h1>Mes boutiques</h1>
     <p>Retrouvez les boutiques auxquelles votre compte a réellement accès. Les données de chaque marchand restent séparées.</p></div>
-    <Link href="/marchand" className={styles.back}>Retour à mon espace</Link>
+    <div><Link href="/marchand" className={styles.back}>Retour à mon espace</Link><PortalLogout portal="MERCHANT"/></div>
    </header>
    {capacity&&subscription&&<section className={styles.card}>
     <span className={styles.kicker}>CAPACITÉ DE VOTRE ABONNEMENT</span>
