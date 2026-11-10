@@ -13,13 +13,13 @@ Priorité choisie : administration SaaS et abonnements.
 
 ## Vérification
 
-`npm test` découvre les tests unitaires automatiquement : 95 fichiers, 320 tests réussis. Les tests unitaires ne reçoivent pas les variables de connexion PostgreSQL.
+`npm test` découvre les tests unitaires automatiquement : 96 fichiers, 325 tests réussis. Les tests unitaires ne reçoivent pas les variables de connexion PostgreSQL.
 
 `npm run typecheck` et `npm run build` passent sur la version finale (Node.js 24, Next.js 16.4.6, Prisma 6.19.0).
 
 `npm run test:integration` conserve le parcours PostgreSQL historique. `npm run test:integration:all` exécute les 17 suites PostgreSQL/HTTP en série afin d'éviter leurs effacements concurrents de tables. Cette commande exige `DATABASE_URL` et `TEST_DATABASE_URL` identiques, sur une base jetable dont le nom se termine par `_test`. L'exercice de restauration, qui exige une sauvegarde préparée et une phase explicite, reste dans son workflow dédié.
 
-Les deux suites PostgreSQL/HTTP `saas-billing-api.test.ts` et `payment-reception-api.test.ts` ont été exécutées localement : 20 tests réussis sur PostgreSQL 18, dans une base jetable séparée de toute base existante. Les 15 autres suites d'intégration n'ont pas été exécutées localement. La recette visuelle interactive de l'administration reste à effectuer.
+Les deux suites PostgreSQL/HTTP `saas-billing-api.test.ts` et `payment-reception-api.test.ts` ont été exécutées localement : 21 tests réussis sur PostgreSQL 18, dans une base jetable séparée de toute base existante. Les 15 autres suites d'intégration n'ont pas été exécutées localement. La recette visuelle interactive de l'administration reste à effectuer.
 
 ## Deuxième lot — vérification des règlements et renouvellements
 
@@ -39,10 +39,23 @@ Pour approuver via `POST /api/admin/subscription-payments`, envoyer `receivedCon
 
 Les tests réels couvrent les validations concurrentes, la référence D17 déjà utilisée, l'isolation entre marchands, les déclarations sans activation immédiate, les refus, l'interdiction d'approbation des comptes suspendus/résiliés et la pagination/export sur 206 dossiers supplémentaires fictifs. Les tests arrêtent leur serveur de test sous Windows comme sous Linux.
 
+## Troisième lot — bilan financier mensuel
+
+- `/admin/finances-saas` propose un mois calendaire, une offre et un moyen de règlement. Les montants et nombres de dossiers sont ventilés séparément entre validations, déclarations encore en attente et refus, puis répartis par offre et par moyen.
+- Les validations et les refus sont rattachés au mois de leur décision ; les dossiers encore en attente, à leur mois de dépôt. Une déclaration déposée en septembre et approuvée en novembre est donc comptée dans les validations de novembre. Une décision sans date n'est pas inventée et reste hors du bilan mensuel.
+- Les limites mensuelles suivent `Africa/Tunis`, indépendamment du fuseau de l'hôte. Le début est inclus et le début du mois suivant exclu. Le mois par défaut suit également le calendrier tunisien ; les années bissextiles et le changement d'année sont testés.
+- La comparaison avec le mois précédent applique les mêmes filtres. Si le montant précédent est nul, aucun pourcentage trompeur ou infini n'est affiché. Le mois courant peut être incomplet : cette comparaison n'est pas une projection de revenu.
+- La situation des dossiers en attente est leur situation actuelle. Elle peut évoluer après une décision ; le bilan ne prétend pas reconstituer un arrêté comptable historique. Les indicateurs globaux, indépendants des filtres mensuels, sont présentés dans une section distincte.
+- L'export `/api/admin/finances-saas/export?mois=2026-11&offre=PRO&method=D17` utilise les mêmes filtres et montants entiers en millimes. Chaque combinaison offre/moyen/statut figure une seule fois ; aucun total ou sous-total dupliqué n'est ajouté aux lignes. L'export agrégé n'inclut ni coordonnées marchands ni données d'acheteurs.
+- Les filtres invalides sont signalés explicitement (400 pour l'export), sans exporter une autre période à la place. Le rapport et l'export sont réservés à l'administration ; l'export est privé et non mis en cache.
+- Les totaux sont agrégés dans PostgreSQL sur tous les dossiers correspondants, sans charger les paiements individuels dans le navigateur. Aucun changement de schéma, d'abonnement ou de paiement n'est effectué par le bilan.
+
+Les cinq tests unitaires supplémentaires et le scénario PostgreSQL/HTTP vérifient les dates de rattachement, les frontières mensuelles en Tunisie, la conservation des filtres, les sommes par groupe, les millimes exacts, la protection CSV et les refus d'accès. La compilation de production et les tests passent sur la version finale.
+
 ## Suite proposée pour l'administration SaaS
 
 1. Évolution des offres : compléter la politique commerciale de changements de formule (prorata éventuel et effet sur les quotas existants).
-2. Pilotage : distinguer les paiements encaissés, les déclarations en attente et les montants attendus ; proposer une vue par mois et par offre.
+2. Pilotage : définir les besoins de suivi sur plusieurs mois et les contrôles de rapprochement avec les justificatifs externes.
 3. Support marchand : récupération de mot de passe et notifications transactionnelles après choix et configuration du prestataire e-mail.
 4. Validation : recette avec plusieurs marchands et plusieurs boutiques, droits d'accès, paiement déclaré puis approuvé, expiration et réactivation.
 
