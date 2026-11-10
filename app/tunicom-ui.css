@@ -1,0 +1,58 @@
+/* Application-only design tokens. Public shops retain their selected storefront theme. */
+:root{--ui-paper:#f7f7ee;--ui-ink:#20251d;--ui-muted:#626c5b;--ui-line:#dfe3d5;--ui-lime:#c9fa4f;--ui-lavender:#eee5fa;--ui-peach:#ffeadb;--ui-radius:16px}
+[data-tunicom-ui=true]{min-height:100dvh;background:var(--ui-paper);color:var(--ui-ink);font-family:'DM Sans',Arial,sans-serif}
+[data-tunicom-ui=true] :where(button,a,input,select,textarea):focus-visible{outline:3px solid #708c35;outline-offset:3px}
+[data-tunicom-ui=true] :where(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){border-radius:9px;min-height:44px}
+[data-tunicom-ui=true] :where(button,a){transition:background-color .18s,color .18s,box-shadow .18s,translate .18s}
+[data-tunicom-ui=true] .card{background:#fffef9;border-color:var(--ui-line);border-radius:16px}
+[data-tunicom-ui=true] .app-shell{--bg:var(--ui-paper);--ink:var(--ui-ink);--muted:var(--ui-muted);--line:var(--ui-line);--green:#26321e;--pale:#edf3dd;background:var(--ui-paper);color:var(--ui-ink)}
+.app-shell .sidebar{background:#fffef7;border-right:1px solid var(--ui-line);padding-top:30px}
+.app-shell .brand{font-size:25px;letter-spacing:-1.3px;color:var(--ui-ink)}
+.app-shell .brand-mark{background:var(--ui-lime);color:var(--ui-ink);border-radius:11px 11px 3px 11px;rotate:-5deg}
+.app-shell .brand-light{font-weight:800}.app-shell .brand i{background:#6c8e31}.app-shell .shop-switch{background:var(--ui-paper);border-color:var(--ui-line);border-radius:11px}
+.app-shell .shop-switch strong,.app-shell .shop-switch small{color:var(--ui-muted)}
+.app-shell .nav-item{border-radius:9px;color:#626e58;min-height:43px;font-size:12px}
+.app-shell .nav-item:hover{background:#f2f4e8;color:var(--ui-ink)}
+.app-shell .nav-item.active{background:var(--ui-lime);color:var(--ui-ink);font-weight:750;box-shadow:0 2px 0 #20251d10}
+.app-shell .nav-group{color:#77816b;letter-spacing:1.5px;font-size:9px}.app-shell .nav-item b{background:#20251d;color:#fff}.app-shell .nav-dot{background:#708d34}
+.app-shell .topbar{background:var(--ui-paper);border-bottom:1px solid var(--ui-line)}
+.app-shell .breadcrumb,.app-shell .topbar-actions,.app-shell .breadcrumb strong{color:var(--ui-muted)}
+.app-shell .global-search{background:#fffef8;border:1px solid var(--ui-line);border-radius:9px}.app-shell .global-search input{background:transparent;color:var(--ui-ink)}
+.app-shell .main-content{background:var(--ui-paper)}
+.app-shell .page-heading h1,.app-shell .page-header h1{font-size:clamp(27px,3vw,39px);color:var(--ui-ink);letter-spacing:-1.5px;font-weight:800}
+.app-shell .card{background:#fffef9;border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:0 4px 18px #20251d04}
+.app-shell .card h2,.app-shell .card h3,.app-shell .stat-value{color:var(--ui-ink)}
+.app-shell .stat-card{min-height:145px;border-radius:16px;padding:23px}.app-shell .stat-card:nth-child(1){background:#eafaC7}.app-shell .stat-card:nth-child(2){background:var(--ui-lavender)}.app-shell .stat-card:nth-child(3){background:var(--ui-peach)}.app-shell .stat-card:nth-child(4){background:#eff0e7}
+.app-shell .stat-top>span:first-child,.app-shell .stat-foot{color:#65705a}.app-shell .stat-value{font-size:30px;letter-spacing:-1.1px}.app-shell .stat-value small{color:#667159}
+.app-shell .primary,[data-tunicom-ui=true] .auth-card .primary{background:var(--ui-lime);color:var(--ui-ink);border:1px solid var(--ui-ink);border-radius:8px;box-shadow:2px 3px 0 var(--ui-ink);font-weight:750;min-height:44px}
+.app-shell .primary:hover,[data-tunicom-ui=true] .auth-card .primary:hover{background:#d2ff62;translate:0 -2px;box-shadow:3px 5px 0 var(--ui-ink)}
+.app-shell .button:not(.primary){background:#fffef9;color:var(--ui-ink);border:1px solid #d4dac7;border-radius:8px;min-height:38px}
+.app-shell .tabs{background:#ecf0df;border-color:var(--ui-line);border-radius:10px}.app-shell .tabs button{color:#657154}.app-shell .tabs button.active{background:var(--ui-ink);color:#fffef4;border-radius:7px}
+.app-shell .table-scroll{border-radius:10px}.app-shell table th{background:#f1f3e7;color:#68745d;font-size:11px}.app-shell table td{color:#47533e;font-size:12px;border-color:var(--ui-line)}.app-shell table td strong{color:var(--ui-ink)}.app-shell tbody tr:hover{background:#f7f9ee}
+.app-shell input,.app-shell select,.app-shell textarea{background:#fffef9;border-color:#d3dac5;color:var(--ui-ink)}
+.app-shell .chart-title,.app-shell .inline-title h2,.app-shell .pipeline-row strong{color:var(--ui-ink)}
+.app-shell .card-heading{border-color:var(--ui-line)}.app-shell .pipeline-row{border-color:var(--ui-line)}.app-shell .pipeline-row:hover{background:#f4f7e9}.app-shell .copilot-teaser{background:var(--ui-lavender);border-color:#d7c9e9}
+.app-shell .sidebar-bottom{border-color:var(--ui-line)}.app-shell .support,.app-shell .profile{color:#667359}.app-shell .profile-avatar{background:#e9efda;color:#3e512c}.app-shell footer{color:#6c795f}
+[data-tunicom-ui=true] .auth-shell{background:var(--ui-paper);grid-template-columns:1fr 1fr}
+[data-tunicom-ui=true] .auth-story{background:#20251d;color:var(--ui-paper);padding:48px clamp(28px,5vw,76px);isolation:isolate;position:relative;overflow:hidden}
+.auth-story::after{content:'✳';position:absolute;right:-58px;bottom:40px;font-size:340px;line-height:1;color:#c9fa4f14;z-index:-1;animation:appOrbit 45s linear infinite;pointer-events:none}
+[data-tunicom-ui=true] .auth-brand{font-size:29px;letter-spacing:-1.2px;color:var(--ui-paper);position:relative;z-index:1;align-self:flex-start}
+.auth-monogram{background:var(--ui-lime);color:var(--ui-ink);font:800 35px Manrope,Arial,sans-serif;letter-spacing:-4px;width:44px;height:45px;display:grid;place-items:center;border-radius:12px 12px 3px 12px;padding-right:6px;rotate:-6deg}
+[data-tunicom-ui=true] .auth-brand>span{color:#c9fa4f;border-color:#c9fa4f66;font-size:8px;border-radius:4px;letter-spacing:.04em}
+[data-tunicom-ui=true] .auth-story h1{font-size:clamp(40px,4.8vw,67px);line-height:1.08;letter-spacing:-.065em;color:var(--ui-paper);font-weight:800}
+[data-tunicom-ui=true] .auth-story p{color:#bec6b4;font-size:14px;line-height:1.8;max-width:420px}.auth-story .auth-eyebrow{color:var(--ui-lime)!important;font-size:9px!important;letter-spacing:.15em}
+[data-tunicom-ui=true] .auth-story>small{color:#a9b698;font-size:10px}.auth-story .auth-chips span{background:#c9fa4f0d;border-color:#c9fa4f3b;color:#d5dfc7;border-radius:30px;font-size:10px;padding:10px 15px}
+[data-tunicom-ui=true] .auth-panel{background:var(--ui-paper);padding:45px 28px}
+[data-tunicom-ui=true] .auth-card{max-width:425px;padding:34px;background:#fffef9;border:1px solid #cdd4be;border-radius:17px;box-shadow:5px 6px 0 #20251d0c}
+[data-tunicom-ui=true] .auth-lock{background:var(--ui-lime);color:var(--ui-ink);border-radius:12px 12px 3px 12px;border:1px solid #20251d14}
+[data-tunicom-ui=true] .auth-card h2{color:var(--ui-ink);font-size:28px;letter-spacing:-1px;line-height:1.25;font-weight:800}
+[data-tunicom-ui=true] .auth-card p{color:#68745c;font-size:12px;line-height:1.75}.auth-card .auth-eyebrow{color:#576a3e!important;font-size:9px!important;letter-spacing:.14em}
+[data-tunicom-ui=true] .auth-card label{color:#48553d;font-size:12px;font-weight:650}.auth-card input{border-color:#cfd8c1!important;border-radius:8px!important;color:var(--ui-ink)!important;min-height:47px;background:#fff!important}
+[data-tunicom-ui=true] .auth-card input:focus{outline:2px solid #778f44;outline-offset:2px}.auth-card .auth-foot a{color:#40502f;font-size:11px}.auth-card .auth-foot{border-top:1px solid var(--ui-line);padding-top:20px}
+[data-tunicom-ui=true] .auth-card .auth-error{background:#fff0e9;color:#a33f32;border:1px solid #ecc9b9}
+[data-tunicom-ui=true] .auth-card .primary:disabled{translate:none;box-shadow:1px 1px 0 var(--ui-ink)}
+@keyframes appOrbit{to{rotate:360deg}}
+@media(max-width:1000px){[data-tunicom-ui=true] .auth-card{padding:28px}.app-shell .stat-card{padding:19px}.app-shell .stat-value{font-size:25px}}
+@media(max-width:760px){[data-tunicom-ui=true] .auth-shell{grid-template-columns:1fr}.auth-story::after{display:none}[data-tunicom-ui=true] .auth-story{padding:25px;min-height:0}[data-tunicom-ui=true] .auth-brand{font-size:27px}[data-tunicom-ui=true] .auth-card{max-width:470px}[data-tunicom-ui=true] .auth-panel{padding:27px 18px 50px}.app-shell .sidebar{background:#fffef7}.app-shell .stat-card{min-height:130px;padding:16px}.app-shell .stat-value{font-size:24px}}
+@media(prefers-reduced-motion:reduce){[data-tunicom-ui=true] *,[data-tunicom-ui=true] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{[data-tunicom-ui=true]{background:white}.app-shell .primary{box-shadow:none}}

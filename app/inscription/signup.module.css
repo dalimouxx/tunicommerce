@@ -31,3 +31,8 @@
 .foot{text-align:center;border-top:1px solid #e5ece7;margin-top:26px;padding-top:23px;font-size:12px;color:#7e8f83}
 .foot a{color:#207a57;font-weight:750}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.story{min-height:0;padding:20px 25px}.storyMain,.storyFooter{display:none}.main{padding:35px 20px 55px}.card{max-width:540px}}
+
+/* Tunicom application refresh */
+
+.shell{background:var(--ui-paper);color:var(--ui-ink)}.story{background:#20251d;position:relative;isolation:isolate;overflow:hidden}.story::after{content:'✳';font-size:300px;color:#c9fa4f12;position:absolute;right:-70px;bottom:5%;line-height:1;z-index:-1;pointer-events:none}.brand{font-size:26px;letter-spacing:-1px}.brand span{background:var(--ui-lime);color:#20251d;border:0;border-radius:11px 11px 3px 11px;rotate:-5deg}.tag{color:var(--ui-lime);font-size:9px}.storyMain h1{font-size:clamp(40px,4.5vw,66px);line-height:1.05;letter-spacing:-.06em}.storyMain em{color:var(--ui-lime)}.storyMain>p{color:#bfc9b1;font-size:14px}.benefits div{color:#dce5ce;font-size:12px}.benefits svg{color:var(--ui-lime)}.storyFooter{color:#a8b694}.main{padding-block:45px}.card{background:#fffef9;border:1px solid var(--ui-line);padding:32px;border-radius:17px;box-shadow:5px 6px 0 #20251d08}.icon{background:#edf6d7;color:#40592c}.eyebrow{color:#627b42}.description,.form small,.security,.foot{color:#6c795d}.form label{color:#4e5e3d}.form input{border-color:#cdd7bf;color:#20251d}.form input:focus{border-color:#7e9853;box-shadow:0 0 0 3px #c9fa4f3d}.submit{background:var(--ui-lime);color:#20251d;border:1px solid #20251d;border-radius:8px;box-shadow:2px 3px 0 #20251d}.submit:hover{background:#d3ff69}.foot a{color:#4e692f}
+@media(max-width:900px){.story::after{display:none}.card{padding:25px}}

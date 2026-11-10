@@ -59,3 +59,7 @@
 .error{background:#fff0ed;color:#b2584d;border-color:#f2d7ce}
 @media(max-width:800px){.layout{grid-template-columns:1fr}.aside{grid-template-columns:1fr 1fr}.hero h1{font-size:26px}}
 @media(max-width:530px){.header{padding:0 14px}.brand small{display:none}.back{font-size:10px}.main{padding:30px 13px}.steps{gap:5px}.steps button{padding:9px 4px;font-size:10px;gap:5px}.steps button span{height:21px;width:21px}.panel{padding:18px}.two{grid-template-columns:1fr}.linkForm{flex-direction:column}.aside{grid-template-columns:1fr}}
+
+/* Tunicom application refresh */
+
+.shell{background:var(--ui-paper);color:var(--ui-ink)}.header{background:#fffef7;border-color:var(--ui-line)}.brand{font-size:24px;letter-spacing:-1px}.brandIcon{background:var(--ui-lime);color:#20251d;border-radius:11px 11px 3px 11px;rotate:-5deg}.back{color:#5e7542}.hero h1{font-size:39px;letter-spacing:-1.6px}.eyebrow{color:#6a804c}.hero p,.help,.small{color:var(--ui-muted)}.panel,.aside{border-color:var(--ui-line);border-radius:16px;background:#fffef9}.primary{background:var(--ui-lime);color:#20251d;border:1px solid #20251d;border-radius:8px;box-shadow:2px 3px 0 #20251d}.primary:hover{background:#d3ff6c}.secondary,.ghost{color:#4c6534;border-color:#cbd7bc}.form input,.form textarea,.form select{border-color:#cbd6bd;color:#20251d;background:#fff}.form label{color:#546a3d}.steps{border-color:var(--ui-line)}

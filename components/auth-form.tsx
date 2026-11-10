@@ -12,7 +12,7 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
  const landing=admin?'/admin':'/mes-boutiques';
  return <div className="auth-shell">
   <section className="auth-story">
-   <div className="auth-brand">{admin?<ShieldCheck/>:<ShoppingBag/>}Tunicom<span>TN</span></div>
+   <a href="/decouvrir" className="auth-brand"><b className="auth-monogram" aria-hidden="true">t.</b>Tunicom<span>TN</span></a>
    <div>
     <p className="auth-eyebrow">{admin?'SUPER ADMIN · ACCÈS GLOBAL':'MA BOUTIQUE · ESPACE PRIVÉ'}</p>
     <h1>{admin?<>Pilotez la plateforme.<br/>En toute sécurité.</>:<>Votre boutique.<br/>Votre croissance.</>}</h1>

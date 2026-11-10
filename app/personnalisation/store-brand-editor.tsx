@@ -4,16 +4,14 @@ import Link from 'next/link';
 import {ArrowLeft,ArrowRight,Check,CheckCircle2,ExternalLink,Image as ImageIcon,LayoutTemplate,Palette,Save,ShieldCheck,ShoppingBag,Smartphone,Store} from 'lucide-react';
 import styles from './brand-editor.module.css';
 import {accents,defaultPresentation,themes,type AppearanceInput,type StoreTheme} from '../../modules/appearance/validation';
+import {appearanceThemeDetails,appearanceAccentText} from '../../modules/appearance/theme-catalog';
+import StorefrontMotionToggle from '../../components/storefront-motion-toggle';
 
-const themeNames:Record<StoreTheme,{name:string,description:string}>={
- classic:{name:'Essentiel',description:'Épuré et polyvalent, idéal pour démarrer.'},
- editorial:{name:'Éditorial',description:'Chic, chaleureux, avec des titres élégants.'},
- prestige:{name:'Prestige',description:'Fond sombre, présentation haut de gamme.'},
- pop:{name:'Pop',description:'Couleurs et formes modernes, style dynamique.'}
-};
+const themeNames=appearanceThemeDetails;
 const paletteLabels:Record<string,string>={
  '#21815F':'Vert émeraude','#244A77':'Bleu nuit','#893F49':'Rouge brique',
- '#633D81':'Violet','#A0511D':'Terracotta','#293442':'Gris ardoise'
+ '#633D81':'Violet','#A0511D':'Terracotta','#293442':'Gris ardoise',
+ '#C9FF4A':'Vert néon','#B52E45':'Cerise','#1749C5':'Bleu électrique','#5E35B6':'Violet Groove'
 };
 const empty:AppearanceInput={
  ...defaultPresentation,logoUrl:'',bannerUrl:'',description:''
@@ -104,7 +102,7 @@ export default function StoreBrandEditor(){
   {name:'Produit exemple',price:39900,imageUrl:''},
   {name:'Nouvelle collection',price:69900,imageUrl:''}
  ];
- const style={'--brand-preview':form.accent} as CSSProperties;
+ const style={'--brand-preview':form.accent,'--brand-preview-text':appearanceAccentText(form.accent)} as CSSProperties;
  const themeStyle=form.theme==='prestige'?styles.prestige:form.theme==='editorial'?styles.editorial:form.theme==='pop'?styles.pop:styles.classic;
 
  return <div className={styles.shell}>
@@ -124,14 +122,14 @@ export default function StoreBrandEditor(){
     <div className={styles.layout}>
      <form className={styles.settings} onSubmit={save}>
       <section className={styles.panel}>
-       <div className={styles.sectionHead}><span className={styles.sectionIcon}><LayoutTemplate size={18}/></span><div><h2>1. Choisir un thème</h2><p>Quatre mises en page adaptées aux écrans mobiles.</p></div></div>
+       <div className={styles.sectionHead}><span className={styles.sectionIcon}><LayoutTemplate size={18}/></span><div><h2>1. Choisir un thème</h2><p>Huit thèmes, dont Pulse, Sorbet, Chrome et Groove animés. Vos anciens styles restent disponibles.</p></div></div>
        <div className={styles.themes}>
-        {themes.map(theme=><button type="button" key={theme} onClick={()=>change('theme',theme)} aria-pressed={form.theme===theme}
+        {themes.map(theme=><button type="button" key={theme} onClick={()=>{setForm(old=>({...old,theme,accent:themeNames[theme].accent||old.accent}));setError('');setSuccess('');}} aria-pressed={form.theme===theme}
           className={styles.themeChoice+' '+(form.theme===theme?styles.selected:'')}>
-          <span className={styles.mini+' '+(theme==='prestige'?styles.miniDark:theme==='editorial'?styles.miniEditorial:theme==='pop'?styles.miniPop:styles.miniClassic)}>
+          <span data-theme={theme} className={styles.mini+' '+(theme==='prestige'?styles.miniDark:theme==='editorial'?styles.miniEditorial:theme==='pop'?styles.miniPop:styles.miniClassic)}>
            <i/><i/><i/>
           </span>
-          <span className={styles.themeName}>{themeNames[theme].name}{form.theme===theme&&<Check size={15}/>}</span>
+          <span className={styles.themeName}>{themeNames[theme].name}{themeNames[theme].animated&&<small>Animé</small>}{form.theme===theme&&<Check size={15}/>}</span>
           <span className={styles.themeDescription}>{themeNames[theme].description}</span>
          </button>)}
        </div>
@@ -141,7 +139,7 @@ export default function StoreBrandEditor(){
        <div className={styles.colors}>
         {accents.map(color=><button type="button" key={color} className={styles.colorCircle+(form.accent===color?' '+styles.colorSelected:'')}
          style={{backgroundColor:color}} aria-label={paletteLabels[color]} title={paletteLabels[color]} aria-pressed={form.accent===color}
-         onClick={()=>change('accent',color)}>{form.accent===color&&<Check size={19} color="white"/>}</button>)}
+         onClick={()=>change('accent',color)}>{form.accent===color&&<Check size={19} color={appearanceAccentText(color)}/>}</button>)}
        </div>
        <p className={styles.helper}>Couleur actuelle : {paletteLabels[form.accent]}</p>
       </section>
@@ -190,7 +188,8 @@ export default function StoreBrandEditor(){
        </button>
       </div>
       <div className={styles.previewShell+(mobile?' '+styles.previewMobile:'')} style={style}>
-       <div className={styles.mock+' '+themeStyle}>
+       <div className={styles.mock+' '+themeStyle} data-theme={form.theme} data-motion-root>
+        {themeNames[form.theme].animated&&<div className={styles.previewMotion}><StorefrontMotionToggle/></div>}
         <div className={styles.mockAnnouncement}>{form.eyebrow||'BOUTIQUE EN TUNISIE'}</div>
         <div className={styles.mockNav}><span className={styles.mockBrand}>
          {form.logoUrl?<img src={form.logoUrl} alt="Aperçu du logo" referrerPolicy="no-referrer"/>:<Store size={18}/>}
