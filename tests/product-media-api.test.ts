@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -211,7 +212,7 @@ test('Merchant product photo library: isolation, stock, COD and quotas',async t=
    assert.equal((await (await get('/api/v1/product-media',foreignCookie)).json()).photos.length,0);
   });
  }finally{
-  server?.kill('SIGTERM');
+  stopTestServer(server);
   await prisma.$disconnect();
  }
 });

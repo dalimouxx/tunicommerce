@@ -1,7 +1,8 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
-import {spawn,spawnSync,type ChildProcess} from 'node:child_process';
+import {spawn,type ChildProcess} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const database=process.env.TEST_DATABASE_URL;
@@ -210,8 +211,7 @@ test('Official SaaS reception configuration: disabled defaults, safe publication
   });
 
  }finally{
-  if(process.platform==='win32'&&server?.pid)spawnSync('taskkill',['/pid',String(server.pid),'/T','/F'],{stdio:'ignore'});
-  else server?.kill('SIGTERM');
+  stopTestServer(server);
   await prisma.$disconnect();
  }
 });

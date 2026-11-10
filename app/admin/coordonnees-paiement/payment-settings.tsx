@@ -3,7 +3,7 @@
 import {useState,type FormEvent} from 'react';
 import {useRouter} from 'next/navigation';
 import {CheckCircle2,ShieldAlert,Save,WalletCards} from 'lucide-react';
-import {receptionLabel,receptionCode,type ReceptionCode} from '../../../modules/billing/reception';
+import {receptionLabel,receptionCode,type ReceptionCode} from '../../../modules/billing/reception-validation';
 import styles from '../platform.module.css';
 
 export type MethodConfig={

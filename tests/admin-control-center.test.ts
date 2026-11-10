@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -211,7 +212,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
   });
 
  }finally{
-  server?.kill('SIGTERM');
+  stopTestServer(server);
   await prisma.$disconnect();
  }
 });

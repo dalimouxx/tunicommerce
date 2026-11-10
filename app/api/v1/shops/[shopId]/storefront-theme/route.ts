@@ -2,7 +2,8 @@ import {z} from 'zod';
 import {getCurrentUser} from '../../../../../../modules/auth/session';
 import {HttpError,assertSameOrigin,readJson,respond} from '../../../../../../modules/auth/http';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../../../modules/shops/isolated-commerce';
-import {storefrontThemeInput,updateStorefrontTheme,storefrontThemeSummary} from '../../../../../../modules/shops/storefront-themes';
+import {storefrontThemeInput,storefrontThemeSummary} from '../../../../../../modules/shops/storefront-themes';
+import {updateStorefrontTheme} from '../../../../../../modules/shops/storefront-theme-service';
 
 export const dynamic='force-dynamic';
 type Context={params:Promise<{shopId:string}>};

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -172,7 +173,7 @@ test('Theme editor persists per merchant and preserves published COD storefront'
   });
 
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

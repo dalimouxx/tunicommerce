@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -74,5 +75,5 @@ test('Super Admin and Boutique have distinct role-gated cookies, login screens a
   assert.equal(oldCookie.status,200);
   const personal=oldCookie.headers.get('set-cookie')!.split(';')[0];
   assert.equal((await get('/admin',personal)).headers.get('location'),'/connexion/admin');
- }finally{server?.kill('SIGTERM');await prisma.$disconnect();}
+ }finally{stopTestServer(server);await prisma.$disconnect();}
 });

@@ -1,6 +1,5 @@
 import {z} from 'zod';
 import type {State} from '../commerce/types';
-import {writeIsolatedCommerce} from './aggregate-quotas';
 
 /** Presets only: tenants can select a theme, never submit executable CSS. */
 export const storefrontThemeCodes=['OASIS','SABLE','MINUIT','NOVA','ATELIER','PRESTIGE','POP','ECLAT','URBAN','ZEN'] as const;
@@ -9,6 +8,7 @@ export const storefrontThemeInput=z.object({
  action:z.literal('saveStorefrontTheme'),requestId:z.string().uuid(),
  payload:z.object({theme:z.enum(storefrontThemeCodes)}).strict()
 }).strict();
+export type StorefrontThemeInput=z.infer<typeof storefrontThemeInput>;
 type Palette={
  name:string;description:string;background:string;foreground:string;
  accent:string;accentText:string;surface:string;muted:string;
@@ -39,9 +39,6 @@ export function storefrontPalette(value:unknown){
  const code:StorefrontThemeCode=storefrontThemeCodes.includes(value as StorefrontThemeCode)?
   value as StorefrontThemeCode:'OASIS';
  return {code,...palettes[code]};
-}
-export async function updateStorefrontTheme(ownerId:string,shopId:string,input:z.infer<typeof storefrontThemeInput>){
- return writeIsolatedCommerce(ownerId,shopId,input,()=>{});
 }
 export function storefrontThemeSummary(state:State){return storefrontPalette(state.shop.theme);}
 

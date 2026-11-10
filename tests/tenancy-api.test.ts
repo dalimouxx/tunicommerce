@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -155,7 +156,7 @@ test('New tenant API is isolated and legacy commerce remains intact',async t=>{
    }
   });
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

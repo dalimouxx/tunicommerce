@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -385,7 +386,7 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    assert.equal(await prisma.user.count({where:{role:'MERCHANT'}}),6,'Two original merchants and four explicitly created team members');
   });
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

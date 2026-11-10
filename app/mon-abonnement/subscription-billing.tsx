@@ -4,7 +4,7 @@ import {useRef,useState,type FormEvent} from 'react';
 import {useRouter} from 'next/navigation';
 import {Banknote,CheckCircle2,Clock3,ReceiptText,ShieldAlert} from 'lucide-react';
 import {paymentMethodLabel,paymentStatusLabel,toTnd} from '../../modules/billing/validation';
-import {receptionCode,type ReceptionPublic} from '../../modules/billing/reception';
+import {receptionCode,type ReceptionPublic} from '../../modules/billing/reception-validation';
 import styles from './plan.module.css';
 
 export type PaymentOffer={
