@@ -9,7 +9,7 @@ export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 
 export default async function DispatchLabels({params,searchParams}:{params:Promise<{shopId:string}>;searchParams:Promise<{page?:string|string[];status?:string|string[]}>}){
- const actor=await getCurrentUser();if(!actor)redirect('/login');
+ const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);if(!shop)notFound();
  const commerce=await readIsolatedCommerce(shopId,shop.name);

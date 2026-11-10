@@ -1,15 +1,15 @@
-import {getCurrentUser} from '../../../modules/auth/session';
-import {readWorkspace} from '../../../modules/storage/repository';
+import {requireOwnCommerceWorkspace} from '../../../modules/auth/own-commerce';
+import {readExistingWorkspace} from '../../../modules/storage/repository';
 import {mutateLegacyCommerce} from '../../../modules/shops/legacy-safe-writes';
 import {HttpError,assertSameOrigin,readJson,respond} from '../../../modules/auth/http';
 import {z} from 'zod';
 import {productPhotoId} from '../../../modules/product-media/validation';
 import {ownsProductPhoto} from '../../../modules/product-media/service';
 export const dynamic='force-dynamic';
-export async function GET(){try{const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);return respond(await readWorkspace(user.userId));}catch{return respond({error:'Base de données indisponible'},503);}}
+export async function GET(){try{const user=await requireOwnCommerceWorkspace();return respond(await readExistingWorkspace(user.userId));}catch(error){if(error instanceof HttpError)return respond({error:error.message},error.status);return respond({error:'Base de données indisponible'},503);}}
 export async function POST(req:Request){
  try{
-  assertSameOrigin(req);const user=await getCurrentUser();if(!user)return respond({error:'Connexion requise'},401);
+  assertSameOrigin(req);const user=await requireOwnCommerceWorkspace();
   const body=z.object({action:z.string(),payload:z.unknown(),requestId:z.string().uuid()}).parse(await readJson(req));
   if(body.action==='product'){
    const payload=body.payload;

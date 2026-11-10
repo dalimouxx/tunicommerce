@@ -117,10 +117,10 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
    const merchant=await get('/marchand',merchantCookie);
    assert.equal(merchant.status,200);
    const html=await merchant.text();
-   assert.ok(html.includes('Espace marchand'));
-   assert.ok(html.includes('Voir ma boutique publiée'));
-   assert.ok(html.includes('Équipe et accès'));
-   assert.ok(html.includes('Mes boutiques'));
+   assert.ok(html.includes('Chargement de votre boutique'));
+   assert.equal(html.includes('Demo Store'),false);
+   assert.equal(html.includes('CLIENT-CONFIDENTIEL-A'),false);
+   assert.equal(html.includes('href="/connexion/admin"'),false);
    const merchantWorkspace=await prisma.workspace.findUniqueOrThrow({where:{slug:'sousse-mode'},include:{shop:true}});
    assert.ok(merchantWorkspace.shop?.id);
    const ownShopOverview=await get('/mes-boutiques/'+merchantWorkspace.shop!.id,merchantCookie);

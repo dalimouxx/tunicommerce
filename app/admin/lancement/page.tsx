@@ -1,10 +1,12 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import Link from 'next/link';
 import {commercialLaunchStatus} from '../../../modules/platform/commercial-launch-status';
 import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 export default async function AdminCommercialLaunch(){
- // /admin/layout.tsx rejects unauthenticated users and all non-ADMIN accounts.
+ await requireSuperAdminPage();
+
  const status=commercialLaunchStatus(process.env);
  return <div>
   <div className={styles.head}><div>

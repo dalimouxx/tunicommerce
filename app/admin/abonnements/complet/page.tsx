@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../../modules/auth/page-access';
 import Link from 'next/link';
 import {prisma} from '../../../../modules/storage/client';
 import {billingBucket} from '../../../../modules/platform/saas-billing-health';
@@ -12,6 +13,7 @@ const statusLabels:{[key:string]:string}={
  EXPIRED:'Expiré',SUSPENDED:'Suspendu ou résilié'
 };
 export default async function FullSubscriptionDirectory({searchParams}:{searchParams:Promise<Search>}){
+ await requireSuperAdminPage();
  const now=new Date();
  const query=subscriptionDirectoryQuery(await searchParams,now);
  const [count,plans]=await Promise.all([

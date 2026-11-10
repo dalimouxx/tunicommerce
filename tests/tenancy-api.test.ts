@@ -104,6 +104,8 @@ test('New tenant API is isolated and legacy commerce remains intact',async t=>{
   });
 
   await t.test('Opt-in legacy import is repeatable and does not change Workspace data or version',async()=>{
+   const {readWorkspace}=await import('../modules/storage/repository');
+   await readWorkspace(owner.id);
    const legacy=await get('/api/commerce',ownerCookie);
    assert.equal(legacy.status,200);
    const workspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});

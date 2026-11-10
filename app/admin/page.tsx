@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../modules/auth/page-access';
 import Link from 'next/link';
 import {Users,Store,Globe,Layers,ArrowUpRight,Clock,Link2Off,Activity,Receipt,Plus,ShieldCheck,Settings2,Banknote} from 'lucide-react';
 import {prisma} from '../../modules/storage/client';
@@ -8,6 +9,7 @@ import styles from './platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function GlobalAdministration(){
+ await requireSuperAdminPage();
  const [stats,shops,events,pendingPayments]=await Promise.all([
   loadPlatformStats(),
   loadShopRows(120),

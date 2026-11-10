@@ -12,7 +12,7 @@ export default async function SubscriptionPaymentDocument({
  params
 }:{params:Promise<{id:string}>}){
  const user=await getCurrentUser();
- if(!user)redirect('/login');
+ if(!user)redirect('/connexion/boutique');
  const {id}=await params;
  if(!/^[0-9a-f-]{36}$/i.test(id))notFound();
  const payment=await prisma.subscriptionPayment.findFirst({

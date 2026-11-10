@@ -55,11 +55,9 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
     </form>}
    <div className="auth-foot">
     {!setup&&<p><a href={'/compte/recuperer?portail='+portal}>Mot de passe oublié ?</a></p>}
-    {!setup&&<p><a href="/connexion">Choisir mon espace de connexion</a></p>}
-    {admin?<p><a href="/connexion/boutique">Accès indépendant : administration d’une boutique</a></p>:
-     <p><a href="/connexion/admin">Accès réservé : Super Admin SaaS</a></p>}
+    {!setup&&<p><a href="/decouvrir">Retour à Tunicom</a></p>}
+    {admin&&<p><a href="/connexion/boutique">Connexion à ma boutique</a></p>}
     {!admin&&<p><a href="/inscription">Créer ma boutique gratuitement</a></p>}
-    {admin&&!setup&&<p><a href="/setup">Première installation du Super Admin</a></p>}
     <p><a href="/boutiques">Voir les boutiques publiques</a></p>
    </div>
   </div></section>

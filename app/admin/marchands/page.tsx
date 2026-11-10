@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import Link from 'next/link';
 import {Plus,Users} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
@@ -8,6 +9,7 @@ import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function Marchands(){
+ await requireSuperAdminPage();
  const [users,total]=await Promise.all([
   prisma.user.findMany({
    where:{role:'MERCHANT'},orderBy:{createdAt:'desc'},take:200,

@@ -1,7 +1,7 @@
+import {requireSuperAdminPage} from '../../../../modules/auth/page-access';
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {prisma} from '../../../../modules/storage/client';
-import {requireAdmin} from '../../../../modules/platform/admin';
 import {merchantDossierSummary} from '../../../../modules/platform/merchant-dossier';
 import {subscriptionOverview} from '../../../../modules/subscriptions/overview';
 import {toTnd,paymentStatusLabel} from '../../../../modules/billing/validation';
@@ -11,7 +11,7 @@ export const dynamic='force-dynamic';
 export const metadata={robots:{index:false,follow:false}};
 
 export default async function GlobalMerchantDossier({params}:{params:Promise<{ownerId:string}>}){
- await requireAdmin();
+ await requireSuperAdminPage();
  const {ownerId}=await params;
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId))notFound();
  // Parent admin layout requires a global ADMIN session.

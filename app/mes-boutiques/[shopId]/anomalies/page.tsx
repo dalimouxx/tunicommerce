@@ -15,7 +15,7 @@ const labels={
  REFUND_DUE:'Remboursements dus'
 } as const;
 export default async function MerchantExceptionPage({params,searchParams}:{params:Promise<{shopId:string}>;searchParams:Promise<Record<string,string|string[]|undefined>>}){
- const actor=await getCurrentUser();if(!actor)redirect('/login');
+ const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;
  const shop=await requireIsolatedOwner(actor.userId,shopId).catch(()=>null);if(!shop)notFound();
  const commerce=await readIsolatedCommerce(shopId,shop.name);

@@ -168,6 +168,9 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    assert.equal(personalLogin.status,200);
    const personalCookie=personalLogin.headers.get('set-cookie')!.split(';')[0];
    assert.equal((await get('/api/commerce',adminCookie)).status,401);
+   const {readWorkspace}=await import('../modules/storage/repository');
+   const personalOwner=await prisma.user.findUniqueOrThrow({where:{email:'admin@example.test'}});
+   await readWorkspace(personalOwner.id);
    assert.equal((await get('/api/commerce',personalCookie)).status,200);
    const owner=await prisma.user.findUniqueOrThrow({where:{email:'admin@example.test'}});
    const old=await prisma.workspace.findUniqueOrThrow({where:{ownerId:owner.id}});

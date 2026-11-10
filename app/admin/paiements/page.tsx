@@ -1,3 +1,4 @@
+import {requireSuperAdminPage} from '../../../modules/auth/page-access';
 import {Banknote,Clock3,CheckCheck,ShieldAlert} from 'lucide-react';
 import {prisma} from '../../../modules/storage/client';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import styles from '../platform.module.css';
 export const dynamic='force-dynamic';
 
 export default async function AdminSaasPayments({searchParams}:{searchParams:Promise<PaymentQueryInput>}){
+ await requireSuperAdminPage();
  const query=paymentDirectoryQuery(await searchParams);
  const count=await prisma.subscriptionPayment.count({where:query.where});
  const paging=paymentDirectoryPage(query.page,count);
