@@ -36,3 +36,8 @@
  .workspaceNavigation{position:sticky;top:0;z-index:3;background:#fff;padding:9px 3px 12px;border-bottom:1px solid #e3e9ee}
  .workspaceDeepLink{display:block;margin:8px 0 0}
 }
+
+/* Tunicom application refresh */
+
+.shell{background:var(--ui-paper);color:var(--ui-ink);font-family:'DM Sans',Arial,sans-serif;padding-top:38px}.header h1{font-size:clamp(31px,4vw,46px);letter-spacing:-1.8px;color:#20251d}.header p,.card p,.note{color:var(--ui-muted)}.eyebrow,.kicker{color:#657c44;font-size:10px;letter-spacing:.12em}.card{border-color:var(--ui-line);border-radius:17px;background:#fffef9;box-shadow:0 5px 22px #20251d04}.card h2{letter-spacing:-.7px;color:#28321f}.meta span{background:#edf2e0;color:#5d6d4d;border-radius:8px}.primary{background:var(--ui-lime);color:#20251d;border:1px solid #20251d;box-shadow:2px 3px 0 #20251d}.primary:hover{translate:0 -2px}.secondary,.back{color:#475a32;border-color:#cbd5bc;background:#fffef9}.workspaceShell{background:#fffef9;border-color:var(--ui-line);box-shadow:0 6px 25px #20251d05}.workspaceHeader h2,.workspacePanel>h3{color:#20251d;letter-spacing:-.6px}.workspaceHeader p,.workspacePanel>p{color:var(--ui-muted)}.workspaceTab{background:#f3f5e8;border-color:#d4ddc5;color:#5c6a4b;border-radius:8px;font-size:12px}.workspaceTabActive{background:#20251d;color:#f7f7ee;border-color:#20251d;border-radius:8px;font-size:12px}.workspaceTab:hover{background:#e7f2cd}.workspaceNavigation{border-color:var(--ui-line)}.workspaceDeepLink{color:#526d31}.workspacePanel{border-color:var(--ui-line)}
+@media(max-width:680px){.shell{padding-top:27px}.workspaceNavigation{background:#fffef9}.header h1{font-size:32px}}

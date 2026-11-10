@@ -5,6 +5,7 @@ import {getSuperAdminUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import styles from './platform.module.css';
 import PortalLogout from '../../components/portal-logout';
+import AppNavLink from '../../components/app-nav-link';
 
 export const dynamic='force-dynamic';
 
@@ -18,24 +19,24 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
  return <div className={styles.shell}>
   <aside className={styles.sidebar}>
    <Link href="/admin" className={styles.logo}>
-    <span className={styles.logoIcon}><Layers size={20}/></span>
+    <span className={styles.logoIcon}>t.</span>
     <span>Tunicom<small>Centre de contrôle SaaS</small></span>
    </Link>
    <div className={styles.sectionLabel}>PILOTAGE PLATEFORME</div>
    <nav className={styles.navigation} aria-label="Administration globale">
-    <Link href="/admin"><ShieldCheck size={18}/> Vue d’ensemble</Link>
-    <Link href="/admin/marchands"><Users size={18}/> Marchands</Link>
-    <Link href="/admin/gestion-boutiques"><Store size={18}/> Boutiques</Link>
-    <Link href="/admin/abonnements"><Receipt size={18}/> Abonnements</Link>
-    <Link href="/admin/paiements"><Banknote size={18}/> Règlements SaaS</Link>
-    <Link href="/admin/finances-saas"><CircleDollarSign size={18}/> Finance et échéances SaaS</Link>
-    <Link href="/admin/integrations"><Settings2 size={18}/> Intégrations externes</Link>
-    <Link href="/admin/taches"><Activity size={18}/> Tâches en arrière-plan</Link>
-    <Link href="/admin/coordonnees-paiement"><Landmark size={18}/> Coordonnées de paiement</Link>
-    <Link href="/admin/plans"><CircleDollarSign size={18}/> Offres et quotas</Link>
-    <Link href="/admin/journal"><Activity size={18}/> Journal d’activité</Link>
-    <Link href="/admin/fiabilite"><ShieldCheck size={18}/> Fiabilité et contrôles</Link>
-    <Link href="/admin/lancement"><ShieldCheck size={18}/> Préparation au lancement</Link>
+    <AppNavLink href="/admin" activeClassName={styles.active}><ShieldCheck size={18}/> Vue d’ensemble</AppNavLink>
+    <AppNavLink href="/admin/marchands" activeClassName={styles.active}><Users size={18}/> Marchands</AppNavLink>
+    <AppNavLink href="/admin/gestion-boutiques" activeClassName={styles.active}><Store size={18}/> Boutiques</AppNavLink>
+    <AppNavLink href="/admin/abonnements" activeClassName={styles.active}><Receipt size={18}/> Abonnements</AppNavLink>
+    <AppNavLink href="/admin/paiements" activeClassName={styles.active}><Banknote size={18}/> Règlements SaaS</AppNavLink>
+    <AppNavLink href="/admin/finances-saas" activeClassName={styles.active}><CircleDollarSign size={18}/> Finance et échéances SaaS</AppNavLink>
+    <AppNavLink href="/admin/integrations" activeClassName={styles.active}><Settings2 size={18}/> Intégrations externes</AppNavLink>
+    <AppNavLink href="/admin/taches" activeClassName={styles.active}><Activity size={18}/> Tâches en arrière-plan</AppNavLink>
+    <AppNavLink href="/admin/coordonnees-paiement" activeClassName={styles.active}><Landmark size={18}/> Coordonnées de paiement</AppNavLink>
+    <AppNavLink href="/admin/plans" activeClassName={styles.active}><CircleDollarSign size={18}/> Offres et quotas</AppNavLink>
+    <AppNavLink href="/admin/journal" activeClassName={styles.active}><Activity size={18}/> Journal d’activité</AppNavLink>
+    <AppNavLink href="/admin/fiabilite" activeClassName={styles.active}><ShieldCheck size={18}/> Fiabilité et contrôles</AppNavLink>
+    <AppNavLink href="/admin/lancement" activeClassName={styles.active}><ShieldCheck size={18}/> Préparation au lancement</AppNavLink>
     <Link href="/boutiques"><Globe size={18}/> Boutiques publiques</Link>
     <Link href="/connexion/boutique"><Store size={18}/> Espace Boutique · connexion séparée</Link>
    </nav>

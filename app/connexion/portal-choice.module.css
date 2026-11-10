@@ -20,3 +20,7 @@
 @media(max-width:710px){.options{grid-template-columns:1fr}.heading{text-align:left}.portal{min-height:0}}
 @media(prefers-reduced-motion:no-preference){.portal{transition:transform .18s,box-shadow .18s}.portal:hover{transform:translateY(-3px);box-shadow:0 25px 55px #13344816}}
 @media(prefers-reduced-motion:reduce){.portal{transition:none}}
+
+/* Tunicom application refresh */
+
+.shell{background:var(--ui-paper);color:var(--ui-ink);font-family:'DM Sans',Arial,sans-serif}.eyebrow{color:#6a7d4e;font-size:10px}.heading h1{font-weight:800;letter-spacing:-.06em}.heading p{color:var(--ui-muted);font-size:14px}.portal{border-color:var(--ui-line);background:#fffef9;border-radius:18px;box-shadow:4px 5px 0 #20251d08}.icon{background:var(--ui-lime);color:#20251d;border-radius:14px 14px 4px 14px}.portal:first-child .icon{background:var(--ui-lavender);color:#51436a}.overline{color:#768263;font-size:9px}.portal>p:not(.overline){color:var(--ui-muted);font-size:13px}.primary{background:var(--ui-lime);color:#20251d!important;border:1px solid #20251d;box-shadow:2px 3px 0 #20251d;border-radius:8px;font-size:12px}.portal:first-child .primary{background:#20251d;color:#f7f7ee!important}.portal small{color:#738061;font-size:11px}.footer a{color:#52683b;font-size:12px}

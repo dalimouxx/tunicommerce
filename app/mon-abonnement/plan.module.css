@@ -63,3 +63,7 @@
 .billingDestination p{white-space:pre-wrap;color:#385e47;font-size:12px;line-height:1.75}
 .billingDestination small{color:#5e7f68;font-size:10px;line-height:1.65}
 @media(max-width:500px){.billingDestination dl{grid-template-columns:1fr;gap:3px}.billingDestination dd{margin-bottom:9px}}
+
+/* Tunicom application refresh */
+
+.shell{background:var(--ui-paper);color:var(--ui-ink)}.back{color:#5b733a}.eyebrow{color:#6c804e}.hero h1{font-size:38px;letter-spacing:-1.5px}.hero p,.card p{color:var(--ui-muted)}.summary>div,.card{background:#fffef9;border-color:var(--ui-line);border-radius:16px}.summary>div:first-child{background:#eaf9c9}.summary>div:nth-child(2){background:var(--ui-lavender)}.summary small,.summary span{color:#6b795b}.card h2{color:#26331d}.billingButton{background:var(--ui-lime);color:#20251d;border:1px solid #20251d;border-radius:8px;box-shadow:2px 3px 0 #20251d}.billingButton:hover{background:#d4ff70}.billingForm label{color:#4f633d}.billingForm input,.billingForm select,.billingForm textarea{border-color:#cdd7bf;background:#fff;color:#20251d}.paymentItem{border-color:var(--ui-line);background:#fffef9}.paymentDocument{color:#4f6932}

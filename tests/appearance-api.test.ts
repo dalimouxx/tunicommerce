@@ -172,6 +172,21 @@ test('Theme editor persists per merchant and preserves published COD storefront'
    assert.equal(adminUser.role,'ADMIN');
   });
 
+  await t.test('All four animated themes persist on historical shops without altering their commerce',async()=>{
+   const before=(await (await get('/api/commerce',cookie)).json()).state;
+   for(const [theme,accent] of [['pulse','#C9FF4A'],['sorbet','#B52E45'],['chrome','#1749C5'],['groove','#5E35B6']]){
+    assert.equal((await post('/api/v1/appearance',{...design,theme,accent},cookie)).status,200);
+    const saved=(await (await get('/api/v1/appearance',cookie)).json()).store;
+    assert.equal(saved.appearance.theme,theme);assert.equal(saved.appearance.accent,accent);
+    const response=await get('/boutiques/soleil-de-gabes');assert.equal(response.status,200);
+    const html=await response.text();assert.ok(html.includes('data-theme="'+theme+'"'));assert.ok(html.includes('Mettre les animations en pause'));
+    const state=(await (await get('/api/commerce',cookie)).json()).state;
+    assert.deepEqual(state.products,before.products);assert.deepEqual(state.orders,before.orders);assert.deepEqual(state.customers,before.customers);assert.deepEqual(state.movements,before.movements);
+   }
+   assert.equal((await post('/api/v1/appearance',design,cookie)).status,200);
+   assert.equal((await (await get('/api/v1/appearance',cookie)).json()).store.appearance.theme,'prestige');
+  });
+
  }finally{
   stopTestServer(child);
   await prisma.$disconnect();
