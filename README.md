@@ -1,6 +1,10 @@
-# TuniCommerce — GitHub / Render (0.4.0)
+# Tunicom — GitHub / Render (0.4.0)
 
 Version autonome de l’application de test : React / Next.js sur Node.js, PostgreSQL et Prisma. Le code métier de la version privée 0.3 est conservé. Cette livraison prépare le transfert hors de Sites ; elle ne constitue pas encore le SaaS complet du cahier des charges.
+
+## Mise à jour en revue — 10 novembre 2026
+
+Le socle utilise désormais Next.js 16.4.6, Prisma 7.10.1 avec `@prisma/adapter-pg`, et Zod 4.6.7. `prisma.config.ts` configure la CLI ; les migrations SQL existantes sont conservées. Les commandes de démarrage ci-dessous restent applicables. Voir [le bilan de développement et de vérification](docs/administration-saas-2026-11-10.md) pour les fonctions SaaS ajoutées et les limites de validation.
 
 ## Fonctionnalités conservées
 Catalogue, stock, commandes, clients, call center simple, zones et tarifs, transporteurs manuels, COD, dépenses, coupons, panier privé, retours partiels, remboursements enregistrés, factures commerciales, statistiques et audit.

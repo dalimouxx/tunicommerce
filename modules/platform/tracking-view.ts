@@ -1,0 +1,3 @@
+import type {Order} from '../commerce/types';
+export function canRequest(order:Order,type:'CANCEL'|'RETURN'){return type==='RETURN'?order.status==='DELIVERED':['TO_CONFIRM','NO_ANSWER','CALLBACK','CONFIRMED','PREPARING','READY'].includes(order.status);}
+export function trackingView(order:Order){return {reference:order.reference,status:order.status,createdAt:order.createdAt,updatedAt:order.updatedAt,items:order.items.map(({name,variant,quantity,price})=>({name,variant,quantity,price})),shipping:order.shipping,discount:order.discount,total:order.total,carrier:order.carrier,tracking:order.tracking,requests:order.customerRequests||[],canCancel:canRequest(order,'CANCEL'),canReturn:canRequest(order,'RETURN')};}

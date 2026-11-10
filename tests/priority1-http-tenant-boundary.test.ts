@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {setTimeout as sleep} from 'node:timers/promises';
@@ -252,7 +253,7 @@ test('HTTP integration: two tenants, role revocation, CSRF and staff filtering',
    assert.equal((await get('/api/v1/shops/'+a.id+'/team-view?section=orders',viewer.cookie)).status,404);
   });
  }finally{
-  server?.kill('SIGTERM');
+  stopTestServer(server);
   await prisma.$disconnect();
  }
 });

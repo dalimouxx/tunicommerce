@@ -57,7 +57,8 @@ export default async function MyShops(){
     <span className={styles.kicker}>CAPACITÉ DE VOTRE ABONNEMENT</span>
     <h2>{ownerPlan?.name||ownerWorkspace?.plan||'Offre marchand'} · {capacity.used} boutique(s){capacity.limit===null?' · Sans limite':` / ${capacity.limit}`}</h2>
     <p>{subscription.active?`Abonnement valide · ${subscription.daysRemaining} jour(s) restant(s)`:'Abonnement non actif ou échéance non configurée.'} Les boutiques de toutes vos organisations sont comptabilisées, même en brouillon. Les boutiques existantes restent accessibles selon vos permissions.</p>
-    <div className={styles.actions}><Link href="/mon-abonnement" className={styles.secondary}>Voir mon abonnement et mes quotas</Link></div>
+    <div className={styles.actions}><Link href="/mon-abonnement" className={styles.secondary}>Voir mon abonnement et mes quotas</Link>
+     <Link href="/compte/securite" className={styles.secondary}>Sécurité de mon compte</Link></div>
    </section>}
    {hasUnlinkedLegacy&&<section className={styles.card}>
     <span className={styles.kicker}>Boutique personnelle existante</span>

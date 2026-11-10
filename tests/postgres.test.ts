@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn} from 'node:child_process';
@@ -21,10 +22,11 @@ async function login(){const r=await post('/api/auth/merchant/login',{email:'own
 test('PostgreSQL and HTTP integration',async t=>{
  try{
   // This suite is deliberately destructive only inside its explicitly named test DB.
+  await prisma.organization.deleteMany();
   await prisma.platformAudit.deleteMany();await prisma.publicReceipt.deleteMany();await prisma.session.deleteMany();await prisma.workspace.deleteMany();await prisma.user.deleteMany();await prisma.setupLock.deleteMany();await prisma.authThrottle.deleteMany();
   child=spawn(process.execPath,['scripts/start.mjs'],{env:{...process.env,NODE_ENV:'production',PORT:'3137',DATABASE_URL:url,APP_URL:origin,SETUP_TOKEN:token},stdio:'ignore'});
   let ready=false;for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error('Test web server exited');try{const r=await fetch(base+'/api/health');if(r.ok){ready=true;break;}}catch{}await delay(200);}assert.ok(ready,'Web server ready');
-  await t.test('Anonymous requests and forged ChatGPT headers cannot access data',async()=>{const r=await fetch(base+'/api/commerce',{headers:{'oai-authenticated-user-id':'attacker','oai-authenticated-user-email':'attacker@example.test'}});assert.equal(r.status,401);const page=await fetch(base,{redirect:'manual'});assert.equal(page.status,307);assert.ok(page.headers.get('location')?.includes('/connexion/boutique'));});
+  await t.test('Anonymous requests and forged ChatGPT headers cannot access data',async()=>{const r=await fetch(base+'/api/commerce',{headers:{'oai-authenticated-user-id':'attacker','oai-authenticated-user-email':'attacker@example.test'}});assert.equal(r.status,401);const page=await fetch(base,{redirect:'manual'});assert.equal(page.status,200);assert.ok((await page.text()).includes('Ton business.'));assert.equal(await prisma.workspace.count(),0);});
   await t.test('Setup requires the secret and can create only one owner',async()=>{const input={email:'OWNER@example.test',name:'Owner Test',password,token};assert.equal((await post('/api/auth/setup',{...input,token:'bad'.repeat(20)},'')).status,403);assert.equal((await post('/api/auth/setup',input,'','https://evil.test')).status,403);const replies=await Promise.all([post('/api/auth/setup',input,''),post('/api/auth/setup',input,'')]);assert.deepEqual(replies.map(r=>r.status).sort(),[201,409]);assert.equal(await prisma.user.count(),1);});
   await t.test('Login rejects invalid password and creates a secure hashed session',async()=>{assert.equal((await post('/api/auth/login',{email:'owner@example.test',password:'wrong'},'')).status,401);const r=await login();const header=r.headers.get('set-cookie')!;assert.match(header,/HttpOnly/i);assert.match(header,/Secure/i);assert.match(header,/SameSite=lax/i);assert.match(header,/__Host-tunicommerce/);const raw=cookie.split('=')[1];const row=await prisma.session.findUnique({where:{tokenHash:digest(raw)}});assert.ok(row);assert.notEqual(row.tokenHash,raw);});
   await t.test('Concurrent first workspace requests create a single workspace',async()=>{const results=await Promise.all([fetch(base+'/api/commerce',{headers:{cookie}}),fetch(base+'/api/commerce',{headers:{cookie}})]);assert.deepEqual(results.map(r=>r.status),[200,200]);assert.equal(await prisma.workspace.count(),1);});
@@ -69,5 +71,5 @@ test('PostgreSQL and HTTP integration',async t=>{
   });
   await t.test('Expired and revoked sessions cannot be reused',async()=>{const raw=cookie.split('=')[1];await prisma.session.update({where:{tokenHash:digest(raw)},data:{expiresAt:new Date(0)}});assert.equal((await fetch(base+'/api/commerce',{headers:{cookie}})).status,401);await login();const old=cookie;assert.equal((await post('/api/auth/logout',{})).status,200);assert.equal((await fetch(base+'/api/commerce',{headers:{cookie:old}})).status,401);});
   await t.test('Persistent throttle enforces the limit atomically',async()=>{const key='parallel-test';const results=await Promise.allSettled(Array.from({length:12},()=>consumeAttempt(key,3)));assert.equal(results.filter(r=>r.status==='fulfilled').length,3);await prisma.authThrottle.update({where:{key},data:{expiresAt:new Date(0)}});await consumeAttempt(key,3);assert.equal((await prisma.authThrottle.findUniqueOrThrow({where:{key}})).count,1);});
- }finally{child?.kill('SIGTERM');await prisma.$disconnect();}
+ }finally{stopTestServer(child);await prisma.$disconnect();}
 });

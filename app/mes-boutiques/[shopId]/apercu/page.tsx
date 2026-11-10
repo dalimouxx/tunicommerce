@@ -5,6 +5,8 @@ import {getCurrentUser} from '../../../../modules/auth/session';
 import {requireIsolatedOwner,readIsolatedCommerce} from '../../../../modules/shops/isolated-commerce';
 import {isolatedStorefrontPreview} from '../../../../modules/shops/storefront-preview';
 import {previewStorefrontTheme} from '../../../../modules/shops/storefront-themes';
+import {animatedStorefrontTheme} from '../../../../modules/shops/storefront-themes';
+import StorefrontMotionToggle from '../../../../components/storefront-motion-toggle';
 import {money} from '../../../../modules/commerce/types';
 import styles from '../../../vitrines/[slug]/storefront-premium.module.css';
 
@@ -29,6 +31,7 @@ export default async function ShopStorefrontPreview({params,searchParams}:{param
  return <main className={styles.page} data-theme={theme.code} style={vars}>
   <div className={styles.previewWarning}>
    <strong>APERÇU PRIVÉ · Thème {theme.name}{selection.temporary?' · non enregistré':''}</strong>
+   {animatedStorefrontTheme(theme.code)&&<StorefrontMotionToggle className={styles.motionControl}/>}
    <span>{selection.temporary?'Essai temporaire : votre thème actif reste inchangé.':'Visible uniquement par le propriétaire.'} Les commandes sont désactivées ici.</span>
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'#espace=growth'}>Retour à mes thèmes</Link>
   </div>

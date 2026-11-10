@@ -1,5 +1,5 @@
 import {labels,type State,type Status} from '../commerce/types';
-import {canRequest} from '../platform/tracking';
+import {canRequest} from '../platform/tracking-view';
 import {publicTrackingProgress} from './public-tracking-progress';
 
 export const fulfillmentStatuses=['CONFIRMED','PREPARING','READY','SHIPPED'] as const;

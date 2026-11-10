@@ -3,9 +3,13 @@ on:
   pull_request:
     paths:
       - 'modules/platform/saas-billing-health.ts'
+      - 'modules/billing/financial-report*.ts'
+      - 'components/saas-monthly-finance.tsx'
+      - 'app/api/admin/finances-saas/**'
       - 'app/admin/finances-saas/page.tsx'
       - 'app/admin/layout.tsx'
       - 'tests/saas-billing-health.test.ts'
+      - 'tests/financial-report.test.ts'
       - '.github/workflows/saas-billing-health.yml'
   workflow_dispatch:
 jobs:
@@ -19,6 +23,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: node --import tsx --test tests/saas-billing-health.test.ts
+      - run: node --import tsx --test tests/saas-billing-health.test.ts tests/financial-report.test.ts
       - run: npm run typecheck
       - run: npm run build

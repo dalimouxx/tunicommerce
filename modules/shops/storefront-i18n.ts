@@ -211,5 +211,12 @@ export function storefrontDictionary(lang:StorefrontLang):StorefrontDictionary{r
 
 /** Same URL in the other language; ad campaigns can link straight to ?lang=ar. */
 export function storefrontLangHref(path:string,lang:StorefrontLang){
- return path+(path.includes('?')?'&':'?')+'lang='+lang;
+ const hashAt=path.indexOf('#');
+ const hash=hashAt<0?'':path.slice(hashAt);
+ const beforeHash=hashAt<0?path:path.slice(0,hashAt);
+ const queryAt=beforeHash.indexOf('?');
+ const pathname=queryAt<0?beforeHash:beforeHash.slice(0,queryAt);
+ const query=new URLSearchParams(queryAt<0?'':beforeHash.slice(queryAt+1));
+ query.set('lang',lang);
+ return pathname+'?'+query.toString()+hash;
 }

@@ -54,7 +54,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  async function recordContact(order:Order){
   const channel=channels[order.id]||'Téléphone';
   const outcome=outcomes[order.id]||'Sans réponse';
-  if(!window.confirm('Confirmer que ce contact a réellement été effectué ? Aucun appel ou message ne sera envoyé par TuniCommerce.'))return;
+  if(!window.confirm('Confirmer que ce contact a réellement été effectué ? Aucun appel ou message ne sera envoyé par Tunicom.'))return;
   const note=contactLogNote(channel,outcome);
   const key=order.id+':'+note;
   const previous=notesPending.current[key];

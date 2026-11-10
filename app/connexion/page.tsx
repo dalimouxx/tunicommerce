@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {ShieldCheck,Store,ArrowRight,LockKeyhole} from 'lucide-react';
 import styles from './portal-choice.module.css';
 
-export const metadata={title:'Choisir mon espace · TuniCommerce',robots:{index:false,follow:false}};
+export const metadata={title:'Choisir mon espace · Tunicom',robots:{index:false,follow:false}};
 
 /** Portal entrypoints are different authentication contexts and cookie sessions.
  * This choice page never attempts to authenticate a user or expose account lists.
@@ -11,7 +11,7 @@ export default function PortalChoice(){
  return <main className={styles.shell}>
   <div className={styles.wrap}>
    <header className={styles.heading}>
-    <span className={styles.eyebrow}>TUNICOMMERCE · ACCÈS SÉPARÉS</span>
+    <span className={styles.eyebrow}>TUNICOM · ACCÈS SÉPARÉS</span>
     <h1>Quel espace souhaitez-vous ouvrir ?</h1>
     <p>Le Super Admin supervise la plateforme SaaS. Le marchand administre uniquement ses boutiques. Chaque espace utilise sa propre page de connexion et sa propre session.</p>
    </header>

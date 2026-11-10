@@ -9,7 +9,7 @@ export function csvRow(values:unknown[]):string{return values.map(csvCell).join(
 export const paymentCsvColumns=[
  'Reference','Date demande (UTC)','Boutique','Marchand','Email marchand',
  'Offre','Montant (TND)','Duree (jours)','Methode','Reference transfert',
- 'Statut','Date decision (UTC)','Fin periode (UTC)'
+ 'Statut','Date decision (UTC)','Fin periode (UTC)','Debut periode (UTC)'
 ] as const;
 export function millimesToTnd(value:number):string{
  if(!Number.isSafeInteger(value)||value<0)throw new Error('Montant invalide');

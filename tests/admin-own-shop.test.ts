@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -174,7 +175,7 @@ test('Super-admin can manage only their own legacy boutique and still access glo
   });
 
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

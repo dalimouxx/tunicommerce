@@ -194,6 +194,10 @@
 
 
 /* Official payment reception settings, configured by platform administrator only */
+.paymentActions>.renewalPreview{display:block;background:#f4f8f5;border:1px solid #d7e5da;border-radius:9px;padding:14px;color:#365641;font-size:12px;line-height:1.65}
+.renewalPreview p{margin:8px 0 0}
+.paymentActions>.paymentVerification{display:flex;align-items:flex-start;gap:10px;font-size:12px;font-weight:500;line-height:1.6}
+.paymentVerification input{flex-shrink:0;width:18px;height:18px;margin-top:2px;accent-color:#287e57}
 .receptionNotice{display:flex;align-items:flex-start;gap:12px;padding:17px;background:#fff8e9;border:1px solid #f1dfb7;border-radius:11px;margin-bottom:20px;color:#8b642a}
 .receptionNotice>svg{flex-shrink:0;margin-top:2px}
 .receptionNotice strong{font-size:13px;color:#7b5a2e}

@@ -1,6 +1,5 @@
 import {prisma} from '../storage/client';
 import {normalizeState} from '../commerce/normalize';
-import type {State,Order} from '../commerce/types';
-export function canRequest(order:Order,type:'CANCEL'|'RETURN'){return type==='RETURN'?order.status==='DELIVERED':['TO_CONFIRM','NO_ANSWER','CALLBACK','CONFIRMED','PREPARING','READY'].includes(order.status);}
+import type {State} from '../commerce/types';
+export {canRequest,trackingView} from './tracking-view';
 export async function findTrackedOrder(token:string){if(!/^[a-f0-9]{64}$/.test(token))return null;const receipt=await prisma.publicReceipt.findUnique({where:{id:token},include:{workspace:true}});if(!receipt)return null;const state=normalizeState(receipt.workspace.data as unknown as State);const order=state.orders.find(o=>o.publicReceiptId===token);return order?{receipt,state,order}:null;}
-export function trackingView(order:Order){return {reference:order.reference,status:order.status,createdAt:order.createdAt,updatedAt:order.updatedAt,items:order.items.map(({name,variant,quantity,price})=>({name,variant,quantity,price})),shipping:order.shipping,discount:order.discount,total:order.total,carrier:order.carrier,tracking:order.tracking,requests:order.customerRequests||[],canCancel:canRequest(order,'CANCEL'),canReturn:canRequest(order,'RETURN')};}

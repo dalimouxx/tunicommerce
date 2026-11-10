@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {spawn,type ChildProcess} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
@@ -247,7 +248,7 @@ test('Invitation acceptance, owner protection and per-shop team isolation over H
    assert.deepEqual((await after.json()).state,before);
   });
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

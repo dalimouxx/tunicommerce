@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -230,7 +231,7 @@ test('SaaS configurable catalog, quota exceptions and COD safety',async t=>{
    assert.equal((await get('/admin/boutiques/'+workspaceId,adminCookie)).status,200);
   });
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

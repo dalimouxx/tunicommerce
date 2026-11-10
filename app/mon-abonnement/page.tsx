@@ -67,7 +67,7 @@ export default async function MySubscription(){
    <Link href="/marchand" className={styles.back}><ArrowLeft size={16}/> Retour à ma boutique</Link>
    <header className={styles.hero}>
     <div>
-     <span className={styles.eyebrow}>MON COMPTE · TUNICOMMERCE</span>
+     <span className={styles.eyebrow}>MON COMPTE · TUNICOM</span>
      <h1>Mon abonnement</h1>
      <p>Consultez votre offre, sa validité et la consommation cumulée de toutes vos boutiques.</p>
     </div>

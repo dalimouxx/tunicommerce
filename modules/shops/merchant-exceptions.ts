@@ -33,11 +33,11 @@ export function merchantExceptionQueue(state:State,now=new Date(),query:Merchant
     title:'Expédition à contrôler',detail:'La commande reste expédiée depuis au moins quatre jours. Vérifiez le suivi avec le transporteur.',ageDays:days});
   if(order.status==='SHIPPED'&&!handedOff.has(order.id)&&days!==null&&days>=1)
    push({id:'handoff:'+order.id,orderReference:order.reference,kind:'HANDOFF_MISSING',priority:'MEDIUM',
-    title:'Bon de remise manquant',detail:'Aucune remise physique au transporteur n’a été déclarée dans TuniCommerce.',ageDays:days});
+    title:'Bon de remise manquant',detail:'Aucune remise physique au transporteur n’a été déclarée dans Tunicom.',ageDays:days});
   if(order.status==='DELIVERED'&&!handedOff.has(order.id)&&days!==null&&days>=1)
    push({id:'delivered-proof:'+order.id,orderReference:order.reference,kind:'DELIVERED_NO_HANDOFF',priority:'MEDIUM',
     title:'Livraison sans bon de remise enregistré',
-    detail:'Le statut livré a été saisi manuellement, mais aucune remise physique au transporteur n’est documentée dans TuniCommerce.',ageDays:days});
+    detail:'Le statut livré a été saisi manuellement, mais aucune remise physique au transporteur n’est documentée dans Tunicom.',ageDays:days});
   if(order.status==='DELIVERED'&&days!==null&&days>=3&&order.total>order.collected)
    push({id:'cod-overdue:'+order.id,orderReference:order.reference,kind:'COD_OVERDUE',priority:'HIGH',
     title:'COD livré et non intégralement déclaré encaissé',

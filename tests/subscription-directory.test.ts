@@ -33,3 +33,33 @@ test('export uses central CSV formula and row injection protection',()=>{
  assert.equal(line.startsWith('"\''),true);
  assert.equal(line.includes('\nrow'),false);
 });
+
+test('renewal windows keep future, expired and suspended accounts separate',()=>{
+ for(const days of [7,14,30]){
+  const deadline=new Date(now.getTime()+days*86400000);
+  const expiring=subscriptionDirectoryQuery({statut:'expiring',jours:String(days)},now);
+  const valid=subscriptionDirectoryQuery({statut:'valid',jours:String(days)},now);
+  assert.equal(expiring.windowDays,days);
+  assert.deepEqual((expiring.where.AND as unknown[])[0],{
+   subscriptionStatus:{in:['ACTIVE','TRIAL']},subscriptionEndsAt:{gt:now,lte:deadline}
+  });
+  assert.deepEqual((valid.where.AND as unknown[])[0],{
+   subscriptionStatus:{in:['ACTIVE','TRIAL']},subscriptionEndsAt:{gt:deadline}
+  });
+ }
+ assert.equal(subscriptionDirectoryQuery({jours:'365000'},now).windowDays,7);
+});
+
+test('plan segmentation survives pagination and export without widening the query',()=>{
+ const query=subscriptionDirectoryQuery({offre:'PRO',jours:'30',statut:'expiring',recherche:'A&B'},now);
+ assert.ok((query.where.AND as {plan?:string}[]).some(clause=>clause.plan==='PRO'));
+ for(const path of ['/admin/abonnements/complet','/api/admin/subscriptions/export']){
+  const url=new URL(directoryHref(path,query,3),'https://test.local');
+  const restored=subscriptionDirectoryQuery(Object.fromEntries(url.searchParams),now);
+  assert.equal(restored.page,3);
+  assert.deepEqual(restored.where,query.where);
+  assert.equal(restored.windowDays,30);
+ }
+ for(const offre of ['pro','<script>','A'.repeat(25),'PRO OR 1=1'])
+  assert.equal(subscriptionDirectoryQuery({offre},now).plan,'');
+});

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {stopTestServer} from './server-process';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {spawn,type ChildProcess} from 'node:child_process';
@@ -169,7 +170,7 @@ test('Direct shop-brand uploads persist with privacy and preserve commerce',asyn
    assert.equal((await get(logoUrl,ownerCookie)).status,200);
   });
  }finally{
-  child?.kill('SIGTERM');
+  stopTestServer(child);
   await prisma.$disconnect();
  }
 });

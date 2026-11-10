@@ -1,4 +1,5 @@
 export class HttpError extends Error {constructor(public status:number,message:string){super(message);}}
+export class MfaChallengeError extends HttpError{constructor(){super(401,'Saisissez le code de votre application ou un code de secours.');}}
 export function applicationOrigin(){
   const value=process.env.APP_URL||process.env.RENDER_EXTERNAL_URL||(process.env.NODE_ENV==='production'?'':'http://localhost:3000');
   if(!value)throw new HttpError(503,'URL de l’application non configurée');

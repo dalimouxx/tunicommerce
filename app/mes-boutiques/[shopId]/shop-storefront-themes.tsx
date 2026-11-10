@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import {useEffect,useState} from 'react';
-import {storefrontPalette,storefrontSectors,storefrontThemesForSector,type StorefrontThemeCode,type StorefrontSector} from '../../../modules/shops/storefront-themes';
+import {storefrontPalette,storefrontSectors,storefrontThemesForSector,storefrontThemeCodes,animatedStorefrontTheme,type StorefrontThemeCode,type StorefrontSector} from '../../../modules/shops/storefront-themes';
+import ProductScene from '../../../components/product-scene';
 import styles from './storefront-theme-gallery.module.css';
 
 export default function ShopStorefrontThemes({shopId}:{shopId:string}){
@@ -39,8 +40,8 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
  return <section className={styles.gallery} aria-labelledby="storefront-theme-title">
   <header className={styles.header}>
    <div><p className={styles.eyebrow}>PERSONNALISATION DE VOTRE VITRINE</p>
-    <h2 id="storefront-theme-title">Les thèmes TuniCommerce Studio</h2>
-    <p>Dix univers professionnels avec mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
+    <h2 id="storefront-theme-title">Les thèmes Tunicom Studio</h2>
+    <p>{storefrontThemeCodes.length} univers, dont quatre nouveaux thèmes animés. Mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
    </div>
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}
     className={styles.previewLink}>Voir mon aperçu privé</Link>
@@ -60,12 +61,12 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
       ['--preview-accent-text' as string]:t.accentText,
       ['--preview-surface' as string]:t.surface
      }}>
-      <div className={styles.miniAnnouncement}>TUNICOMMERCE · PAIEMENT À LA LIVRAISON</div>
+      <div className={styles.miniAnnouncement}>TUNICOM · PAIEMENT À LA LIVRAISON</div>
       <div className={styles.miniHeader}><span className={styles.miniLogo}>S</span><span>Votre boutique</span><span>☰</span></div>
       <div className={styles.miniHero}>
        <div><small>NOUVELLE COLLECTION</small><strong>Découvrez votre univers.</strong>
         <span className={styles.miniButton}>Explorer</span></div>
-       <div className={styles.miniHeroVisual}><span>✦</span></div>
+       <div className={styles.miniHeroVisual}>{animatedStorefrontTheme(code)?<ProductScene kind={code==='SORBET'?'bottle':code==='CHROME'?'audio':'shoe'}/>:<span>✦</span>}</div>
       </div>
       <div className={styles.miniProducts}>
        <div><span className={styles.miniPhoto}>◈</span><small>Produit premium</small><strong>49,000 TND</strong></div>
@@ -74,7 +75,7 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
       </div>
      </div>
      <div className={styles.themeFooter}>
-      <div><h3>{t.name} {active===code&&<span className={styles.activeTag}>Actif</span>}</h3>
+      <div><h3>{t.name} {active===code&&<span className={styles.activeTag}>Actif</span>} {animatedStorefrontTheme(code)&&<span className={styles.activeTag}>Animé</span>}</h3>
        <p>{t.description}</p></div>
       <div className={styles.themeActions}>
        <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu?theme='+code}

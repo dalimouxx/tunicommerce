@@ -2,17 +2,31 @@ import Link from 'next/link';
 import {prisma} from '../../../modules/storage/client';
 import {billingBucket} from '../../../modules/platform/saas-billing-health';
 import {toTnd} from '../../../modules/billing/validation';
+import {financialReportQuery,previousFinancialReportQuery,FinancialReportInputError,type FinancialReportInput} from '../../../modules/billing/financial-report';
+import {loadFinancialReport} from '../../../modules/billing/financial-report-service';
+import SaasMonthlyFinance from '../../../components/saas-monthly-finance';
+import {getSuperAdminUser} from '../../../modules/auth/session';
+import {redirect} from 'next/navigation';
 import styles from '../platform.module.css';
 
 export const dynamic='force-dynamic';
 
-export default async function SaasBillingCommandCenter(){
+export default async function SaasBillingCommandCenter({searchParams}:{searchParams:Promise<FinancialReportInput>}){
+ const actor=await getSuperAdminUser();
+ if(!actor)redirect('/connexion/admin');
+ if(actor.role!=='ADMIN')redirect('/marchand');
  const now=new Date();
- const since=new Date(now.getTime()-30*86400000);
+ let query;
+ try{query=financialReportQuery(await searchParams,now);}
+ catch(error){
+  if(!(error instanceof FinancialReportInputError))throw error;
+  return <section className={styles.panel}><h1>Filtres du bilan invalides</h1><p role="alert">{error.message}</p><Link href="/admin/finances-saas">Revenir au mois courant</Link></section>;
+ }
+ const previousQuery=previousFinancialReportQuery(query);
  const inSevenDays=new Date(now.getTime()+7*86400000);
  const activeStatuses=['ACTIVE','TRIAL'];
  const stoppedStatuses=['SUSPENDED','CANCELLED'];
- const [totalAccounts,validAccounts,dueSoonAccounts,suspendedAccounts,attention,approved30d,pending,approvedAll,latest]=await Promise.all([
+ const [totalAccounts,validAccounts,dueSoonAccounts,suspendedAccounts,attention,pending,approvedAll,latest,monthly,previous,plans]=await Promise.all([
   prisma.workspace.count(),
   prisma.workspace.count({where:{subscriptionStatus:{in:activeStatuses},subscriptionEndsAt:{gt:inSevenDays}}}),
   prisma.workspace.count({where:{subscriptionStatus:{in:activeStatuses},subscriptionEndsAt:{gt:now,lte:inSevenDays}}}),
@@ -30,12 +44,13 @@ export default async function SaasBillingCommandCenter(){
    orderBy:[{subscriptionEndsAt:'asc'},{id:'asc'}],
    take:50
   }),
-  prisma.subscriptionPayment.aggregate({where:{status:'APPROVED',decidedAt:{gte:since}},_count:{_all:true},_sum:{priceMillimes:true}}),
   prisma.subscriptionPayment.aggregate({where:{status:'PENDING'},_count:{_all:true},_sum:{priceMillimes:true}}),
   prisma.subscriptionPayment.aggregate({where:{status:'APPROVED'},_count:{_all:true},_sum:{priceMillimes:true}}),
   prisma.subscriptionPayment.findMany({where:{status:'APPROVED'},orderBy:{decidedAt:'desc'},take:20,
    select:{id:true,reference:true,planCode:true,priceMillimes:true,decidedAt:true,
-    workspace:{select:{owner:{select:{name:true,email:true}}}}}})
+    workspace:{select:{owner:{select:{name:true,email:true}}}}}}),
+  loadFinancialReport(query),loadFinancialReport(previousQuery),
+  prisma.subscriptionPlan.findMany({select:{code:true,name:true},orderBy:{code:'asc'}})
  ]);
  // SQL counts cover all workspaces; no 2,000-account snapshot that masks expiring subscriptions.
  const buckets={
@@ -54,9 +69,10 @@ export default async function SaasBillingCommandCenter(){
    <Link href="/admin/abonnements" className={styles.secondary}>Gérer les échéances</Link>
    <Link href="/api/admin/subscription-payments/export?status=APPROVED" className={styles.secondary}>Exporter les décisions (CSV)</Link>
   </div>
+  <SaasMonthlyFinance query={query} report={monthly} previous={previous.totals} plans={plans}/>
+  <div className={styles.head}><div><h2>Vue globale · toutes les offres et tous les moyens</h2><p>Indicateurs courants indépendants des filtres mensuels ci-dessus.</p></div></div>
   <div className={styles.stats}>
    {([
-    ['Paiements approuvés · 30 jours',toTnd(approved30d._sum.priceMillimes||0),approved30d._count._all+' dossier(s)'],
     ['Demandes en attente',toTnd(pending._sum.priceMillimes||0),pending._count._all+' déclaration(s) · non encaissées'],
     ['Paiements approuvés · historique',toTnd(approvedAll._sum.priceMillimes||0),approvedAll._count._all+' dossier(s)'],
     ['Échéances sous 7 jours',String(buckets.DUE_SOON),'Abonnements actifs ou en essai'],

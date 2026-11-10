@@ -3,6 +3,8 @@ import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import type {SubscriptionDecisionInput,SubscriptionRequestInput} from './validation';
 import {assertReceptionEnabled} from './reception';
+import {subscriptionDecisionInput} from './validation';
+import {subscriptionRenewalPeriod} from './renewal';
 
 function normalizedReference(input:SubscriptionRequestInput){
  return input.method==='CASH'?null:input.transferReference.trim().replace(/\s+/g,' ').toUpperCase();
@@ -39,7 +41,7 @@ export async function submitSubscriptionRequest(ownerId:string,input:Subscriptio
   });
   if(!plan||!plan.enabled)throw new HttpError(409,'Cette offre n’est plus disponible');
   if(plan.priceMillimes<=0)
-   throw new HttpError(409,'Cette offre ne dispose pas encore de tarif. Contactez TuniCommerce pour une attribution manuelle.');
+   throw new HttpError(409,'Cette offre ne dispose pas encore de tarif. Contactez Tunicom pour une attribution manuelle.');
 
   const payment=await tx.subscriptionPayment.create({
    data:{
@@ -66,6 +68,7 @@ export async function listMySubscriptionRequests(ownerId:string){
 }
 
 export async function decideSubscriptionRequest(actorId:string,input:SubscriptionDecisionInput){
+ input=subscriptionDecisionInput.parse(input);
  const initial=await prisma.subscriptionPayment.findUnique({
   where:{id:input.id},select:{workspaceId:true}
  });
@@ -84,13 +87,12 @@ export async function decideSubscriptionRequest(actorId:string,input:Subscriptio
    throw new HttpError(409,'Demande déjà traitée avec une autre décision');
   }
   const workspace=await tx.workspace.findUniqueOrThrow({
-   where:{id:initial.workspaceId},select:{id:true,subscriptionEndsAt:true}
+   where:{id:initial.workspaceId},select:{id:true,plan:true,subscriptionStatus:true,subscriptionEndsAt:true}
   });
   const now=new Date();
   const nextStatus=input.action==='approve'?'APPROVED':'REJECTED';
-  const startAt=input.action==='approve'
-   ?new Date(Math.max(now.getTime(),workspace.subscriptionEndsAt?.getTime()||0)):null;
-  const endsAt=startAt?new Date(startAt.getTime()+payment.durationDays*86400000):null;
+  const period=input.action==='approve'?subscriptionRenewalPeriod(workspace,payment.durationDays,now):null;
+  const startAt=period?.startAt||null,endsAt=period?.endsAt||null;
 
   const saved=await tx.subscriptionPayment.updateMany({
    where:{id:payment.id,status:'PENDING'},
@@ -115,6 +117,10 @@ export async function decideSubscriptionRequest(actorId:string,input:Subscriptio
     requestId:payment.id,reference:payment.reference,
     plan:payment.planCode,amountMillimes:payment.priceMillimes,
     durationDays:payment.durationDays,method:payment.method,
+    receivedConfirmed:input.action==='approve',
+    previousPlan:workspace.plan,previousStatus:workspace.subscriptionStatus,
+    previousEndsAt:workspace.subscriptionEndsAt?.toISOString()||null,
+    periodStartsAt:startAt?.toISOString()||null,
     periodEndsAt:endsAt?.toISOString()||null
    })
   }});

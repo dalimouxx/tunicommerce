@@ -16,6 +16,10 @@ import {isolatedStorefrontPreview} from '../../../modules/shops/storefront-previ
 import {normalizeState} from '../../../modules/commerce/normalize';
 import type {State} from '../../../modules/commerce/types';
 import styles from './storefront-premium.module.css';
+import {publishedPageLinks} from '../../../modules/shops/page-service';
+import pageStyles from '../../../components/shop-pages.module.css';
+import {animatedStorefrontTheme} from '../../../modules/shops/storefront-themes';
+import StorefrontMotionToggle from '../../../components/storefront-motion-toggle';
 
 export const dynamic='force-dynamic';
 
@@ -39,7 +43,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  const query=await searchParams;
  const productToAdd=typeof query.produit==='string'?query.produit:undefined;
  const shop=await prisma.shop.findUnique({where:{slug},select:{
-  name:true,status:true,legacyWorkspaceId:true,
+  id:true,name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},
   organization:{select:{owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}
  }});
@@ -51,6 +55,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   subscriptionEndsAt:subscription?.subscriptionEndsAt||null
  }))notFound();
  const catalog=isolatedStorefrontPreview(normalizeState(shop.commerce!.data as unknown as State));
+ const pages=await publishedPageLinks(shop.id);
  const lang=resolveStorefrontLang(query.lang,(await cookies()).get(STOREFRONT_LANG_COOKIE)?.value,catalog.marketing.language);
  const t=storefrontDictionary(lang);
  const theme=catalog.theme;
@@ -74,7 +79,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   </div>
   <div className={styles.container}>
    <header className={styles.storeHeader}>
-    <Link className={styles.identity} href={publicBase} aria-label={t.home(shopName)}>
+    <Link className={styles.identity} href={storefrontLangHref(publicBase,lang)} aria-label={t.home(shopName)}>
      {catalog.logoUrl?<img src={catalog.logoUrl} alt="" width={52} height={52}
       referrerPolicy="no-referrer" className={styles.logo}/>:
       <span className={styles.fallbackLogo}>{shopName.slice(0,1).toLocaleUpperCase('fr')}</span>}
@@ -82,12 +87,16 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
       <small>{t.independentShop}</small></span>
     </Link>
     <nav className={styles.nav} aria-label={t.navCollections}>
+     {animatedStorefrontTheme(theme.code)&&<StorefrontMotionToggle className={styles.motionControl} lang={lang}/>}
      <a href="#catalogue">{t.navCollections}</a>
      {catalog.products.length>0&&<a href="#panier" className={styles.navCart}>{t.navCart}</a>}
      <LanguageSwitch lang={lang} label={t.switchTo} ariaLabel={t.switchLabel}
       href={storefrontLangHref(publicBase,lang==='ar'?'fr':'ar')}/>
     </nav>
    </header>
+   {pages.length>0&&<nav className={pageStyles.navLinks} aria-label={lang==='ar'?'صفحات المتجر':'Pages de la boutique'}>
+    {pages.map(page=><Link key={page.slug} href={publicBase+'/pages/'+encodeURIComponent(page.slug)}>{page.title}</Link>)}
+   </nav>}
    <section className={styles.hero} aria-labelledby="storefront-title">
     <div className={styles.heroCopy}>
      <span className={styles.kicker}>{t.heroKicker}</span>

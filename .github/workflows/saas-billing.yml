@@ -5,6 +5,9 @@ on:
   pull_request:
     paths:
       - 'app/admin/paiements/**'
+      - 'app/admin/finances-saas/**'
+      - 'app/api/admin/finances-saas/**'
+      - 'components/saas-monthly-finance.tsx'
       - 'app/admin/layout.tsx'
       - 'app/admin/page.tsx'
       - 'app/admin/abonnements/**'

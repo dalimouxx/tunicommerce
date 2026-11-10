@@ -1,7 +1,8 @@
 import {prisma} from '../storage/client';
-import {hashPassword,verifyPassword,secretMatches} from './crypto';
+import {hashPassword,verifyPassword,secretMatches,digest} from './crypto';
 import {HttpError} from './http';
 import {portalRoleAllowed,type AuthPortal} from './portal';
+import {consumeMfaProof} from './mfa';
 // Persistent atomic buckets apply across processes. No untrusted forwarded-IP headers.
 export async function consumeAttempt(key:string,limit:number){
   const now=new Date();const expiresAt=new Date(now.getTime()+10*60*1000);
@@ -19,10 +20,17 @@ export async function setupOwner(input:{email:string;name:string;password:string
   catch(e){if(typeof e==='object'&&e&&'code' in e&&e.code==='P2002')throw new HttpError(409,'Le compte propriétaire existe déjà');throw e;}
 }
 const dummyHash='scrypt:32768:8:1:'+ '0'.repeat(32)+':'+ '0'.repeat(128);
-export async function authenticate(email:string,password:string,portal:AuthPortal='MERCHANT'){
-  await consumeAttempt('login',20);
+export async function authenticate(email:string,password:string,portal:AuthPortal='MERCHANT',otp?:string){
+  await consumeAttempt('login:all',1000);
+  await consumeAttempt('login:email:'+digest(email),20);
   const user=await prisma.user.findUnique({where:{email}});
   const valid=await verifyPassword(password,user?.passwordHash??dummyHash);
   if(!user||!valid||!portalRoleAllowed(user.role,portal))throw new HttpError(401,'E-mail ou mot de passe incorrect');
-  return {id:user.id,role:user.role};
+  return prisma.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
+   const current=await tx.user.findUniqueOrThrow({where:{id:user.id}});
+   if(current.passwordHash!==user.passwordHash||!portalRoleAllowed(current.role,portal))throw new HttpError(401,'E-mail ou mot de passe incorrect');
+   await consumeMfaProof(tx,current,otp);
+   return {id:current.id,role:current.role,authVersion:current.authVersion};
+  });
 }
