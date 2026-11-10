@@ -26,7 +26,7 @@ export async function processOneJob(send:typeof sendAccountEmail=sendAccountEmai
  const reset=payload.purpose==='RESET_PASSWORD';
  try{
   await send({id:job.id,to:payload.email,
-   subject:reset?'TuniCommerce · Réinitialiser votre mot de passe':'TuniCommerce · Vérifier votre adresse e-mail',
+   subject:reset?'Tunicom · Réinitialiser votre mot de passe':'Tunicom · Vérifier votre adresse e-mail',
    text:(reset?'Pour choisir un nouveau mot de passe, ouvrez le lien suivant :':'Pour confirmer votre adresse e-mail, ouvrez le lien suivant :')+
     '\n\n'+payload.url+'\n\nCe lien est personnel et utilisable une seule fois. Il expire le '+current.expiresAt.toISOString()+
     '.\nSi vous n’êtes pas à l’origine de cette demande, ignorez ce message.'});

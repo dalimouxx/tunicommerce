@@ -33,7 +33,7 @@ export default function AccountRecovery({mode,ready=true,portal:initialPortal='M
  }
  const login=portal==='ADMIN'?'/connexion/admin':'/connexion/boutique';
  return <main className="auth-panel" style={{minHeight:'100vh'}}><section className="auth-card">
-  <p className="auth-eyebrow">TUNICOMMERCE · SÉCURITÉ DU COMPTE</p>
+  <p className="auth-eyebrow">TUNICOM · SÉCURITÉ DU COMPTE</p>
   <h1>{mode==='request'?'Mot de passe oublié':mode==='reset'?'Choisir un nouveau mot de passe':'Vérifier mon adresse e-mail'}</h1>
   {done?<div role="status">
    <p>{mode==='request'?'Si un compte correspond à cette adresse et à cet espace, une demande de récupération a été enregistrée. Consultez aussi vos courriers indésirables.':

@@ -60,4 +60,5 @@
 .sectorFilters button[data-active="true"]{background:#126c65;color:#fff;border-color:#126c65}
 .sectorFilters button:focus-visible{outline:3px solid #56c1a9;outline-offset:3px}
 .matchCount{font-size:12px;color:#587080;margin:0 0 18px}
+.miniHeroVisual svg{width:120%;height:120%;flex:none}.miniSite[data-theme="PULSE"] .miniHero strong{text-transform:uppercase;font-weight:950}.miniSite[data-theme="PULSE"] .miniHeroVisual{background:#c9ff4a;border-radius:2px;rotate:-6deg}.miniSite[data-theme="SORBET"] .miniHero strong{font-family:Georgia,serif;font-weight:500}.miniSite[data-theme="SORBET"] .miniHeroVisual{border-radius:50% 50% 5px 5px;background:#f2c7b4}.miniSite[data-theme="CHROME"] .miniHeroVisual{border-radius:18px;background:linear-gradient(145deg,#c4d3df,#f7fbff,#c0cfdd)}.miniSite[data-theme="GROOVE"] .miniHero strong{font-family:Georgia,serif;font-style:italic}.miniSite[data-theme="GROOVE"] .miniHeroVisual{border-radius:40px 8px 40px 8px;background:#d4c1fa;border:1px solid #5e35b6}
 @media(max-width:640px){.sectorFilters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.sectorFilters button{flex:none;scroll-snap-align:start}}

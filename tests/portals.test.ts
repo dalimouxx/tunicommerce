@@ -58,10 +58,11 @@ test('Platform, merchant and public shop portals stay strictly separate',async t
   }
   assert.equal(ready,true,'Next.js HTTP server ready');
 
-  await t.test('Anonymous visitors see login; no protected data leaked',async()=>{
+  await t.test('Anonymous visitors see the Tunicom landing page; protected portals stay private',async()=>{
    const root=await get('/');
-   assert.equal(root.status,307);
-   assert.ok(root.headers.get('location')?.includes('/connexion/boutique'));
+   assert.equal(root.status,200);
+   const landing=await root.text();assert.ok(landing.includes('Ton business.'));assert.ok(landing.includes('Tunicom'));
+   assert.ok(landing.includes('/inscription'));assert.ok(landing.includes('/themes/PULSE'));
    assert.equal((await get('/admin')).status,307);
    assert.equal((await get('/marchand')).status,307);
    assert.equal((await get('/mes-boutiques')).status,307);

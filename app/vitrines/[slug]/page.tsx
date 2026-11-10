@@ -18,6 +18,8 @@ import type {State} from '../../../modules/commerce/types';
 import styles from './storefront-premium.module.css';
 import {publishedPageLinks} from '../../../modules/shops/page-service';
 import pageStyles from '../../../components/shop-pages.module.css';
+import {animatedStorefrontTheme} from '../../../modules/shops/storefront-themes';
+import StorefrontMotionToggle from '../../../components/storefront-motion-toggle';
 
 export const dynamic='force-dynamic';
 
@@ -85,6 +87,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
       <small>{t.independentShop}</small></span>
     </Link>
     <nav className={styles.nav} aria-label={t.navCollections}>
+     {animatedStorefrontTheme(theme.code)&&<StorefrontMotionToggle className={styles.motionControl} lang={lang}/>}
      <a href="#catalogue">{t.navCollections}</a>
      {catalog.products.length>0&&<a href="#panier" className={styles.navCart}>{t.navCart}</a>}
      <LanguageSwitch lang={lang} label={t.switchTo} ariaLabel={t.switchLabel}

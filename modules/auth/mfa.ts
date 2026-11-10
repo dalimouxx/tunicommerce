@@ -46,8 +46,8 @@ export async function beginMfa(userId:string,password:string){
   await tx.user.update({where:{id:userId},data:{mfaPendingSecret:seal({secret:secret.toString('base64')},'mfa-pending:'+userId),mfaPendingExpiresAt:new Date(Date.now()+15*60000)}});
  });
  const display=base32(secret);
- return {secret:display,uri:'otpauth://totp/'+encodeURIComponent('TuniCommerce:'+user.email)+'?'+
-  new URLSearchParams({secret:display,issuer:'TuniCommerce',algorithm:'SHA1',digits:'6',period:'30'}).toString()};
+ return {secret:display,uri:'otpauth://totp/'+encodeURIComponent('Tunicom:'+user.email)+'?'+
+  new URLSearchParams({secret:display,issuer:'Tunicom',algorithm:'SHA1',digits:'6',period:'30'}).toString()};
 }
 export async function configureMfa(userId:string,input:{action:'confirm'|'disable'|'recovery';password:string;otp:string},sessionHash:string|undefined){
  const user=await passwordUser(userId,input.password);

@@ -26,7 +26,7 @@ export default function ShopManualMessages({orders}:{orders:Order[]}){
  function openWhatsApp(){
   if(!confirmConsent()||!link)return;
   const win=window.open(link,'_blank','noopener,noreferrer');
-  setNotice(win?'WhatsApp ouvert pour une action manuelle. Aucun envoi confirmé par TuniCommerce.':'Nouvel onglet bloqué par le navigateur ; copiez le texte manuellement.');
+  setNotice(win?'WhatsApp ouvert pour une action manuelle. Aucun envoi confirmé par Tunicom.':'Nouvel onglet bloqué par le navigateur ; copiez le texte manuellement.');
  }
  return <div style={{padding:16,border:'1px solid #d8e7e6',borderRadius:12,marginTop:18,background:'#f7faf9'}}>
   <h3>Préparer un message transactionnel (envoi manuel)</h3>
