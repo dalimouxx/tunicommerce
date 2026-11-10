@@ -111,6 +111,7 @@ model Shop {
   memberships    Membership[]
   invitations    ShopInvitation[]
   commerce       ShopCommerce?
+  pages          ShopPage[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -343,4 +344,20 @@ model MfaRecoveryCode {
  usedAt DateTime?
  createdAt DateTime @default(now())
  @@index([userId])
+}
+
+/** Draft and public snapshot are deliberately independent. Slugs stay stable after creation. */
+model ShopPage {
+ id String @id @default(uuid())
+ shopId String
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ slug String
+ draft Json
+ published Json?
+ version Int @default(0)
+ publishedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([shopId,slug])
+ @@index([shopId,publishedAt])
 }

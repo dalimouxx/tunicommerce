@@ -16,6 +16,8 @@ import {isolatedStorefrontPreview} from '../../../modules/shops/storefront-previ
 import {normalizeState} from '../../../modules/commerce/normalize';
 import type {State} from '../../../modules/commerce/types';
 import styles from './storefront-premium.module.css';
+import {publishedPageLinks} from '../../../modules/shops/page-service';
+import pageStyles from '../../../components/shop-pages.module.css';
 
 export const dynamic='force-dynamic';
 
@@ -39,7 +41,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  const query=await searchParams;
  const productToAdd=typeof query.produit==='string'?query.produit:undefined;
  const shop=await prisma.shop.findUnique({where:{slug},select:{
-  name:true,status:true,legacyWorkspaceId:true,
+  id:true,name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},
   organization:{select:{owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}
  }});
@@ -51,6 +53,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   subscriptionEndsAt:subscription?.subscriptionEndsAt||null
  }))notFound();
  const catalog=isolatedStorefrontPreview(normalizeState(shop.commerce!.data as unknown as State));
+ const pages=await publishedPageLinks(shop.id);
  const lang=resolveStorefrontLang(query.lang,(await cookies()).get(STOREFRONT_LANG_COOKIE)?.value,catalog.marketing.language);
  const t=storefrontDictionary(lang);
  const theme=catalog.theme;
@@ -88,6 +91,9 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
       href={storefrontLangHref(publicBase,lang==='ar'?'fr':'ar')}/>
     </nav>
    </header>
+   {pages.length>0&&<nav className={pageStyles.navLinks} aria-label={lang==='ar'?'صفحات المتجر':'Pages de la boutique'}>
+    {pages.map(page=><Link key={page.slug} href={publicBase+'/pages/'+encodeURIComponent(page.slug)}>{page.title}</Link>)}
+   </nav>}
    <section className={styles.hero} aria-labelledby="storefront-title">
     <div className={styles.heroCopy}>
      <span className={styles.kicker}>{t.heroKicker}</span>

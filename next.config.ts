@@ -18,6 +18,7 @@ const config: NextConfig = {
    {source:'/vitrines/:slug/suivi/:token',headers:privateTrackingHeaders},
    {source:'/suivi/:token',headers:privateTrackingHeaders},
    {source:'/compte/:path*',headers:privateTrackingHeaders},
+   {source:'/mes-boutiques/:shopId/pages/:path*',headers:privateTrackingHeaders},
    {source:'/api/auth/account/:path*',headers:privateTrackingHeaders},
    {source:'/api/suivi/:token',headers:privateTrackingHeaders},
    {source:'/api/v1/public/vitrines/:slug/suivi/:token/requests',headers:privateTrackingHeaders},
