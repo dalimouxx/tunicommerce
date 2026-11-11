@@ -96,6 +96,50 @@ test('Shop page lifecycle: tenant isolation, snapshots, concurrency and publicat
    assert.equal((await update('unpublish')).status,200);assert.equal((await get(publicPath())).status,404);
    assert.equal((await (await get('/vitrines/'+slug)).text()).includes('/pages/a-propos'),false);
   });
+  const ownWorkspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:userId}}),otherWorkspace=await prisma.workspace.findUniqueOrThrow({where:{ownerId:otherId}});
+  const photoBytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAOoqL8cAAAAASUVORK5CYII=','base64'),photoData={content:photoBytes,mimeType:'image/png',size:photoBytes.length,width:1,height:1};
+  const ownPhoto=await prisma.productMedia.create({data:{workspaceId:ownWorkspace.id,...photoData}}),foreignPhoto=await prisma.productMedia.create({data:{workspaceId:otherWorkspace.id,...photoData}}),unusedPhoto=await prisma.productMedia.create({data:{workspaceId:ownWorkspace.id,...photoData}}),racingPhoto=await prisma.productMedia.create({data:{workspaceId:ownWorkspace.id,...photoData}});
+  const photoUrl=(id:string)=>'/api/media/products/'+id,publicImage=(id:string,shopSlug=slug,pageSlug='a-propos')=>'/api/v1/public/vitrines/'+shopSlug+'/pages/'+pageSlug+'/images/'+id;
+  const section=(imageUrl=photoUrl(ownPhoto.id))=>({id:randomUUID(),type:'image' as const,title:'Notre équipe en images',imageUrl,alt:'Photo de notre équipe',caption:'Une légende <script>ne pas exécuter</script>',layout:'square' as const,fit:'contain' as const});
+  const imageContent={...page.draft,sections:[section()]};let photoRevision='';
+  const removePhoto=(id:string)=>write('/api/v1/product-media/'+id,{},cookie,'DELETE');
+  await t.test('page creation and saving require owned photos; an image draft stays private',async()=>{
+   const foreign={...imageContent,sections:[section(photoUrl(foreignPhoto.id))]};assert.equal((await write(api(),{slug:'photo-probe',content:foreign})).status,403);assert.equal((await write(api(),{slug:'photo-probe',content:{...imageContent,sections:[section(photoUrl(randomUUID()))]}})).status,403);
+   const create=await write(api(),{slug:'photo-probe',content:imageContent});assert.equal(create.status,201);const temporary=(await create.json()).page;const creationHistory=await (await get(api()+'/'+temporary.id+'/history',cookie)).json();assert.equal(creationHistory.revisions[0].action,'create');assert.equal(creationHistory.revisions[0].version,0);assert.equal((await write(api()+'/'+temporary.id,{version:temporary.version},cookie,'DELETE')).status,200);
+   const before=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}});assert.equal((await update('save',foreign)).status,403);assert.deepEqual(await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),before);
+   assert.equal((await update('save',imageContent)).status,200);assert.equal((await get(publicImage(ownPhoto.id))).status,404);assert.equal((await get(publicImage(ownPhoto.id),cookie)).status,404);
+   const preview=await get('/mes-boutiques/'+shopId+'/pages/'+page.id+'/apercu',cookie);assert.equal(preview.status,200);assert.ok((await preview.text()).includes(photoUrl(ownPhoto.id)));assert.equal((await removePhoto(ownPhoto.id)).status,409);
+   photoRevision=(await (await get(api()+'/'+page.id+'/history',cookie)).json()).revisions[0].id;
+  });
+  await t.test('published page images serve owned bytes with safe headers and exact page-scoped URLs',async()=>{
+   assert.equal((await update('publish')).status,200);const response=await get(publicImage(ownPhoto.id));assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');assert.equal(response.headers.get('x-content-type-options'),'nosniff');assert.match(response.headers.get('cache-control')||'',/no-store/);assert.deepEqual(Buffer.from(await response.arrayBuffer()),photoBytes);
+   const html=await (await get(publicPath())).text();assert.ok(html.includes(publicImage(ownPhoto.id)));assert.ok(html.includes('alt="Photo de notre équipe"'));assert.ok(html.includes('loading="lazy"'));assert.ok(html.includes('&lt;script&gt;ne pas exécuter&lt;/script&gt;'));assert.equal(html.includes('<script>ne pas exécuter</script>'),false);
+   const head=await fetch(base+publicImage(ownPhoto.id),{method:'HEAD'});assert.equal(head.status,200);assert.equal((await head.arrayBuffer()).byteLength,0);assert.equal((await get(photoUrl(ownPhoto.id))).status,404);
+  });
+  await t.test('other pages, unused photos, wrong owners and suspension cannot expose a page image',async()=>{
+   for(const path of [publicImage(ownPhoto.id,slug,'other-page'),publicImage(ownPhoto.id,slug+'-two'),publicImage(unusedPhoto.id),publicImage(foreignPhoto.id)])assert.equal((await get(path,cookie)).status,404);
+   await prisma.workspace.update({where:{ownerId:userId},data:{subscriptionStatus:'SUSPENDED'}});assert.equal((await get(publicImage(ownPhoto.id),cookie)).status,404);await prisma.workspace.update({where:{ownerId:userId},data:{subscriptionStatus:'ACTIVE'}});
+   await prisma.shop.update({where:{id:shopId},data:{status:'DRAFT'}});assert.equal((await get(publicImage(ownPhoto.id),cookie)).status,404);await prisma.shop.update({where:{id:shopId},data:{status:'PUBLISHED'}});
+   const before=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}});await prisma.shopPage.update({where:{id:page.id},data:{published:{...imageContent,sections:[section(photoUrl(foreignPhoto.id))]} as never}});assert.equal((await get(publicImage(foreignPhoto.id),otherCookie)).status,404);await prisma.shopPage.update({where:{id:page.id},data:{published:before.published as never}});
+  });
+  await t.test('history pins and restores photo references without publishing them, then releases expired references',async()=>{
+   const external={...imageContent,sections:[section('https://cdn.example.com/external.png')]};assert.equal((await update('save',external)).status,200);assert.equal((await removePhoto(ownPhoto.id)).status,409);assert.equal((await get(publicImage(ownPhoto.id))).status,200);
+   assert.equal((await update('unpublish')).status,200);assert.equal((await get(publicImage(ownPhoto.id),cookie)).status,404);assert.equal((await removePhoto(ownPhoto.id)).status,409);
+   const restore=await write(api()+'/'+page.id,{action:'restoreRevision',version:page.version,revisionId:photoRevision},cookie,'PUT');assert.equal(restore.status,200);page=(await restore.json()).page;assert.deepEqual(page.draft.sections,imageContent.sections);assert.equal((await get(publicImage(ownPhoto.id))).status,404);
+   const detail=await (await get(api()+'/'+page.id+'/history/'+photoRevision,cookie)).json();assert.deepEqual(detail.content.sections,imageContent.sections);
+   assert.equal((await update('save',external)).status,200);for(let n=0;n<20;n++)assert.equal((await update('save',{...external,title:'Étape image '+n})).status,200);assert.equal((await removePhoto(ownPhoto.id)).status,200);
+  });
+  await t.test('publication and historical restore recheck photo ownership without changing rejected versions',async()=>{
+   const original=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),invalid={...imageContent,sections:[section(photoUrl(foreignPhoto.id))]};
+   const revision={id:randomUUID(),version:page.version,createdAt:new Date().toISOString(),action:'save',content:invalid};await prisma.shopPage.update({where:{id:page.id},data:{history:[revision] as never,draft:invalid as never}});const before=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}});
+   assert.equal((await update('publish')).status,403);assert.equal((await write(api()+'/'+page.id,{action:'restoreRevision',version:page.version,revisionId:revision.id},cookie,'PUT')).status,403);assert.deepEqual(await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),before);
+   await prisma.shopPage.update({where:{id:page.id},data:{draft:original.draft as never,history:original.history as never}});
+  });
+  await t.test('a media deletion racing a page save never persists a dangling photo',async()=>{
+   const next={...page.draft,sections:[section(photoUrl(racingPhoto.id))]};const results=await Promise.all([write(api()+'/'+page.id,{action:'save',version:page.version,content:next},cookie,'PUT'),removePhoto(racingPhoto.id)]),statuses=results.map(r=>r.status);
+   assert.ok(statuses[0]===200&&statuses[1]===409||statuses[0]===403&&statuses[1]===200,JSON.stringify(statuses));page=(await (await get(api(),cookie)).json()).pages.find((entry:PageEditorRecord)=>entry.id===page.id);
+   assert.equal((await prisma.productMedia.count({where:{id:racingPhoto.id}}))>0,statuses[0]===200);
+  });
   await t.test('Slugs are scoped to a shop and the ten-page ceiling survives concurrent creates',async()=>{
    const content=initialPageContent();assert.equal((await write(api(),{slug:'a-propos',content})).status,409);
    assert.equal((await write('/api/v1/shops/'+secondId+'/pages',{slug:'a-propos',content})).status,201);
@@ -107,7 +151,7 @@ test('Shop page lifecycle: tenant isolation, snapshots, concurrency and publicat
   await t.test('history reads are private, scoped to the page and do not expose content in summaries',async()=>{
    assert.equal((await get(historyApi())).status,401);assert.equal((await get(historyApi(),otherCookie)).status,403);
    const response=await get(historyApi(),cookie);assert.equal(response.status,200);assert.match(response.headers.get('cache-control')||'',/no-store/);const {revisions}=await response.json();assert.ok(revisions.length);assert.equal('content' in revisions[0],false);
-   assert.equal(revisions.at(-1).action,'create');assert.equal(revisions.at(-1).version,0);
+   assert.ok(revisions.length<=20);
    assert.equal((await get('/api/v1/shops/'+secondId+'/pages/'+page.id+'/history',cookie)).status,404);assert.equal((await get(historyApi()+'/invalid',cookie)).status,404);
    const sameShopPage=await prisma.shopPage.findFirstOrThrow({where:{shopId,slug:'extra-0'}});assert.equal((await get(api()+'/'+sameShopPage.id+'/history/'+revisions[0].id,cookie)).status,404);
   });
