@@ -5,12 +5,13 @@ import {isOpen} from '../platform/public';
 import {isPublicIsolatedShop} from './publication';
 import {homeContent,initialHomeContent,changeHomeInput,type HomeEditorRecord} from './home-content';
 import type {z} from 'zod';
+import {assertHomePhotoOwnership} from './home-image-service';
 
 /** Homepage ownership covers the existing workspace shop as well as independent shops. */
 export async function homeOwner(userId:string,shopId:string,tx:Prisma.TransactionClient=prisma){
  const member=await tx.membership.findUnique({where:{shopId_userId:{shopId,userId}},select:{active:true,role:true,shop:{select:{id:true,name:true,slug:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{shopId:true}},legacyWorkspace:{select:{ownerId:true,slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}},
-  organization:{select:{ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}
+  organization:{select:{ownerId:true,owner:{select:{workspace:{select:{id:true,subscriptionStatus:true,subscriptionEndsAt:true}}}}}}
  }}}});
  if(!member?.active)throw new HttpError(404,'Boutique introuvable');
  const shop=member.shop;
@@ -39,7 +40,8 @@ export async function changeShopHome(userId:string,shopId:string,input:z.infer<t
  return prisma.$transaction(async tx=>{
   const candidate=await homeOwner(userId,shopId,tx);
   // Keep the workspace-before-shop lock order used by legacy commerce operations.
-  if(candidate.legacyWorkspaceId)await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${candidate.legacyWorkspaceId} FOR UPDATE`;
+  const workspaceId=candidate.legacyWorkspaceId||candidate.organization.owner.workspace?.id;
+  if(workspaceId)await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspaceId} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "Shop" WHERE id=${shopId} FOR UPDATE`;
   const shop=await homeOwner(userId,shopId,tx);
   if(shop.legacyWorkspaceId!==candidate.legacyWorkspaceId)throw new HttpError(409,'La boutique a changé. Rechargez avant de réessayer.');
@@ -47,15 +49,18 @@ export async function changeShopHome(userId:string,shopId:string,input:z.infer<t
   if((row?.version||0)!==input.version)throw new HttpError(409,'L’accueil a changé. Rechargez avant de réessayer.');
   if(!row&&input.action!=='save')throw new HttpError(409,'Enregistrez un brouillon avant de continuer.');
   if(input.action==='save'){
+   await assertHomePhotoOwnership(tx,userId,input.content);
    return editor(await tx.shopHome.upsert({where:{shopId},create:{shopId,draft:input.content as Prisma.InputJsonValue,version:1},update:{draft:input.content as Prisma.InputJsonValue,version:{increment:1}}}));
   }
   if(input.action==='publish'){
    if(!homePublicPath(await homeOwner(userId,shopId,tx)))
     throw new HttpError(409,'Publiez la boutique avec un abonnement valide avant de publier son accueil.');
+   await assertHomePhotoOwnership(tx,userId,homeContent.parse(row!.draft));
    return editor(await tx.shopHome.update({where:{shopId},data:{published:homeContent.parse(row!.draft) as Prisma.InputJsonValue,publishedAt:new Date(),publishedVersion:row!.version,version:{increment:1}}}));
   }
   if(input.action==='restore'){
    if(!row!.publishedAt)throw new HttpError(409,'Aucune version publiée à restaurer.');
+   await assertHomePhotoOwnership(tx,userId,homeContent.parse(row!.published));
    return editor(await tx.shopHome.update({where:{shopId},data:{draft:homeContent.parse(row!.published) as Prisma.InputJsonValue,version:{increment:1}}}));
   }
   return editor(await tx.shopHome.update({where:{shopId},data:{published:Prisma.DbNull,publishedAt:null,publishedVersion:null,version:{increment:1}}}));
