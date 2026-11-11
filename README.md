@@ -89,3 +89,6 @@ La gestion des sous-domaines et preuves TXT est accessible au propriétaire dans
 
 Mes boutiques → boutique indépendante → Ma vitrine → Composer et publier l’accueil : textes et sections FR/AR, aperçu privé, brouillon séparé de la publication et retour au thème. Les produits et le panier restent disponibles. [Fonctionnement et limites](docs/shop-home.md).
 
+
+L’éditeur d’accueil est aussi accessible depuis Ma vitrine dans le menu marchand et fonctionne avec la boutique existante liée au workspace, sans déplacer son catalogue ou ses commandes. Sa vitrine conserve son adresse /boutiques/<slug>.
+

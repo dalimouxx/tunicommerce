@@ -26,6 +26,12 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    return {user,shop,cookie:'__Host-tunicommerce='+token};
   }
   const a=await owner('a'),b=await owner('b');const endpoint='/api/v1/shops/'+a.shop.id+'/home',publicPath='/vitrines/'+a.shop.slug,preview='/mes-boutiques/'+a.shop.id+'/apercu';
+  const legacy=await owner('legacy');const legacyState=initialState(false);legacyState.shop.name='Boutique existante '+mark;legacyState.products=initialState(true).products.slice(0,1);
+  const legacyWorkspace=await prisma.workspace.update({where:{ownerId:legacy.user.id},data:{slug:'ancienne-'+mark,published:true,data:legacyState as never,version:7}});
+  await prisma.shop.update({where:{id:legacy.shop.id},data:{legacyWorkspaceId:legacyWorkspace.id,status:'DRAFT'}});await prisma.shopCommerce.delete({where:{shopId:legacy.shop.id}});
+  const legacyApi='/api/v1/shops/'+legacy.shop.id+'/home',legacyEditor='/mes-boutiques/'+legacy.shop.id+'/accueil',legacyPreview=legacyEditor+'/apercu',legacyPublic='/boutiques/'+legacyWorkspace.slug;
+  let legacyRecord:HomeEditorRecord;const legacyDraft=initialHomeContent();legacyDraft.fr.heroTitle='ACCUEIL-EXISTANT-'+mark;legacyDraft.fr.announcement='ANNONCE-EXISTANTE-'+mark;legacyDraft.fr.sections=[{id:randomUUID(),type:'cta',title:'SECTION-EXISTANTE-'+mark,text:'Catalogue conservé',label:'Voir les produits'}];legacyDraft.ar.heroTitle='متجر موجود '+mark;
+  async function legacyChange(action:'save'|'publish'|'unpublish'|'restore',content?:unknown){const response=await put(legacyApi,{action,version:legacyRecord.version,...(action==='save'?{content}:{})},legacy.cookie);if(response.ok)legacyRecord=await response.json();return response;}
   const commerceBefore=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});const workspaceBefore=await prisma.workspace.findUniqueOrThrow({where:{ownerId:a.user.id}});
   server=spawn(process.execPath,['scripts/start.mjs'],{env:{...process.env,NODE_ENV:'production',PORT:'3204',APP_URL:origin,DATABASE_URL:db,STOREFRONT_DOMAIN_ROUTING:'disabled'},stdio:'ignore'});
   let ready=false;for(let n=0;n<160;n++){try{if((await get('/api/health')).ok){ready=true;break;}}catch{}if(server.exitCode!==null)throw Error('Home server exited');await delay(250);}assert.ok(ready);
@@ -72,5 +78,38 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    assert.equal((await change('publish')).status,200);await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'SUSPENDED'}});assert.equal((await get(publicPath)).status,404);assert.equal((await get(preview,a.cookie)).status,200);
    const after=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});assert.deepEqual(after.data,commerceBefore.data);assert.equal(after.version,commerceBefore.version);const workspaceAfter=await prisma.workspace.findUniqueOrThrow({where:{ownerId:a.user.id}});assert.deepEqual(workspaceAfter.data,workspaceBefore.data);assert.equal(workspaceAfter.version,workspaceBefore.version);
   });
+
+  await t.test('existing workspace owners find Ma vitrine and the editor without migrating their commerce',async()=>{
+   assert.equal((await get('/marchand',legacy.cookie)).status,200);for(const path of ['/personnalisation','/mes-boutiques/'+legacy.shop.id]){const r=await get(path,legacy.cookie);assert.equal(r.status,200,path);assert.ok((await r.text()).includes('Ma vitrine'),path);}
+   const html=await (await get(legacyEditor,legacy.cookie)).text();assert.ok(html.includes('Compose l’accueil'));assert.ok(html.includes(legacyPublic));assert.equal(html.includes('/vitrines/'+legacy.shop.slug),false);
+   assert.equal((await get(legacyApi)).status,401);assert.equal((await get(legacyApi,b.cookie)).status,404);legacyRecord=await (await get(legacyApi,legacy.cookie)).json();assert.equal(legacyRecord.version,0);assert.equal(await prisma.shopHome.count({where:{shopId:legacy.shop.id}}),0);
+   assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);
+  });
+  await t.test('legacy drafts preview privately and publish on the existing workspace URL in either language',async()=>{
+   assert.equal((await legacyChange('save',legacyDraft)).status,200);assert.equal((await get(legacyPreview,b.cookie)).status,404);const previewHtml=await (await get(legacyPreview,legacy.cookie)).text();assert.ok(previewHtml.includes(legacyDraft.fr.heroTitle));assert.ok(previewHtml.includes('Commandes')||previewHtml.includes('commandes'));
+   assert.equal((await (await get(legacyPublic)).text()).includes(legacyDraft.fr.heroTitle),false);assert.equal((await legacyChange('publish')).status,200);
+   const html=await (await get(legacyPublic+'?lang=fr')).text();assert.ok(html.includes('<h1 dir="auto">'+legacyDraft.fr.heroTitle+'</h1>'));assert.ok(html.includes('SECTION-EXISTANTE-'+mark));assert.ok(html.includes(legacyDraft.fr.announcement));assert.ok(html.includes('id="catalogue"'));assert.ok(html.includes('Casque sans fil Studio'));
+   const ar=await (await get(legacyPublic+'?lang=ar')).text();assert.ok(ar.includes('<h1 dir="auto">'+legacyDraft.ar.heroTitle+'</h1>'));assert.ok(ar.includes('dir="rtl"'));assert.equal(legacyRecord.hasUnpublishedChanges,false);
+  });
+  await t.test('global admin and foreign OWNER membership cannot bypass the workspace and organization owner',async()=>{
+   await prisma.user.update({where:{id:b.user.id},data:{role:'ADMIN'}});await prisma.membership.create({data:{shopId:legacy.shop.id,userId:b.user.id,role:'OWNER'}});
+   assert.equal((await get(legacyApi,b.cookie)).status,403);assert.equal((await put(legacyApi,{action:'unpublish',version:legacyRecord.version},b.cookie)).status,403);assert.equal((await get(legacyPreview,b.cookie)).status,404);
+   await prisma.organization.update({where:{id:legacy.shop.organizationId},data:{ownerId:b.user.id}});assert.equal((await get(legacyApi,legacy.cookie)).status,403);assert.equal((await get(legacyApi,b.cookie)).status,403);assert.equal((await (await get(legacyPublic)).text()).includes(legacyDraft.fr.heroTitle),false);await prisma.organization.update({where:{id:legacy.shop.organizationId},data:{ownerId:legacy.user.id}});
+   await prisma.membership.update({where:{shopId_userId:{shopId:legacy.shop.id,userId:legacy.user.id}},data:{active:false}});assert.equal((await get(legacyApi,legacy.cookie)).status,404);await prisma.membership.update({where:{shopId_userId:{shopId:legacy.shop.id,userId:legacy.user.id}},data:{active:true}});
+  });
+  await t.test('legacy publication uses the actual workspace gate and private preview survives unpublication',async()=>{
+   await prisma.shop.update({where:{id:legacy.shop.id},data:{status:'PUBLISHED'}});await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:false}});assert.equal((await legacyChange('publish')).status,409);assert.equal((await get(legacyPublic)).status,404);assert.equal((await get(legacyPreview,legacy.cookie)).status,200);
+   await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:true,subscriptionEndsAt:new Date(Date.now()-1000)}});assert.equal((await legacyChange('publish')).status,409);assert.equal((await get(legacyPublic)).status,404);
+   await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{subscriptionStatus:'SUSPENDED',subscriptionEndsAt:new Date(Date.now()+86400000)}});assert.equal((await legacyChange('publish')).status,409);await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{subscriptionStatus:'ACTIVE'}});
+  });
+  await t.test('legacy saves, restores and theme fallback preserve the original workspace JSON and version',async()=>{
+   const newer=structuredClone(legacyDraft);newer.fr.heroTitle='DRAFT-NOT-PUBLISHED-'+mark;assert.equal((await legacyChange('save',newer)).status,200);assert.equal((await (await get(legacyPublic)).text()).includes(newer.fr.heroTitle),false);assert.equal((await legacyChange('restore')).status,200);assert.equal(legacyRecord.draft.fr.heroTitle,legacyDraft.fr.heroTitle);
+   assert.equal((await legacyChange('unpublish')).status,200);const html=await (await get(legacyPublic)).text();assert.ok(html.includes('Boutique existante '+mark));assert.equal(html.includes(legacyDraft.fr.heroTitle),false);assert.deepEqual(legacyRecord.draft,legacyDraft);
+   const after=await prisma.workspace.findUniqueOrThrow({where:{id:legacyWorkspace.id}});assert.deepEqual(after.data,legacyWorkspace.data);assert.equal(after.version,legacyWorkspace.version);assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);assert.equal((await legacyChange('publish')).status,200);
+  });
+  await t.test('legacy COD ordering remains on its existing API after homepage publication',async()=>{
+   const r=await fetch(base+'/api/boutiques/'+legacyWorkspace.slug+'/checkout',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({requestId:randomUUID(),customer:{name:'Client de recette',phone:'22123456',city:'Tunis',address:'Adresse fictive'},items:[{productId:'p1',quantity:1}]})});assert.equal(r.status,201);const receipt=await r.json();assert.ok(receipt.reference);assert.match(receipt.trackingUrl,/^\/suivi\/[a-f0-9]{64}$/);assert.ok((await (await get(legacyPublic)).text()).includes(legacyDraft.fr.heroTitle));
+  });
  }finally{stopTestServer(server);await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });
+
