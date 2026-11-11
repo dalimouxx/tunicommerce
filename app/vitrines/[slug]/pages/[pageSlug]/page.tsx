@@ -13,5 +13,5 @@ export async function generateMetadata({params}:Props):Promise<Metadata>{
 }
 export default async function PublicPage({params}:Props){
  const {slug,pageSlug}=await params,page=await read(slug,pageSlug);if(!page)notFound();
- return <ShopPageContent content={page.content} shopName={page.shopName} slug={slug}/>;
+ return <ShopPageContent content={page.content} shopName={page.shopName} slug={slug} pageSlug={pageSlug}/>;
 }

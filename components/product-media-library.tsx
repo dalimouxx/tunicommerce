@@ -83,7 +83,7 @@ export default function ProductMediaLibrary({value,onChoose,standalone=false,onB
    <input type="file" accept="image/jpeg,image/png,image/webp" disabled={pending||collection.photos.length>=collection.limit}
     onChange={chooseFile}/>
   </label>
-  <p className={styles.hint}>Depuis votre téléphone ou ordinateur · 12 Mo maximum avant optimisation · 1600 px recommandé. Une photo utilisée par un produit ne peut pas être supprimée.</p>
+  <p className={styles.hint}>Depuis votre téléphone ou ordinateur · 12 Mo maximum avant optimisation · 1600 px recommandé. Une photo utilisée par un produit, un accueil, une page ou un historique conservé ne peut pas être supprimée.</p>
   {error&&<p role="alert" className={styles.error}>{error}</p>}
   {success&&<p role="status" className={styles.success}>{success}</p>}
   {loading?<p className={styles.hint}>Chargement des photos…</p>:

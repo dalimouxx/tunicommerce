@@ -5,7 +5,7 @@ Ce lot poursuit le bloc 6 du chantier. Le propriétaire d'une boutique indépend
 ## Utilisation
 
 1. Créer un brouillon en choisissant un titre et une adresse courte, par exemple `a-propos`. L'adresse utilise des minuscules ASCII, chiffres et tirets ; elle reste stable après la création. Chaque boutique dispose de dix pages maximum, avec contrôle transactionnel en cas de créations simultanées.
-2. Choisir français ou arabe pour la page, ajouter une description et composer jusqu'à douze sections : en-tête, texte, points forts, questions fréquentes ou appel vers le catalogue. Les flèches déplacent les sections, y compris au clavier ; les boutons permettent d'ajouter et retirer les éléments répétés.
+2. Choisir français ou arabe pour la page, ajouter une description et composer jusqu'à douze sections : en-tête, texte, points forts, questions fréquentes appel vers le catalogue ou image avec légende. Les flèches déplacent les sections, y compris au clavier ; les boutons permettent d'ajouter et retirer les éléments répétés.
 3. Enregistrer le brouillon. L'aperçu ouvre le dernier brouillon enregistré dans un onglet privé réservé au propriétaire. Les champs non enregistrés ne sont pas inclus dans cet aperçu.
 4. Publier explicitement la version enregistrée. La boutique doit être publiée et l'abonnement marchand actif. La page apparaît à `/vitrines/{slug}/pages/{pageSlug}` et dans la navigation de la page d'accueil de la boutique.
 5. Les modifications enregistrées après publication restent dans le brouillon jusqu'à une nouvelle publication. Dépublier retire la page et son lien de navigation ; supprimer efface le brouillon, la version publiée et tout son historique après confirmation dans l'interface.
@@ -27,7 +27,7 @@ Le rendu React affiche du texte avec échappement. Les types de sections et leur
 
 ## Périmètre restant du bloc 6
 
-L'éditeur crée des pages complémentaires. La mise en page de la page d'accueil et les thèmes existants restent gérés par leur parcours actuel. Les images de section des pages complémentaires, le texte enrichi et la modification d'adresse avec redirection ne sont pas inclus. L'interface repose sur un formulaire et des boutons d'ordre, sans déplacement à la souris.
+L'éditeur crée des pages complémentaires. La mise en page de la page d'accueil et les thèmes existants restent gérés par leur parcours actuel. Le texte enrichi et la modification d'adresse avec redirection ne sont pas inclus. L'interface repose sur un formulaire et des boutons d'ordre, sans déplacement à la souris.
 
 Les domaines personnalisés et leur preuve TXT disposent désormais de leur propre parcours ; leur recette DNS/TLS réelle reste prévue sur le futur VPS. Le routage reste désactivé par défaut sur Render. Voir `VPS-STOREFRONT-DOMAINS.md`. Ce lot d’historique ne modifie ni DNS ni prestataire.
 
@@ -48,3 +48,13 @@ Les tests de validation couvrent les limites, les adresses invalides, les identi
 Résultats locaux : 332 tests unitaires et 140 tests PostgreSQL/HTTP réussis dans 19 suites d'intégration ; les huit tests du parcours pages réussissent également après ajout des contrôles sur une adhésion inactive et un rôle OWNER attribué à un compte qui ne possède pas l'organisation. TypeScript, compilation de production, migration locale et redémarrage sans migration supplémentaire réussis ; la comparaison Prisma ne détecte aucune différence.
 
 La recette dans le navigateur sur un compte fictif a confirmé l'affichage de l'éditeur, le réordonnancement, l'enregistrement du brouillon et le maintien de l'ordre précédent sur la page publique. Une capture de l'éditeur a été conservée dans les livrables. La vérification porte sur la fenêtre de bureau disponible ; la recette sur appareils mobiles réels reste à faire.
+
+## Images dans les pages complémentaires
+
+La section « Image et légende » utilise la médiathèque du marchand, avec import et compression existants, ou une URL HTTPS sans identifiants. Le titre et le texte alternatif sont obligatoires ; la légende est facultative. Trois formats (paysage, carré, portrait) et deux ajustements (recadrer ou image entière) sont disponibles. La limite de 12 sections et le volume de 24 000 octets par page restent inchangés. Les champs sont éditables dans la langue de la page ; aucune traduction automatique.
+
+Les sauvegardes, créations, publications et restaurations recontrôlent la propriété de chaque photo interne. Les écritures de page verrouillent désormais Workspace puis Shop, comme les suppressions de médias, afin qu’une suppression concurrente ne laisse pas de référence enregistrée vers un fichier disparu. Les photos utilisées par les brouillons, publications ou 20 étapes retenues des pages sont protégées contre la suppression. Leur présence dans un historique ne les rend pas publiques.
+
+La route GET/HEAD /api/v1/public/vitrines/[slug]/pages/[pageSlug]/images/[id] exige une boutique indépendante ouverte, une page publiée à cette adresse, une référence dans son seul instantané publié et un média du propriétaire. Les brouillons et historiques ne sont pas lus pour cet accès. Une session valide ne contourne pas ces conditions. Les domaines personnalisés n’acceptent que la route de leur boutique ; les routes brutes de médiathèque conservent leur politique existante. Si le Workspace historique est publié, certains fichiers bruts peuvent déjà être publics : l’éditeur ne constitue pas un coffre de fichiers confidentiels.
+
+L’aperçu privé et l’historique utilisent l’URL de médiathèque du propriétaire. Les rendus publics utilisent une URL limitée à la page et des images différées, avec décodage asynchrone et sans référent. Le backend ne télécharge pas les images HTTPS externes et n’en garantit pas la disponibilité. Aucun nouveau schéma SQL, stockage objet, fournisseur ni activation DNS. Les anciens contenus restent compatibles ; un retour au code antérieur après ajout de sections image exige de conserver la prise en charge du nouveau type dans les pages et leur historique.

@@ -1,8 +1,8 @@
 import {z} from 'zod';
 import {pageSection,pageSectionLabels} from './page-content';
-import {homeImageSection,homePhotoId} from './home-image';
+import {homePhotoId} from './home-image';
 
-export const homeSection=z.discriminatedUnion('type',[...pageSection.options,homeImageSection]);
+export const homeSection=pageSection;
 export type HomeSection=z.infer<typeof homeSection>;
 export const homeSectionLabels:Record<HomeSection['type'],string>={...pageSectionLabels,image:'Image et légende'};
 
