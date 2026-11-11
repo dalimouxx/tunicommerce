@@ -1,13 +1,13 @@
-# Éditeur de pages des boutiques indépendantes
+# Éditeur de pages des boutiques
 
-Ce lot poursuit le bloc 6 du chantier. Le propriétaire d'une boutique indépendante initialisée dispose d'un éditeur à `/mes-boutiques/{shopId}/pages`, accessible depuis « Ma vitrine ». Les boutiques historiques liées à un Workspace conservent leur parcours existant.
+Ce lot poursuit le bloc 6 du chantier. Le propriétaire d’une boutique indépendante initialisée ou d’une boutique historique liée à son Workspace dispose d’un éditeur à `/mes-boutiques/{shopId}/pages`, accessible depuis « Ma vitrine ». Les boutiques historiques conservent leur catalogue, leurs commandes et leur adresse /boutiques/[slug-du-workspace].
 
 ## Utilisation
 
 1. Créer un brouillon en choisissant un titre et une adresse courte, par exemple `a-propos`. L'adresse utilise des minuscules ASCII, chiffres et tirets ; elle reste stable après la création. Chaque boutique dispose de dix pages maximum, avec contrôle transactionnel en cas de créations simultanées.
 2. Choisir français ou arabe pour la page, ajouter une description et composer jusqu'à douze sections : en-tête, texte, points forts, questions fréquentes appel vers le catalogue ou image avec légende. Les flèches déplacent les sections, y compris au clavier ; les boutons permettent d'ajouter et retirer les éléments répétés.
 3. Enregistrer le brouillon. L'aperçu ouvre le dernier brouillon enregistré dans un onglet privé réservé au propriétaire. Les champs non enregistrés ne sont pas inclus dans cet aperçu.
-4. Publier explicitement la version enregistrée. La boutique doit être publiée et l'abonnement marchand actif. La page apparaît à `/vitrines/{slug}/pages/{pageSlug}` et dans la navigation de la page d'accueil de la boutique.
+4. Publier explicitement la version enregistrée. La boutique doit être publiée et l'abonnement marchand actif. La page apparaît à `/vitrines/{slug}/pages/{pageSlug}` pour une boutique indépendante, ou à `/boutiques/{slug-du-workspace}/pages/{pageSlug}` pour une boutique historique, ainsi que dans la navigation de sa vitrine.
 5. Les modifications enregistrées après publication restent dans le brouillon jusqu'à une nouvelle publication. Dépublier retire la page et son lien de navigation ; supprimer efface le brouillon, la version publiée et tout son historique après confirmation dans l'interface.
 6. « Consulter l’historique de la page » affiche ses 20 dernières étapes. Une sélection charge l’aperçu privé. Restaurer demande d’abord d’enregistrer les modifications locales, puis une confirmation dans la page ; le contenu et la langue reviennent dans le brouillon. L’adresse et la publication restent inchangées jusqu’à une nouvelle publication explicite.
 
@@ -39,7 +39,7 @@ Chaque création, enregistrement, publication, retrait et restauration réussis 
 
 `GET /api/v1/shops/[shopId]/pages/[pageId]/history` donne une liste de résumés sans corps de page. `GET .../history/[id]` donne la seule étape sélectionnée. Les deux accès recontrôlent le véritable propriétaire, l’appartenance active et la relation boutique/page ; les identifiants d’une autre page ou boutique sont refusés, même pour le même marchand. Les réponses ne sont pas mises en cache. La restauration utilise l’API PUT existante avec `action: restoreRevision`, `revisionId` et `version`, en conservant les contrôles d’origine et le verrou de boutique.
 
-Une restauration reste possible pour une boutique non publiée ou un abonnement suspendu, car elle ne publie rien. Publier la page continue d’exiger une boutique ouverte avec un abonnement valide. La vitrine, sa navigation et ses métadonnées ne lisent que l’instantané publié. L’historique des pages est distinct de celui de l’accueil et reste réservé aux boutiques indépendantes initialisées.
+Une restauration reste possible pour une boutique non publiée ou un abonnement suspendu, car elle ne publie rien. Publier la page continue d’exiger une boutique ouverte avec un abonnement valide. La vitrine, sa navigation et ses métadonnées ne lisent que l’instantané publié. L’historique des pages est distinct de celui de l’accueil et est disponible aussi pour les boutiques historiques appartenant au même propriétaire.
 
 ## Vérifications
 
@@ -55,6 +55,16 @@ La section « Image et légende » utilise la médiathèque du marchand, avec im
 
 Les sauvegardes, créations, publications et restaurations recontrôlent la propriété de chaque photo interne. Les écritures de page verrouillent désormais Workspace puis Shop, comme les suppressions de médias, afin qu’une suppression concurrente ne laisse pas de référence enregistrée vers un fichier disparu. Les photos utilisées par les brouillons, publications ou 20 étapes retenues des pages sont protégées contre la suppression. Leur présence dans un historique ne les rend pas publiques.
 
-La route GET/HEAD /api/v1/public/vitrines/[slug]/pages/[pageSlug]/images/[id] exige une boutique indépendante ouverte, une page publiée à cette adresse, une référence dans son seul instantané publié et un média du propriétaire. Les brouillons et historiques ne sont pas lus pour cet accès. Une session valide ne contourne pas ces conditions. Les domaines personnalisés n’acceptent que la route de leur boutique ; les routes brutes de médiathèque conservent leur politique existante. Si le Workspace historique est publié, certains fichiers bruts peuvent déjà être publics : l’éditeur ne constitue pas un coffre de fichiers confidentiels.
+La route GET/HEAD /api/v1/public/vitrines/[slug]/pages/[pageSlug]/images/[id] exige une boutique ouverte, une page publiée à cette adresse, une référence dans son seul instantané publié et un média du propriétaire. Les brouillons et historiques ne sont pas lus pour cet accès. Une session valide ne contourne pas ces conditions. Les domaines personnalisés n’acceptent que la route de leur boutique ; les routes brutes de médiathèque conservent leur politique existante. Si le Workspace historique est publié, certains fichiers bruts peuvent déjà être publics : l’éditeur ne constitue pas un coffre de fichiers confidentiels.
 
 L’aperçu privé et l’historique utilisent l’URL de médiathèque du propriétaire. Les rendus publics utilisent une URL limitée à la page et des images différées, avec décodage asynchrone et sans référent. Le backend ne télécharge pas les images HTTPS externes et n’en garantit pas la disponibilité. Aucun nouveau schéma SQL, stockage objet, fournisseur ni activation DNS. Les anciens contenus restent compatibles ; un retour au code antérieur après ajout de sections image exige de conserver la prise en charge du nouveau type dans les pages et leur historique.
+
+## Compatibilité des boutiques historiques
+
+Les liens vers les pages figurent dans Ma vitrine (Personnalisation), dans la fiche de boutique et dans Mes boutiques. Les contrôles d’édition réutilisent ceux de l’accueil : appartenance OWNER active, propriétaire réel de l’organisation et du Workspace lié, sans contournement administrateur. Les lectures ne créent ni page, ni ShopCommerce, ni copie du catalogue. Les écritures conservent le verrou Workspace puis Shop et la version attendue.
+
+Une page historique se publie sous /boutiques/[slug-du-workspace]/pages/[pageSlug]. Sa publication, ses métadonnées, sa lecture publique et ses images dépendent du Workspace réel (publication et abonnement valide), même si le statut Shop diffère. Une organisation liée au mauvais propriétaire est refusée. L’alias /vitrines/[slug-du-Shop]/pages/[pageSlug] reste fermé pour une boutique historique. Les liens Retour/Produits et les appels vers le catalogue reviennent à l’adresse Workspace ; les images gardent leur portée Shop/page déjà utilisée par la route média.
+
+La navigation de la vitrine historique expose uniquement les pages publiées et leur titre publié. Une modification de brouillon ou une restauration ne remplace pas ce titre. Le retrait d’une page supprime son lien ; le retrait de la vitrine ou la suspension de l’abonnement masque aussi les pages et leurs images. L’aperçu et l’historique restent privés et accessibles au propriétaire pour préparer son contenu.
+
+Aucune migration SQL, transformation de Workspace.data ou création de ShopCommerce. Le checkout COD reste sur /api/boutiques/[slug-du-workspace]/checkout. Les domaines personnalisés ne sont pas activés ou étendus aux boutiques historiques par ce lot.

@@ -59,3 +59,5 @@ Les sections image de l’accueil utilisent désormais la médiathèque du propr
 
 
 Les pages complémentaires prennent maintenant en charge les images de médiathèque, les légendes et les formats de cadrage, avec vérification du propriétaire, conservation des références historiques et accès public limité à la page publiée.
+
+Les pages complémentaires, leurs images et leur historique sont également accessibles aux propriétaires des boutiques historiques liées à un Workspace, avec publication sous leur adresse existante et conservation du commerce historique. Les domaines personnalisés de ces boutiques restent un chantier distinct.

@@ -27,7 +27,7 @@ export default async function MyShops(){
     role:true,active:true,
     shop:{select:{
      id:true,name:true,slug:true,status:true,legacyWorkspaceId:true,
-     organization:{select:{name:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}},
+     organization:{select:{name:true,ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}},
      commerce:{select:{shopId:true}},
      legacyWorkspace:{select:{slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}}
     }}
@@ -91,6 +91,7 @@ export default async function MyShops(){
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
       {publicPath&&<Link className={styles.secondary} href={publicPath}>Vitrine publique</Link>}
       {role==='OWNER'&&(access.manageOwnCommerce||!shop.legacyWorkspaceId&&shop.commerce)&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/accueil'}>Modifier l’accueil</Link>}
+      {role==='OWNER'&&shop.organization.ownerId===actor.userId&&(access.manageOwnCommerce||!shop.legacyWorkspaceId&&shop.commerce)&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/pages'}>Pages de ma boutique</Link>}
       {role==='OWNER'&&!shop.legacyWorkspaceId&&shop.commerce&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/apercu'}>Aperçu privé</Link>}
      </div>
     </section>;

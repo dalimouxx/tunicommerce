@@ -8,7 +8,8 @@ import ProductMediaLibrary from './product-media-library';
 import {isSectionImageUrl} from '../modules/shops/section-image';
 import imageStyles from './shop-home.module.css';
 
-export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:string;shopSlug:string;initialPages:PageEditorRecord[]}){
+export default function ShopPageEditor({shopId,shopSlug,initialPages,publicBasePath}:{shopId:string;shopSlug:string;initialPages:PageEditorRecord[];publicBasePath?:string|null}){
+ const [storefront,setStorefront]=useState(publicBasePath===undefined?'/vitrines/'+encodeURIComponent(shopSlug):publicBasePath);
  const [pages,setPages]=useState(initialPages),[selected,setSelected]=useState(initialPages[0]?.id||'');
  const [content,setContent]=useState<PageContent|null>(initialPages[0]?.draft||null);
  const [newTitle,setNewTitle]=useState(''),[newSlug,setNewSlug]=useState('');
@@ -73,6 +74,7 @@ export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:st
   setBusy(true);setError('');setMessage('');
   try{
    const data=await request('','GET'),next=data.pages.find((page:PageEditorRecord)=>page.id===selected)||data.pages[0];
+   if(typeof data.shop?.publicBasePath==='string'||data.shop?.publicBasePath===null)setStorefront(data.shop.publicBasePath);
    setPages(data.pages);setSelected(next?.id||'');setContent(next?.draft||null);setMessage('Dernière version chargée.');
   }catch(error){setError(error instanceof Error?error.message:'Chargement indisponible');}finally{setBusy(false);}
  }
@@ -151,7 +153,7 @@ export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:st
     <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/pages/'+row.id+'/apercu'} target="_blank" rel="noopener noreferrer">Aperçu enregistré ↗</Link>
     <button type="button" className={styles.primary} disabled={busy||mediaBusy||dirty} onClick={()=>void change('publish')}>Publier la version enregistrée</button>
     {row.publishedAt&&<><button type="button" className={styles.secondary} disabled={busy||mediaBusy||dirty} onClick={()=>void change('unpublish')}>Dépublier</button>
-     <Link href={'/vitrines/'+encodeURIComponent(shopSlug)+'/pages/'+row.slug} target="_blank" rel="noopener noreferrer">Voir la page publique ↗</Link></>}
+     {storefront&&<Link href={storefront+'/pages/'+row.slug} target="_blank" rel="noopener noreferrer">Voir la page publique ↗</Link>}</>}
    </div><p className={styles.muted}>La publication nécessite une boutique publiée et un abonnement valide. Les pages sont ajoutées à la navigation de la boutique.</p>
    <button type="button" className={styles.secondary} disabled={busy||mediaBusy} onClick={()=>void remove()}>Supprimer la page</button>
    <ShopPageHistory key={row.id+':'+row.version} endpoint={endpoint+'/'+row.id} disabled={busy||mediaBusy||dirty} onRestore={id=>void change('restoreRevision',id)}/>
