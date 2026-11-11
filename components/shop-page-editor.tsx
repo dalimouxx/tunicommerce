@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {initialPageContent,pageContent,pageSectionLabels,type PageContent,type PageSection,type PageEditorRecord} from '../modules/shops/page-content';
 import styles from './shop-pages.module.css';
+import ShopPageHistory from './shop-page-history';
 
 export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:string;shopSlug:string;initialPages:PageEditorRecord[]}){
  const [pages,setPages]=useState(initialPages),[selected,setSelected]=useState(initialPages[0]?.id||'');
@@ -12,9 +13,15 @@ export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:st
  const row=pages.find(page=>page.id===selected);
  const dirty=!!row&&!!content&&JSON.stringify(content)!==JSON.stringify(row.draft);
  const endpoint='/api/v1/shops/'+encodeURIComponent(shopId)+'/pages';
+ const activeRequest=useRef<AbortController|null>(null);
+ useEffect(()=>()=>activeRequest.current?.abort(),[]);
  async function request(path:string,method:string,body?:unknown){
-  const response=await fetch(endpoint+path,{method,headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
-  const data=await response.json();if(!response.ok)throw Error(data.error||'Enregistrement indisponible');return data;
+  const controller=new AbortController();activeRequest.current=controller;const timeout=setTimeout(()=>controller.abort(),45000);
+  try{
+   const response=await fetch(endpoint+path,{method,cache:'no-store',signal:controller.signal,headers:{'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+   const data=await response.json().catch(()=>null);if(!response.ok)throw Error(response.status===401?'Ta session a expiré. Reconnecte-toi dans un autre onglet puis réessaie.':data?.error||'Enregistrement indisponible');if(!data)throw Error('Réponse incomplète. Tes modifications sont conservées dans cet écran.');return data;
+  }catch(error){if(controller.signal.aborted)throw Error('La connexion prend trop de temps. Tes modifications sont conservées dans cet écran ; réessaie.');throw error;}
+  finally{clearTimeout(timeout);if(activeRequest.current===controller)activeRequest.current=null;}
  }
  function choose(page:PageEditorRecord){
   if(dirty&&!window.confirm('Abandonner les modifications non enregistrées ?'))return;
@@ -29,20 +36,21 @@ export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:st
    setPages(current=>[...current,data.page]);setSelected(data.page.id);setContent(data.page.draft);setNewTitle('');setNewSlug('');setMessage('Page créée en brouillon.');
   }catch(error){setError(error instanceof Error?error.message:'Création indisponible');}finally{setBusy(false);}
  }
- async function change(action:'save'|'publish'|'unpublish'){
+ async function change(action:'save'|'publish'|'unpublish'|'restoreRevision',revisionId?:string){
   if(busy||!row||!content)return;
+  if(action==='restoreRevision'&&(dirty||!revisionId))return;
   if(action==='save'){
    const valid=pageContent.safeParse(content);if(!valid.success){setError(valid.error.issues[0]?.message||'Contenu invalide');return;}
   }
   setBusy(true);setError('');setMessage('');
   try{
-   const data=await request('/'+row.id,'PUT',{action,version:row.version,...(action==='save'?{content}:{})});
+   const data=await request('/'+row.id,'PUT',{action,version:row.version,...(action==='save'?{content}:{}),...(action==='restoreRevision'?{revisionId}:{})});
    setPages(current=>current.map(page=>page.id===row.id?data.page:page));setContent(data.page.draft);
-   setMessage(action==='save'?'Brouillon enregistré. La version publique reste inchangée.':action==='publish'?'La version enregistrée est maintenant publiée.':'Page retirée de la boutique publique.');
+   setMessage(action==='save'?'Brouillon enregistré. La version publique reste inchangée.':action==='publish'?'La version enregistrée est maintenant publiée.':action==='restoreRevision'?'Ancienne version restaurée dans le brouillon. La page publique reste inchangée.':'Page retirée de la boutique publique.');
   }catch(error){setError(error instanceof Error?error.message:'Enregistrement indisponible');}finally{setBusy(false);}
  }
  async function remove(){
-  if(busy||!row||!window.confirm('Supprimer définitivement cette page, son brouillon et sa version publique ?'))return;
+  if(busy||!row||!window.confirm('Supprimer définitivement cette page, son brouillon, sa version publique et tout son historique ?'))return;
   setBusy(true);setError('');setMessage('');
   try{
    await request('/'+row.id,'DELETE',{version:row.version});const remaining=pages.filter(page=>page.id!==row.id);
@@ -125,6 +133,7 @@ export default function ShopPageEditor({shopId,shopSlug,initialPages}:{shopId:st
      <Link href={'/vitrines/'+encodeURIComponent(shopSlug)+'/pages/'+row.slug} target="_blank" rel="noopener noreferrer">Voir la page publique ↗</Link></>}
    </div><p className={styles.muted}>La publication nécessite une boutique publiée et un abonnement valide. Les pages sont ajoutées à la navigation de la boutique.</p>
    <button type="button" className={styles.secondary} disabled={busy} onClick={()=>void remove()}>Supprimer la page</button>
+   <ShopPageHistory key={row.id+':'+row.version} endpoint={endpoint+'/'+row.id} disabled={busy||dirty} onRestore={id=>void change('restoreRevision',id)}/>
   </>:<p className={styles.muted}>Sélectionnez une page ou créez un brouillon pour commencer.</p>}</section></div>
  </>;
 }
