@@ -79,3 +79,8 @@ Les produits acceptent une description et une photo par lien HTTPS. Les réglage
 Les nouvelles commandes publiques disposent d’un lien privé `/suivi/{jeton}` avec un jeton aléatoire de 256 bits. Ce lien expose uniquement les articles, montants, statut, transporteur et échanges client prévus ; jamais les coordonnées du client ni les notes internes. Il permet de demander une annulation avant expédition ou un retour après livraison. Les marchands voient les demandes en attente et peuvent répondre. Accepter une annulation annule la commande et restitue le stock une seule fois. Accepter un retour n’effectue aucun remboursement ou mouvement de stock ; les modules Retours existants gèrent la réception et le remboursement.
 
 Les téléversements de médias historiques sont disponibles. Les comptes clients synchronisés entre appareils et les notifications de commande e-mail/SMS restent à développer. Les liens privés doivent être conservés et ne pas être partagés. Les anciennes commandes ne reçoivent pas rétroactivement de lien de suivi.
+
+## Domaines des boutiques
+
+La gestion des sous-domaines et preuves TXT est accessible au propriétaire dans Mes boutiques → boutique → Ma vitrine → Sous-domaine et domaines personnels. Le routage reste désactivé par défaut pour Render. La configuration DNS et HTTPS du futur VPS est décrite dans [le guide dédié](docs/VPS-STOREFRONT-DOMAINS.md).
+

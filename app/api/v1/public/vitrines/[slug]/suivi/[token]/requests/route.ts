@@ -1,12 +1,13 @@
 import {z} from 'zod';
-import {assertSameOrigin,readJson,respond,HttpError} from '../../../../../../../../../modules/auth/http';
+import {assertPublicStorefrontOrigin} from '../../../../../../../../../modules/shops/domains-routing';
+import {readJson,respond,HttpError} from '../../../../../../../../../modules/auth/http';
 import {isolatedCustomerRequestInput,submitIsolatedCustomerRequest} from '../../../../../../../../../modules/shops/public-customer-request';
 
 export const dynamic='force-dynamic';
 export async function POST(request:Request,context:{params:Promise<{slug:string;token:string}>}){
  try{
-  assertSameOrigin(request);
   const {slug,token}=await context.params;
+  await assertPublicStorefrontOrigin(request,slug);
   const input=isolatedCustomerRequestInput.parse(await readJson(request,3000));
   const result=await submitIsolatedCustomerRequest(slug,token,input);
   return respond(result,result.alreadyApplied?200:201);

@@ -17,7 +17,7 @@ Créer → Vendre → Confirmer → Préparer → Livrer → Encaisser → Analy
 - Protection des données personnelles et minimisation des données pour le score client transparent et contestable.
 
 ## Architecture de transition
-Conserver Next.js 16 + React 19 + TypeScript + Prisma 6, modules métier séparés, API versionnée. Ne pas introduire Express/Fastify tant que le besoin de déploiement séparé n'est pas démontré.
+Conserver Next.js 16 + React 19 + TypeScript + Prisma 7, modules métier séparés, API versionnée. Ne pas introduire Express/Fastify tant que le besoin de déploiement séparé n'est pas démontré.
 
 Modules cibles : auth, organizations, shops, memberships, permissions, products, variants, inventory, stock-locations, customers, orders, order-events, call-center, cart, checkout, coupons, delivery-zones, carriers, shipments, returns, exchanges, finance, cod-settlements, invoices, expenses, analytics, automations, notifications, integrations, webhooks, ai, platform-billing.
 
@@ -50,3 +50,9 @@ Entités de départ : Organization, Shop, Membership, Role, Permission, Product,
 
 ## Sécurité de déploiement
 Développer sur audit/stabilisation-2026-11 puis branches de fonctionnalités, ouvrir PR, valider CI, ne fusionner ni migrer la base principale sans vérification et sauvegarde préalable.
+
+## Domaines des boutiques — code livré, activation VPS à réaliser
+
+`ShopDomainClaim` conserve les demandes et preuves TXT ; `ShopDomainBinding` assure l'unicité globale des domaines vérifiés. La gestion appartient au propriétaire de la boutique indépendante. Le Proxy Next associe le véritable Host à une seule boutique et refuse les routes privées et les autres boutiques. Les commandes restent validées côté serveur avec une origine HTTPS correspondant à cette boutique. Les sous-domaines automatiques utilisent le slug sous une racine réservée à l'exploitant.
+
+Le routage est désactivé par défaut sur Render. Le futur VPS devra fournir le DNS, le reverse proxy et les certificats HTTPS. L'autorisation d'émission TLS est contrôlée par `/api/v1/public/domains/allow`. Voir [le guide VPS](VPS-STOREFRONT-DOMAINS.md). La revérification périodique et le transfert administratif guidé restent à développer.

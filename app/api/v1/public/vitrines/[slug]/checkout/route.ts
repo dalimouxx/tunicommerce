@@ -1,5 +1,6 @@
 import {z} from 'zod';
-import {HttpError,assertSameOrigin,readJson,respond} from '../../../../../../../modules/auth/http';
+import {assertPublicStorefrontOrigin} from '../../../../../../../modules/shops/domains-routing';
+import {HttpError,readJson,respond} from '../../../../../../../modules/auth/http';
 import {createPublicCodOrder,publicCodCheckoutInput} from '../../../../../../../modules/shops/public-cod-checkout';
 
 export const dynamic='force-dynamic';
@@ -7,8 +8,8 @@ type Context={params:Promise<{slug:string}>};
 
 export async function POST(request:Request,context:Context){
  try{
-  assertSameOrigin(request);
   const {slug}=await context.params;
+  await assertPublicStorefrontOrigin(request,slug);
   const input=publicCodCheckoutInput.parse(await readJson(request,12000));
   const result=await createPublicCodOrder(slug,input);
   return respond(result,result.alreadyApplied?200:201);
