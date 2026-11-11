@@ -26,9 +26,20 @@ La boutique historique conserve son adresse `/boutiques/<slug-du-workspace>` et 
 
 L'aperçu `/mes-boutiques/<shopId>/accueil/apercu` reste privé et sans commande, y compris lorsque la boutique est dépubliée. Sans personnalisation publiée, les textes et l'apparence historiques restent utilisés. Le contrôle des trois points de réassurance standards est réservé au catalogue indépendant qui possède ces blocs. Les pages complémentaires et domaines ne sont pas étendus aux boutiques historiques par cette correction.
 
+## Brouillons locaux et enregistrements simultanés
+
+L'éditeur conserve les modifications dans le stockage de session de l'onglet, avec une clé distincte pour chaque compte et chaque boutique. Une copie retrouvée, datant de moins de 24 heures, peut être récupérée avant de reprendre l'édition. Les champs encore incomplets sont conservés aussi : ils devront être corrigés avant l'enregistrement serveur. Une navigation interne enregistre immédiatement la copie avant de quitter l'éditeur. Fermer l'onglet, effacer les données du navigateur ou refuser le stockage peut empêcher cette récupération ; l'écran signale l'indisponibilité d'une copie locale. La copie locale ne publie rien et ne remplace pas une sauvegarde confirmée par le serveur.
+
+Lorsqu'une version a changé, les modifications sur des champs distincts peuvent être réunies automatiquement. Une liste de sections est traitée comme un ensemble : deux changements concurrents de son ordre ou de son contenu nécessitent un choix, afin de ne pas perdre une section. Si le même champ a été modifié différemment, les textes locaux restent affichés et le propriétaire peut consulter la version du serveur, la charger ou confirmer explicitement son remplacement. Aucune publication n'est effectuée pendant cette réconciliation.
+
+Une sauvegarde déjà reçue par le serveur mais dont la réponse a été perdue est reconnue à la tentative suivante. Le client ne réessaie qu'une fois une écriture après lecture d'une version récente ; une nouvelle concurrence est présentée comme conflit. Les délais réseau sont bornés à 45 secondes pour rendre les boutons disponibles en cas de panne. Une session expirée propose une reconnexion dans un autre onglet. Les messages de validation nomment la langue et la section, ouvrent la langue concernée et ciblent le champ à compléter.
+
+La barre Enregistrer/Publier reste accessible pendant le défilement. L'enregistrement du brouillon, sa copie locale et sa publication disposent d'indications distinctes. Les protections serveur de version attendue et de propriétaire restent inchangées.
+
 ## Validation et limites
 
 Les tests couvrent les valeurs par défaut, les langues indépendantes, les limites de sections et de volume UTF-8, les champs exécutables refusés, les versions attendues, les accès anonymes/étrangers, les origines falsifiées, les premières sauvegardes simultanées, l'aperçu privé et l'échappement du texte, les instantanés publiés, la restauration, le retour au thème et la conservation des données commerciales. La suite des domaines vérifie aussi qu'un domaine personnel affiche la version publiée sans révéler le brouillon.
 
 La recette navigateur locale vérifie la sauvegarde, le réordonnancement, la publication, les langues, la FAQ et les formats étroit et large. Un défaut de compression du nom dans l’en-tête mobile a été corrigé par une disposition sur deux lignes. Les essais sur appareils physiques restent à effectuer. Les animations des sections des thèmes récents respectent la réduction de mouvement et le bouton de pause existant. Restent à développer : images de sections avec stockage adapté, historique de restauration et composition plus libre des blocs métier.
+
 

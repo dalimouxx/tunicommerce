@@ -1,3 +1,4 @@
+import {saveHomeDraft,HomeConflictError,type HomeFetcher} from '../modules/shops/home-editor-state';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID} from 'node:crypto';
@@ -109,6 +110,26 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
   });
   await t.test('legacy COD ordering remains on its existing API after homepage publication',async()=>{
    const r=await fetch(base+'/api/boutiques/'+legacyWorkspace.slug+'/checkout',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({requestId:randomUUID(),customer:{name:'Client de recette',phone:'22123456',city:'Tunis',address:'Adresse fictive'},items:[{productId:'p1',quantity:1}]})});assert.equal(r.status,201);const receipt=await r.json();assert.ok(receipt.reference);assert.match(receipt.trackingUrl,/^\/suivi\/[a-f0-9]{64}$/);assert.ok((await (await get(legacyPublic)).text()).includes(legacyDraft.fr.heroTitle));
+  });
+
+  const editorFetch:HomeFetcher=(url,init)=>fetch(base+url,{...init,headers:{...init.headers,cookie:a.cookie,origin}});
+  await t.test('two editor tabs merge separate fields without losing changes or publishing drafts',async()=>{
+   const baseRecord:HomeEditorRecord=await (await get(endpoint,a.cookie)).json();const mine=structuredClone(baseRecord.draft),theirs=structuredClone(baseRecord.draft);mine.fr.announcement='LOCAL-'+mark;theirs.ar.announcement='REMOTE-'+mark;
+   const published=(await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}})).published;
+   assert.equal((await put(endpoint,{action:'save',version:baseRecord.version,content:theirs},a.cookie)).status,200);
+   const merged=await saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,editorFetch);assert.equal(merged.draft.fr.announcement,mine.fr.announcement);assert.equal(merged.draft.ar.announcement,theirs.ar.announcement);assert.deepEqual((await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}})).published,published);
+  });
+  await t.test('a real same-field conflict preserves the remote draft and leaves the local text intact',async()=>{
+   const baseRecord:HomeEditorRecord=await (await get(endpoint,a.cookie)).json();const mine=structuredClone(baseRecord.draft),theirs=structuredClone(baseRecord.draft);mine.fr.heroTitle='MON-TEXTE-'+mark;theirs.fr.heroTitle='AUTRE-ONGLET-'+mark;
+   assert.equal((await put(endpoint,{action:'save',version:baseRecord.version,content:theirs},a.cookie)).status,200);
+   await assert.rejects(saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,editorFetch),error=>error instanceof HomeConflictError&&error.latest.draft.fr.heroTitle===theirs.fr.heroTitle&&error.conflicts.includes('fr.heroTitle'));
+   assert.equal(mine.fr.heroTitle,'MON-TEXTE-'+mark);assert.equal((await (await get(endpoint,a.cookie)).json()).draft.fr.heroTitle,theirs.fr.heroTitle);
+  });
+  await t.test('a lost successful save response can be retried without another write or a reload error',async()=>{
+   const baseRecord:HomeEditorRecord=await (await get(endpoint,a.cookie)).json();const mine=structuredClone(baseRecord.draft);mine.fr.heroDescription='REPONSE-PERDUE-'+mark;let lose=true;
+   const unreliable:HomeFetcher=async(url,init)=>{const response=await editorFetch(url,init);if(lose&&init.method==='PUT'&&response.ok){lose=false;await response.arrayBuffer();throw new TypeError('Simulated connection lost after commit');}return response;};
+   await assert.rejects(saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,unreliable),/connection lost/);const savedVersion=(await (await get(endpoint,a.cookie)).json()).version;
+   const retried=await saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,editorFetch);assert.equal(retried.version,savedVersion);assert.equal(retried.draft.fr.heroDescription,mine.fr.heroDescription);
   });
  }finally{stopTestServer(server);await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });
