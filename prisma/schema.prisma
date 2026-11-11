@@ -394,6 +394,7 @@ model ShopHome {
   shopId String @id
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
   draft Json
+  history Json @default("[]")
   published Json?
   version Int @default(1)
   publishedVersion Int?

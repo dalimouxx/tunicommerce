@@ -155,9 +155,11 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    for(const [slug,id] of [[b.shop.slug,ownPhoto.id],[a.shop.slug,unusedPhoto.id],[a.shop.slug,foreignPhoto.id]])assert.equal((await get(publicPhoto(slug,id),a.cookie)).status,404);
    await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'SUSPENDED'}});assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id),a.cookie)).status,404);await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'ACTIVE'}});
   });
-  await t.test('a published snapshot pins its photo after the draft changes, until it is unpublished',async()=>{
+  await t.test('history pins a formerly published photo until all retained references expire',async()=>{
    const next=structuredClone(imageDraft);next.fr.sections=[imageSection('https://cdn.example.com/another.jpg')];assert.equal((await change('save',next)).status,200);assert.equal((await removePhoto(ownPhoto.id)).status,409);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,200);
-   assert.equal((await change('unpublish')).status,200);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,404);assert.equal((await removePhoto(ownPhoto.id)).status,200);
+   assert.equal((await change('unpublish')).status,200);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,404);assert.equal((await removePhoto(ownPhoto.id)).status,409);
+   for(let n=0;n<20;n++){next.fr.announcement='Étape sans cette photo '+n;assert.equal((await change('save',next)).status,200);}
+   assert.equal((await removePhoto(ownPhoto.id)).status,200);
   });
   await t.test('a photo deletion racing a home save never leaves a saved dangling reference',async()=>{
    const next=structuredClone(record.draft);next.fr.sections=[imageSection(photoUrl(unusedPhoto.id))];const results=await Promise.all([put(endpoint,{action:'save',version:record.version,content:next},a.cookie),removePhoto(unusedPhoto.id)]);const statuses=results.map(r=>r.status);assert.ok(statuses[0]===200&&statuses[1]===409||statuses[0]===403&&statuses[1]===200,JSON.stringify(statuses));
@@ -166,6 +168,49 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    const photo=await prisma.productMedia.create({data:{workspaceId:legacyWorkspace.id,...photoData}});const home=structuredClone(legacyRecord.draft);home.fr.sections=[imageSection(photoUrl(photo.id))];assert.equal((await legacyChange('save',home)).status,200);assert.equal((await legacyChange('publish')).status,200);
    const html=await (await get(legacyPublic)).text();assert.ok(html.includes(publicPhoto(legacy.shop.slug,photo.id)));assert.equal((await get(publicPhoto(legacy.shop.slug,photo.id))).status,200);
    await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:false}});assert.equal((await get(publicPhoto(legacy.shop.slug,photo.id),legacy.cookie)).status,404);const draftHtml=await (await get(legacyPreview,legacy.cookie)).text();assert.ok(draftHtml.includes(photoUrl(photo.id)));assert.equal((await get(photoUrl(photo.id),legacy.cookie)).status,200);
+  });
+  const historyApi=endpoint+'/history';
+  record=await (await get(endpoint,a.cookie)).json();
+  type Summary={id:string;version:number;action:string;title:string};
+  let savedRevision:string;
+  await t.test('history is private, owner-only, bounded and does not leak full content in summaries',async()=>{
+   assert.equal((await get(historyApi)).status,401);assert.equal((await get(historyApi,b.cookie)).status,404);
+   await prisma.membership.create({data:{shopId:a.shop.id,userId:b.user.id,role:'VIEWER'}});assert.equal((await get(historyApi,b.cookie)).status,403);
+   const response=await get(historyApi,a.cookie);assert.equal(response.status,200);assert.match(response.headers.get('cache-control')||'',/no-store/);
+   const {revisions}=await response.json();assert.equal(revisions.length,20);assert.equal('content' in revisions[0],false);assert.ok(revisions[0].version>revisions[19].version);
+   assert.equal((await get(historyApi+'/invalid',a.cookie)).status,404);
+   const empty=await (await get('/api/v1/shops/'+b.shop.id+'/home/history',b.cookie)).json();assert.deepEqual(empty,{revisions:[]});assert.equal(await prisma.shopHome.count({where:{shopId:b.shop.id}}),0);
+  });
+  await t.test('selected revisions retain both languages and restore only the draft, without changing publication or commerce',async()=>{
+   const first=structuredClone(record.draft);first.fr.heroTitle='HISTOIRE-UNE-'+mark;first.ar.heroTitle='نسخة سابقة '+mark;
+   assert.equal((await change('save',first)).status,200);const list=await (await get(historyApi,a.cookie)).json();savedRevision=list.revisions[0].id;
+   const detail=await get(historyApi+'/'+savedRevision,a.cookie);assert.equal(detail.status,200);const revision=await detail.json();assert.deepEqual(revision.content,first);
+   assert.equal((await get(historyApi+'/'+savedRevision,b.cookie)).status,403);assert.equal((await get('/api/v1/shops/'+b.shop.id+'/home/history/'+savedRevision,b.cookie)).status,404);
+   const next=structuredClone(first);next.fr.heroTitle='HISTOIRE-DEUX-'+mark;assert.equal((await change('save',next)).status,200);assert.equal((await change('publish')).status,200);
+   const before=await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}}),commerce=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});
+   const response=await put(endpoint,{action:'restoreRevision',version:record.version,revisionId:savedRevision},a.cookie);assert.equal(response.status,200);record=await response.json();assert.deepEqual(record.draft,first);assert.equal(record.hasUnpublishedChanges,true);
+   const after=await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}});assert.deepEqual(after.published,before.published);assert.equal(after.publishedAt?.toISOString(),before.publishedAt?.toISOString());assert.equal(after.publishedVersion,before.publishedVersion);assert.deepEqual(await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}}),commerce);
+   const live=await (await get(publicPath)).text();assert.ok(live.includes(next.fr.heroTitle));assert.equal(live.includes(first.fr.heroTitle),false);
+  });
+  await t.test('rejected restores never add history entries, and foreign revision ids cannot be used',async()=>{
+   const before=await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}}),body={action:'restoreRevision',version:record.version,revisionId:savedRevision};
+   assert.equal((await put(endpoint,body,a.cookie,'https://evil.test')).status,403);assert.equal((await put(endpoint,body,b.cookie)).status,403);
+   assert.equal((await put(endpoint,{...body,version:0},a.cookie)).status,409);assert.equal((await put(endpoint,{...body,revisionId:randomUUID()},a.cookie)).status,404);
+   const foreignList=await (await get(legacyApi+'/history',legacy.cookie)).json();assert.ok(foreignList.revisions.length);assert.equal((await put(endpoint,{...body,revisionId:foreignList.revisions[0].id},a.cookie)).status,404);
+   assert.deepEqual(await prisma.shopHome.findUniqueOrThrow({where:{shopId:a.shop.id}}),before);
+  });
+  await t.test('two restorations of the same expected version serialize with a single history entry',async()=>{
+   const before=record.version,body={action:'restoreRevision',version:before,revisionId:savedRevision};const results=await Promise.all([put(endpoint,body,a.cookie),put(endpoint,body,a.cookie)]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);record=await results.find(r=>r.ok)!.json();assert.equal(record.version,before+1);
+   const {revisions}=await (await get(historyApi,a.cookie)).json();assert.equal(revisions.filter((r:Summary)=>r.version===record.version).length,1);assert.equal(revisions[0].action,'restoreRevision');
+  });
+  await t.test('pre-upgrade legacy drafts and distinct publication are checkpointed only on the next mutation',async()=>{
+   const previous=await prisma.shopHome.findUniqueOrThrow({where:{shopId:legacy.shop.id}}),older=structuredClone(legacyRecord.draft);older.fr.heroTitle='PUBLICATION-AVANT-HISTORIQUE-'+mark;
+   await prisma.shopHome.update({where:{shopId:legacy.shop.id},data:{history:[],published:older as never,publishedAt:new Date(),publishedVersion:1}});
+   const list=await (await get(legacyApi+'/history',legacy.cookie)).json();assert.deepEqual(list,{revisions:[]});assert.deepEqual((await prisma.shopHome.findUniqueOrThrow({where:{shopId:legacy.shop.id}})).history,[]);
+   const next=structuredClone(legacyRecord.draft);next.fr.heroTitle='NOUVEAU-LEGACY-'+mark;assert.equal((await legacyChange('save',next)).status,200);
+   const {revisions}=await (await get(legacyApi+'/history',legacy.cookie)).json();assert.equal(revisions.length,3);assert.deepEqual(revisions.map((r:Summary)=>r.action),['save','checkpoint','publishedCheckpoint']);
+   const oldDraft=await (await get(legacyApi+'/history/'+revisions[1].id,legacy.cookie)).json(),oldPublished=await (await get(legacyApi+'/history/'+revisions[2].id,legacy.cookie)).json();assert.deepEqual(oldDraft.content,previous.draft);assert.deepEqual(oldPublished.content,older);
+   const response=await put(legacyApi,{action:'restoreRevision',version:legacyRecord.version,revisionId:revisions[1].id},legacy.cookie);assert.equal(response.status,200);legacyRecord=await response.json();assert.deepEqual(legacyRecord.draft,previous.draft);assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);
   });
  }finally{stopTestServer(server);await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });

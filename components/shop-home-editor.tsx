@@ -8,6 +8,7 @@ import {HomeConflictError,HomeRequestError,homeEditorRequest,saveHomeDraft,merge
 import styles from './shop-pages.module.css';
 import homeStyles from './shop-home.module.css';
 import ShopHomeSections from './shop-home-sections';
+import ShopHomeHistory from './shop-home-history';
 
 export default function ShopHomeEditor({shopId,userId,publicPath,legacy=false,initial}:{shopId:string;userId:string;publicPath:string|null;legacy?:boolean;initial:HomeEditorRecord}){
  const [record,setRecord]=useState(initial),[content,setContent]=useState(initial.draft),[lang,setLang]=useState<'fr'|'ar'>('fr');
@@ -39,20 +40,21 @@ export default function ShopHomeEditor({shopId,userId,publicPath,legacy=false,in
    type==='cta'?{id,type,title,text:'Découvrez notre collection.',label:'Voir les produits'}:{id,type,title,text:'Votre texte'};
   localized({sections:[...current.sections,section]});
  }
- async function request(action:'save'|'publish'|'unpublish'|'restore'|'reload'|'overwrite'){
+ async function request(action:'save'|'publish'|'unpublish'|'restore'|'restoreRevision'|'reload'|'overwrite',revisionId?:string){
   if(inFlight.current||mediaBusy)return;
   setMessage('');
   if(action==='save'||action==='overwrite'){const valid=homeContent.safeParse(content);if(!valid.success){const issue=valid.error.issues[0];setError(homeValidationMessage(issue));setFocusPath(issue.path.join('.'));if(issue.path[0]==='ar'||issue.path[0]==='fr')setLang(issue.path[0]);return;}}
   if(action==='reload'&&(dirty||recovery)&&!window.confirm('Charger la version du serveur et abandonner les modifications non enregistrées, y compris la copie locale ?'))return;
   if(action==='restore'&&!window.confirm('Remplacer le brouillon par la version actuellement publiée ?'))return;
+  if(action==='restoreRevision'&&(dirty||recovery||conflict||!revisionId))return;
   if(action==='unpublish'&&!window.confirm('Revenir à l’accueil du thème ? Le brouillon sera conservé, ainsi que les produits et commandes.'))return;
   if(action==='overwrite'&&(!conflict||!window.confirm('Remplacer le brouillon enregistré sur le serveur par les textes et sections affichés ici ?')))return;
   inFlight.current=true;setBusy(true);setError('');setMessage('');setFocusPath('');
   const controller=new AbortController();activeRequest.current=controller;const timeout=setTimeout(()=>controller.abort(),45000);
   try{
-   const data=action==='save'||action==='overwrite'?await saveHomeDraft(endpoint,action==='overwrite'?conflict!.latest:record,content,controller.signal):await homeEditorRequest(endpoint,action==='reload'?undefined:{action,version:record.version},controller.signal);
+   const data=action==='save'||action==='overwrite'?await saveHomeDraft(endpoint,action==='overwrite'?conflict!.latest:record,content,controller.signal):await homeEditorRequest(endpoint,action==='reload'?undefined:{action,version:record.version,...(action==='restoreRevision'?{revisionId}:{})},controller.signal);
    accept(data);
-   setMessage(action==='save'||action==='overwrite'?'Brouillon enregistré. Publiez-le pour le rendre visible.':action==='publish'?'Accueil publié dans les deux langues.':action==='unpublish'?'Accueil du thème rétabli. Le brouillon est conservé.':action==='restore'?'Version publiée recopiée dans le brouillon.':'Dernière version chargée.');
+   setMessage(action==='save'||action==='overwrite'?'Brouillon enregistré. Publiez-le pour le rendre visible.':action==='publish'?'Accueil publié dans les deux langues.':action==='unpublish'?'Accueil du thème rétabli. Le brouillon est conservé.':action==='restore'?'Version publiée recopiée dans le brouillon.':action==='restoreRevision'?'Ancienne version restaurée dans le brouillon. Vérifie-la avant de la publier.':'Dernière version chargée.');
   }catch(error){
    if(error instanceof HomeConflictError){setConflict(error);setError(error.message);}
    else if(error instanceof HomeRequestError&&error.status===409){try{setConflict(new HomeConflictError(await homeEditorRequest(endpoint,undefined,controller.signal),[]));setError('Le brouillon enregistré a changé. Vérifie la version du serveur avant de publier ou remplacer du contenu.');}catch{setError('La version a changé et le serveur ne répond pas. Tes modifications sont conservées ; réessaie.');}}
@@ -111,6 +113,7 @@ export default function ShopHomeEditor({shopId,userId,publicPath,legacy=false,in
    {record.publishedAt&&<><button className={styles.secondary} disabled={busy||mediaBusy||dirty||!!conflict||!!recovery} onClick={()=>void request('restore')}>Restaurer le brouillon depuis la version publiée</button><button className={styles.secondary} disabled={busy||mediaBusy||dirty||!!conflict||!!recovery} onClick={()=>void request('unpublish')}>Revenir à l’accueil du thème</button></>}
    {publicPath&&<Link href={publicPath+'?lang='+lang} target="_blank" rel="noopener noreferrer">Voir la boutique publique ↗</Link>}
   </div><p className={styles.muted}>La publication exige une boutique publiée et un abonnement valide. Les images de l’en-tête se règlent dans Apparence. Le catalogue, le panier et les conditions de commande restent gérés par la boutique.</p>
+  <ShopHomeHistory endpoint={endpoint} version={record.version} disabled={busy||mediaBusy||dirty||!!conflict||!!recovery} onRestore={id=>void request('restoreRevision',id)}/>
  </div>;
 }
 
