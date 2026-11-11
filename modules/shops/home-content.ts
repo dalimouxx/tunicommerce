@@ -20,6 +20,7 @@ export function homePhotoIds(content:HomeContent){return [...new Set([...content
 export type HomeEditorRecord={draft:HomeContent;version:number;publishedAt:string|null;publishedVersion:number|null;hasUnpublishedChanges:boolean};
 export const changeHomeInput=z.discriminatedUnion('action',[
  z.object({action:z.literal('save'),version:z.number().int().nonnegative(),content:homeContent}).strict(),
+ z.object({action:z.literal('restoreRevision'),version:z.number().int().nonnegative(),revisionId:z.uuid()}).strict(),
  z.object({action:z.enum(['publish','unpublish','restore']),version:z.number().int().nonnegative()}).strict()
 ]);
 export function initialHomeContent():HomeContent{

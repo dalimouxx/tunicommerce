@@ -6,6 +6,8 @@ import {isPublicIsolatedShop} from './publication';
 import {homeContent,initialHomeContent,changeHomeInput,type HomeEditorRecord} from './home-content';
 import type {z} from 'zod';
 import {assertHomePhotoOwnership} from './home-image-service';
+import {randomUUID} from 'node:crypto';
+import {readHomeHistory,appendHomeHistory,summarizeHomeRevision,type HomeRevision} from './home-history';
 
 /** Homepage ownership covers the existing workspace shop as well as independent shops. */
 export async function homeOwner(userId:string,shopId:string,tx:Prisma.TransactionClient=prisma){
@@ -36,6 +38,15 @@ export async function getShopHome(userId:string,shopId:string){
  await homeOwner(userId,shopId);
  return editor(await prisma.shopHome.findUnique({where:{shopId}}));
 }
+export async function getShopHomeHistory(userId:string,shopId:string,revisionId?:string){
+ await homeOwner(userId,shopId);
+ const row=await prisma.shopHome.findUnique({where:{shopId},select:{history:true}});
+ const history=readHomeHistory(row?.history);
+ if(!revisionId)return {revisions:history.toReversed().map(summarizeHomeRevision)};
+ const revision=history.find(entry=>entry.id===revisionId);
+ if(!revision)throw new HttpError(404,'Version introuvable ou sortie de l’historique.');
+ return revision;
+}
 export async function changeShopHome(userId:string,shopId:string,input:z.infer<typeof changeHomeInput>){
  return prisma.$transaction(async tx=>{
   const candidate=await homeOwner(userId,shopId,tx);
@@ -48,22 +59,43 @@ export async function changeShopHome(userId:string,shopId:string,input:z.infer<t
   const row=await tx.shopHome.findUnique({where:{shopId}});
   if((row?.version||0)!==input.version)throw new HttpError(409,'L’accueil a changé. Rechargez avant de réessayer.');
   if(!row&&input.action!=='save')throw new HttpError(409,'Enregistrez un brouillon avant de continuer.');
+  let history=readHomeHistory(row?.history);
+  const snapshot=(action:HomeRevision['action'],content:unknown,version:number,date=new Date())=>{
+   history=appendHomeHistory(history,{id:randomUUID(),version,createdAt:date.toISOString(),action,content:homeContent.parse(content)});
+  };
+  // Lazily retain the two existing states on the first successful mutation after upgrade.
+  if(row&&!history.length){
+   if(row.publishedAt&&JSON.stringify(row.draft)!==JSON.stringify(row.published))snapshot('publishedCheckpoint',row.published,row.publishedVersion??row.version,row.publishedAt);
+   snapshot('checkpoint',row.draft,row.version,row.updatedAt);
+  }
+  const historyData=()=>history as unknown as Prisma.InputJsonValue;
   if(input.action==='save'){
    await assertHomePhotoOwnership(tx,userId,input.content);
-   return editor(await tx.shopHome.upsert({where:{shopId},create:{shopId,draft:input.content as Prisma.InputJsonValue,version:1},update:{draft:input.content as Prisma.InputJsonValue,version:{increment:1}}}));
+   snapshot('save',input.content,(row?.version||0)+1);
+   return editor(await tx.shopHome.upsert({where:{shopId},create:{shopId,draft:input.content as Prisma.InputJsonValue,history:historyData(),version:1},update:{draft:input.content as Prisma.InputJsonValue,history:historyData(),version:{increment:1}}}));
   }
   if(input.action==='publish'){
    if(!homePublicPath(await homeOwner(userId,shopId,tx)))
     throw new HttpError(409,'Publiez la boutique avec un abonnement valide avant de publier son accueil.');
    await assertHomePhotoOwnership(tx,userId,homeContent.parse(row!.draft));
-   return editor(await tx.shopHome.update({where:{shopId},data:{published:homeContent.parse(row!.draft) as Prisma.InputJsonValue,publishedAt:new Date(),publishedVersion:row!.version,version:{increment:1}}}));
+   snapshot('publish',row!.draft,row!.version+1);
+   return editor(await tx.shopHome.update({where:{shopId},data:{published:homeContent.parse(row!.draft) as Prisma.InputJsonValue,publishedAt:new Date(),publishedVersion:row!.version,history:historyData(),version:{increment:1}}}));
+  }
+  if(input.action==='restoreRevision'){
+   const revision=history.find(entry=>entry.id===input.revisionId);
+   if(!revision)throw new HttpError(404,'Version introuvable ou sortie de l’historique.');
+   await assertHomePhotoOwnership(tx,userId,revision.content);
+   snapshot('restoreRevision',revision.content,row!.version+1);
+   return editor(await tx.shopHome.update({where:{shopId},data:{draft:revision.content as Prisma.InputJsonValue,history:historyData(),version:{increment:1}}}));
   }
   if(input.action==='restore'){
    if(!row!.publishedAt)throw new HttpError(409,'Aucune version publiée à restaurer.');
    await assertHomePhotoOwnership(tx,userId,homeContent.parse(row!.published));
-   return editor(await tx.shopHome.update({where:{shopId},data:{draft:homeContent.parse(row!.published) as Prisma.InputJsonValue,version:{increment:1}}}));
+   snapshot('restore',row!.published,row!.version+1);
+   return editor(await tx.shopHome.update({where:{shopId},data:{draft:homeContent.parse(row!.published) as Prisma.InputJsonValue,history:historyData(),version:{increment:1}}}));
   }
-  return editor(await tx.shopHome.update({where:{shopId},data:{published:Prisma.DbNull,publishedAt:null,publishedVersion:null,version:{increment:1}}}));
+  snapshot('unpublish',row!.draft,row!.version+1);
+  return editor(await tx.shopHome.update({where:{shopId},data:{published:Prisma.DbNull,publishedAt:null,publishedVersion:null,history:historyData(),version:{increment:1}}}));
  });
 }
 /** Caller must already have authorized this public shop. Draft fields never leave this query. */

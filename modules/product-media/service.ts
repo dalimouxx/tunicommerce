@@ -6,6 +6,7 @@ import type {State} from '../commerce/types';
 import {LIBRARY_LIMIT,productPhotoUrl} from './validation';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import {homeContent,homePhotoIds} from '../shops/home-content';
+import {readHomeHistory} from '../shops/home-history';
 
 export async function listProductPhotos(ownerId:string){
  const shop=await prisma.workspace.findUnique({where:{ownerId},select:{id:true,plan:true}});
@@ -66,9 +67,9 @@ export async function removeProductPhoto(ownerId:string,id:string){
   const url=productPhotoUrl(id);
   if(state.products.some(p=>p.imageUrl===url))
    throw new HttpError(409,'Cette image est utilisée par un produit. Changez sa photo avant de la supprimer.');
-  const homes=await tx.shopHome.findMany({where:{shop:{organization:{ownerId}}},select:{draft:true,published:true}});
-  if(homes.some(home=>[home.draft,home.published].some(value=>{const parsed=homeContent.safeParse(value);return parsed.success&&homePhotoIds(parsed.data).includes(id);})))
-   throw new HttpError(409,'Cette photo est utilisée dans un accueil enregistré. Retire-la du brouillon et de la version publiée avant de la supprimer.');
+  const homes=await tx.shopHome.findMany({where:{shop:{organization:{ownerId}}},select:{draft:true,published:true,history:true}});
+  if(homes.some(home=>[home.draft,home.published,...readHomeHistory(home.history).map(entry=>entry.content)].some(value=>{const parsed=homeContent.safeParse(value);return parsed.success&&homePhotoIds(parsed.data).includes(id);})))
+   throw new HttpError(409,'Cette photo est conservée par un accueil ou son historique. Elle sera supprimable quand elle ne figurera plus dans le brouillon, la publication ni les 20 dernières étapes.');
   await tx.productMedia.delete({where:{id}});
   // Invalidates a racing commerce optimistic write that still references this image.
   await tx.workspace.update({where:{id:row.id},data:{version:{increment:1}}});
