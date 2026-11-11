@@ -33,6 +33,6 @@ Les anciens tests qui créaient une boutique par une lecture HTTP préparent mai
 
 Le service existant utilise le runtime Node natif de Render, sans Dockerfile ni Docker Compose dans ce dépôt. Le build et le démarrage, les migrations et PostgreSQL sont vérifiés. Les workflows GitHub utilisent PostgreSQL 18 en conteneur ; ceci ne constitue pas une certification Docker de l'application.
 
-`render.yaml` prévoit `/api/health`, qui vérifie le serveur et la base de données. Le service Render existant utilise encore une sonde TCP : son champ « Health Check Path » reste à régler sur `/api/health` dans le tableau de bord. Le connecteur de cette session ne propose pas de mise à jour de ce champ et le navigateur de contrôle est indisponible. Aucun forfait ni service externe supplémentaire n'est activé.
+`render.yaml` prévoit `/api/health`, qui vérifie le serveur et la base de données. Le propriétaire a activé cette sonde sur le service existant le 11 novembre 2026 ; le réglage `/api/health`, le déploiement en ligne et la réponse HTTP 200 ont été confirmés via le connecteur Render.
 
 Le test visuel interactif n'a pas pu être exécuté dans cette session, en raison de l'indisponibilité du navigateur. Les tests HTTP fonctionnent sur le serveur de production compilé. Les prestataires réels de paiement, livraison, SMTP, SMS/WhatsApp et leurs parcours externes restent à choisir, configurer et tester. Cet audit ne remplace pas un test d'intrusion indépendant ni un test de charge en conditions réelles.

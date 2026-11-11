@@ -4,6 +4,7 @@ import {redirect} from 'next/navigation';
 import {getCurrentUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import {isOpen} from '../../modules/platform/public';
+import {isPublicIsolatedShop} from '../../modules/shops/publication';
 import {shopAccess} from '../../modules/shops/navigation';
 import {countMerchantShopSlots} from '../../modules/shops/plan-limits';
 import {effectiveLimit} from '../../modules/subscriptions/validation';
@@ -26,7 +27,8 @@ export default async function MyShops(){
     role:true,active:true,
     shop:{select:{
      id:true,name:true,slug:true,status:true,legacyWorkspaceId:true,
-     organization:{select:{name:true}},
+     organization:{select:{name:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}},
+     commerce:{select:{shopId:true}},
      legacyWorkspace:{select:{slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}}
     }}
    },
@@ -52,7 +54,7 @@ export default async function MyShops(){
    <header className={styles.header}>
     <div><span className={styles.eyebrow}>ESPACE MARCHAND</span><h1>Mes boutiques</h1>
     <p>Retrouvez les boutiques auxquelles votre compte a réellement accès. Les données de chaque marchand restent séparées.</p></div>
-    <div><Link href="/marchand" className={styles.back}>Retour à mon espace</Link><PortalLogout portal="MERCHANT"/></div>
+    <div><Link href="/marchand" className={styles.back}>Retour à mon espace</Link>{(legacy||actor.role==='ADMIN')&&<Link href="/mes-boutiques/nouvelle" className={styles.primary}>Créer une boutique ↗</Link>}<PortalLogout portal="MERCHANT"/></div>
    </header>
    {capacity&&subscription&&<section className={styles.card}>
     <span className={styles.kicker}>CAPACITÉ DE VOTRE ABONNEMENT</span>
@@ -76,7 +78,8 @@ export default async function MyShops(){
    <div className={styles.grid}>{memberships.map(({shop,role,active})=>{
     const access=shopAccess({id:shop.id,legacyWorkspaceId:shop.legacyWorkspaceId,status:shop.status,active,role},legacy?.id||null);
     const linked=shop.legacyWorkspace;
-    const publicSlug=linked?.slug&&isOpen(linked)?linked.slug:null;
+    const ownerSubscription=shop.organization.owner.workspace;
+    const publicPath=linked?.slug&&isOpen(linked)?'/boutiques/'+encodeURIComponent(linked.slug):isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,initialized:!!shop.commerce,subscriptionStatus:ownerSubscription?.subscriptionStatus||'',subscriptionEndsAt:ownerSubscription?.subscriptionEndsAt||null})?'/vitrines/'+encodeURIComponent(shop.slug):null;
     return <section key={shop.id} className={styles.card}>
      <span className={styles.kicker}>{shop.organization.name}</span>
      <h2>{shop.name}</h2>
@@ -86,7 +89,8 @@ export default async function MyShops(){
       {(access.manageOwnCommerce||(active&&role==='OWNER'&&shop.legacyWorkspaceId===null))&&<Link className={styles.primary} href={"/mes-boutiques/"+encodeURIComponent(shop.id)}>Tableau de bord boutique</Link>}
       {!access.manageOwnCommerce&&access.mayOpenTeam&&shop.legacyWorkspaceId===null&&<Link className={styles.primary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)}>Mon espace collaborateur</Link>}
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
-      {publicSlug&&<Link className={styles.secondary} href={'/boutiques/'+encodeURIComponent(publicSlug)}>Vitrine publique</Link>}
+      {publicPath&&<Link className={styles.secondary} href={publicPath}>Vitrine publique</Link>}
+      {role==='OWNER'&&!shop.legacyWorkspaceId&&shop.commerce&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/apercu'}>Aperçu privé</Link>}
      </div>
     </section>;
    })}</div>

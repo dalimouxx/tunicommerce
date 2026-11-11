@@ -25,11 +25,11 @@ export async function POST(req:Request){
   const user=await getCurrentUser();
   if(!user)return respond({error:'Connexion requise'},401);
   const {name}=organizationInput.parse(await readJson(req));
-  const count=await prisma.organization.count({where:{ownerId:user.userId}});
-  if(count>=10)return respond({error:'Limite d’organisations atteinte'},409);
-  const organization=await prisma.organization.create({
-   data:{name,ownerId:user.userId},
-   select:{id:true,name:true,createdAt:true}
+  const organization=await prisma.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${user.userId}))`;
+   const count=await tx.organization.count({where:{ownerId:user.userId}});
+   if(count>=10)throw new HttpError(409,'Limite de groupes de boutiques atteinte');
+   return tx.organization.create({data:{name,ownerId:user.userId},select:{id:true,name:true,createdAt:true}});
   });
   return respond({organization},201);
  }catch(e){

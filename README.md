@@ -1,10 +1,12 @@
-# Tunicom — GitHub / Render (0.4.0)
+# Tunicom — plateforme de commerce (0.6.0)
 
-Version autonome de l’application de test : React / Next.js sur Node.js, PostgreSQL et Prisma. Le code métier de la version privée 0.3 est conservé. Cette livraison prépare le transfert hors de Sites ; elle ne constitue pas encore le SaaS complet du cahier des charges.
+Plateforme multi-boutique sur Next.js, Node.js, PostgreSQL et Prisma. Les espaces marchand et Super Admin ont des sessions distinctes. Le socle commercial historique et les boutiques indépendantes sont conservés. Les prestataires externes restent à choisir et à valider avant un lancement commercial.
 
-## Mise à jour en revue — 10 novembre 2026
+## Socle technique et parcours marchands
 
 Le socle utilise désormais Next.js 16.4.6, Prisma 7.10.1 avec `@prisma/adapter-pg`, et Zod 4.6.7. `prisma.config.ts` configure la CLI ; les migrations SQL existantes sont conservées. Les commandes de démarrage ci-dessous restent applicables. Voir [le bilan de développement et de vérification](docs/administration-saas-2026-11-10.md) pour les fonctions SaaS ajoutées et les limites de validation.
+
+Le parcours de création d’une boutique indépendante est décrit dans [Création et préparation des boutiques](docs/merchant-shop-creation.md). La gestion et les vitrines utilisent des accès distincts ; les anciens thèmes restent disponibles.
 
 ## Fonctionnalités conservées
 Catalogue, stock, commandes, clients, call center simple, zones et tarifs, transporteurs manuels, COD, dépenses, coupons, panier privé, retours partiels, remboursements enregistrés, factures commerciales, statistiques et audit.
@@ -50,11 +52,11 @@ TEST_DATABASE_URL=postgresql://.../tunicommerce_test npm run test:integration
 Pour les tests d’intégration, appliquer d’abord les migrations à cette base via `DATABASE_URL=postgresql://.../tunicommerce_test npm run db:migrate`. Le workflow CI configure ces étapes avec PostgreSQL 18. Les identifiants PostgreSQL présents dans ce workflow sont uniquement ceux du conteneur éphémère de CI.
 
 ## Limites
-Un propriétaire et une boutique par instance de test. Pas d’inscription publique, de récupération de mot de passe par e-mail, de MFA, d’équipe/RBAC ni de boutique publique. Les transporteurs, messageries, publicités et IA ne sont pas connectés. Les factures ne sont pas encore des factures fiscales validées.
+Inscription publique, comptes, MFA configurable, équipes/RBAC, abonnements, boutiques publiques et gestion multi-boutique sont implémentés. La création guidée est accessible depuis « Mes boutiques ». La récupération par e-mail dépend d’un SMTP et d’un worker configurés ; les transporteurs, paiements en ligne, SMS/WhatsApp et l’IA attendent leurs prestataires. Les factures commerciales nécessitent une adaptation avant un usage fiscal.
 
 Les données métier restent un agrégat JSON versionné dans PostgreSQL. Les comptes, sessions et compteurs de sécurité ont leurs tables relationnelles ; la normalisation complète des produits, commandes, stocks et organisations reste à réaliser avant la montée en charge. La migration technique vers PostgreSQL/Prisma ne signifie donc pas que l’architecture SaaS complète est terminée.
 
-Les données de l’ancien site ne sont pas copiées automatiquement : cette nouvelle instance commence avec les données fictives signalées. Aucun contenu réel du site privé n’a été extrait. Préparer un export/import contrôlé si des données réelles doivent être transférées.
+Les données de l’ancien site ne sont pas copiées automatiquement. Les boutiques créées depuis l’inscription ou le nouveau parcours démarrent vides ; les démonstrations sont signalées séparément. Aucun contenu réel du site privé n’a été extrait. Préparer un export/import contrôlé si des données réelles doivent être transférées.
 
 La limitation des connexions est globale à cette instance de test (20 tentatives/10 minutes), ce qui peut temporairement bloquer un utilisateur légitime ; une stratégie multi-utilisateurs plus fine sera nécessaire pour le SaaS.
 
@@ -76,4 +78,4 @@ Les produits acceptent une description et une photo par lien HTTPS. Les réglage
 
 Les nouvelles commandes publiques disposent d’un lien privé `/suivi/{jeton}` avec un jeton aléatoire de 256 bits. Ce lien expose uniquement les articles, montants, statut, transporteur et échanges client prévus ; jamais les coordonnées du client ni les notes internes. Il permet de demander une annulation avant expédition ou un retour après livraison. Les marchands voient les demandes en attente et peuvent répondre. Accepter une annulation annule la commande et restitue le stock une seule fois. Accepter un retour n’effectue aucun remboursement ou mouvement de stock ; les modules Retours existants gèrent la réception et le remboursement.
 
-Limites : pas encore de téléversement de photos, de compte client synchronisé entre appareils ou de notifications e-mail/SMS. Les liens privés doivent être conservés et ne pas être partagés. Les anciennes commandes ne reçoivent pas rétroactivement de lien de suivi.
+Les téléversements de médias historiques sont disponibles. Les comptes clients synchronisés entre appareils et les notifications de commande e-mail/SMS restent à développer. Les liens privés doivent être conservés et ne pas être partagés. Les anciennes commandes ne reçoivent pas rétroactivement de lien de suivi.

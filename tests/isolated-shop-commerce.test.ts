@@ -14,6 +14,8 @@ test('new shop state starts empty and non-demo',()=>{
  const state=newShopState('Nouveau magasin');
  assert.equal(state.shop.name,'Nouveau magasin');
  assert.equal(state.demo,false);
+ assert.equal(state.shop.phone,'');
+ assert.equal(state.shop.address,'');
  assert.equal(state.orders.length,0);
  assert.equal(state.customers.length,0);
  assert.equal(state.products.length,0);
