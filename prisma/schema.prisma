@@ -112,6 +112,8 @@ model Shop {
   invitations    ShopInvitation[]
   commerce       ShopCommerce?
   pages          ShopPage[]
+  domainClaims   ShopDomainClaim[]
+  domainBindings ShopDomainBinding[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -360,4 +362,28 @@ model ShopPage {
  updatedAt DateTime @updatedAt
  @@unique([shopId,slug])
  @@index([shopId,publishedAt])
+}
+
+model ShopDomainClaim {
+ id String @id @default(uuid())
+ shopId String
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ hostname String
+ token String
+ expiresAt DateTime
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ binding ShopDomainBinding?
+ @@unique([shopId,hostname])
+ @@index([shopId])
+}
+
+model ShopDomainBinding {
+ hostname String @id
+ shopId String
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ claimId String @unique
+ claim ShopDomainClaim @relation(fields:[claimId],references:[id],onDelete:Cascade)
+ verifiedAt DateTime
+ @@index([shopId])
 }
