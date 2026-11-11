@@ -103,11 +103,62 @@ test('Shop page lifecycle: tenant isolation, snapshots, concurrency and publicat
    const responses=await Promise.all(['last-one','last-two'].map(extra=>write(api(),{slug:extra,content})));
    assert.deepEqual(responses.map(r=>r.status).sort(),[201,409]);assert.equal(await prisma.shopPage.count({where:{shopId}}),10);
   });
+  const historyApi=()=>api()+'/'+page.id+'/history';let restoredId='';
+  await t.test('history reads are private, scoped to the page and do not expose content in summaries',async()=>{
+   assert.equal((await get(historyApi())).status,401);assert.equal((await get(historyApi(),otherCookie)).status,403);
+   const response=await get(historyApi(),cookie);assert.equal(response.status,200);assert.match(response.headers.get('cache-control')||'',/no-store/);const {revisions}=await response.json();assert.ok(revisions.length);assert.equal('content' in revisions[0],false);
+   assert.equal(revisions.at(-1).action,'create');assert.equal(revisions.at(-1).version,0);
+   assert.equal((await get('/api/v1/shops/'+secondId+'/pages/'+page.id+'/history',cookie)).status,404);assert.equal((await get(historyApi()+'/invalid',cookie)).status,404);
+   const sameShopPage=await prisma.shopPage.findFirstOrThrow({where:{shopId,slug:'extra-0'}});assert.equal((await get(api()+'/'+sameShopPage.id+'/history/'+revisions[0].id,cookie)).status,404);
+  });
+  await t.test('restoring language and every section type keeps publication, address and commerce unchanged',async()=>{
+   const old=initialPageContent('قصتنا السابقة');old.language='ar';old.description='وصف النسخة السابقة';old.sections=[
+    {id:randomUUID(),type:'hero',title:'مرحبا',text:'تقديم المتجر'},
+    {id:randomUUID(),type:'text',title:'Texte',text:'Texte privé <script>unsafe</script>'},
+    {id:randomUUID(),type:'benefits',title:'Atouts',items:['Premier','Second']},
+    {id:randomUUID(),type:'faq',title:'Questions',items:[{question:'Comment ?',answer:'Réponse'}]},
+    {id:randomUUID(),type:'cta',title:'Catalogue',text:'Découvrir',label:'Voir les produits'}];
+   assert.equal((await update('save',old)).status,200);restoredId=(await (await get(historyApi(),cookie)).json()).revisions[0].id;
+   const detail=await get(historyApi()+'/'+restoredId,cookie);assert.equal(detail.status,200);assert.match(detail.headers.get('cache-control')||'',/no-store/);assert.deepEqual((await detail.json()).content,old);
+   const current={...old,title:'Publication récente '+mark,language:'fr'};assert.equal((await update('save',current)).status,200);assert.equal((await update('publish')).status,200);
+   const before=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),commerce=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId}});
+   const response=await write(api()+'/'+page.id,{action:'restoreRevision',version:page.version,revisionId:restoredId},cookie,'PUT');assert.equal(response.status,200);page=(await response.json()).page;assert.deepEqual(page.draft,old);assert.equal(page.version,before.version+1);assert.equal(page.slug,before.slug);
+   const after=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}});assert.deepEqual(after.published,before.published);assert.equal(after.publishedAt?.toISOString(),before.publishedAt?.toISOString());assert.deepEqual(await prisma.shopCommerce.findUniqueOrThrow({where:{shopId}}),commerce);
+   const html=await (await get(publicPath())).text();assert.ok(html.includes(current.title));assert.equal(html.includes(old.title),false);const preview=await (await get('/mes-boutiques/'+shopId+'/pages/'+page.id+'/apercu',cookie)).text();assert.ok(preview.includes('dir="rtl"'));assert.ok(preview.includes('&lt;script&gt;unsafe&lt;/script&gt;'));assert.equal(preview.includes('<script>unsafe</script>'),false);
+  });
+  await t.test('foreign revision ids, forged origins, revoked memberships and stale writes preserve history',async()=>{
+   const before=await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),body={action:'restoreRevision',version:page.version,revisionId:restoredId};
+   assert.equal((await write(api()+'/'+page.id,body,cookie,'PUT','https://evil.test')).status,403);assert.equal((await write(api()+'/'+page.id,body,otherCookie,'PUT')).status,403);
+   assert.equal((await write(api()+'/'+page.id,{...body,version:0},cookie,'PUT')).status,409);assert.equal((await write(api()+'/'+page.id,{...body,revisionId:randomUUID()},cookie,'PUT')).status,404);
+   const extra=await prisma.shopPage.findFirstOrThrow({where:{shopId,slug:'extra-0'}}),list=await (await get(api()+'/'+extra.id+'/history',cookie)).json();assert.equal((await write(api()+'/'+page.id,{...body,revisionId:list.revisions[0].id},cookie,'PUT')).status,404);
+   await prisma.membership.update({where:{shopId_userId:{shopId,userId}},data:{active:false}});assert.equal((await get(historyApi(),cookie)).status,404);assert.equal((await write(api()+'/'+page.id,body,cookie,'PUT')).status,404);await prisma.membership.update({where:{shopId_userId:{shopId,userId}},data:{active:true}});
+   assert.deepEqual(await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}}),before);
+  });
+  await t.test('concurrent restores allow only one expected version and publish only after explicit action',async()=>{
+   const version=page.version,body={action:'restoreRevision',version,revisionId:restoredId};const results=await Promise.all([write(api()+'/'+page.id,body,cookie,'PUT'),write(api()+'/'+page.id,body,cookie,'PUT')]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);page=(await results.find(r=>r.ok)!.json()).page;assert.equal(page.version,version+1);
+   const list=await (await get(historyApi(),cookie)).json();assert.equal(list.revisions.filter((entry:{version:number})=>entry.version===page.version).length,1);assert.equal(list.revisions[0].action,'restoreRevision');
+   await prisma.workspace.update({where:{ownerId:userId},data:{subscriptionStatus:'SUSPENDED'}});
+   const privateRestore=await write(api()+'/'+page.id,{action:'restoreRevision',version:page.version,revisionId:restoredId},cookie,'PUT');assert.equal(privateRestore.status,200);page=(await privateRestore.json()).page;
+   assert.equal((await update('publish')).status,409);assert.equal((await get(publicPath())).status,404);assert.equal((await get(historyApi(),cookie)).status,200);
+   await prisma.workspace.update({where:{ownerId:userId},data:{subscriptionStatus:'ACTIVE'}});assert.equal((await update('publish')).status,200);assert.ok((await (await get(publicPath())).text()).includes(page.draft.title));
+  });
+  await t.test('older pages checkpoint distinct draft and publication lazily without inventing a publication version',async()=>{
+   const previous=structuredClone(page.draft),published={...previous,title:'Publication avant historique '+mark};await prisma.shopPage.update({where:{id:page.id},data:{history:[],published:published as never,publishedAt:new Date()}});
+   assert.deepEqual(await (await get(historyApi(),cookie)).json(),{revisions:[]});assert.deepEqual((await prisma.shopPage.findUniqueOrThrow({where:{id:page.id}})).history,[]);
+   assert.equal((await update('save',{...previous,title:'Nouveau brouillon'})).status,200);const {revisions}=await (await get(historyApi(),cookie)).json();assert.deepEqual(revisions.map((r:{action:string})=>r.action),['save','checkpoint','publishedCheckpoint']);assert.equal(revisions[2].version,null);
+   assert.deepEqual((await (await get(historyApi()+'/'+revisions[1].id,cookie)).json()).content,previous);assert.deepEqual((await (await get(historyApi()+'/'+revisions[2].id,cookie)).json()).content,published);
+  });
+  await t.test('only twenty recent steps remain and expired revision ids cannot restore',async()=>{
+   const earliest=(await (await get(historyApi(),cookie)).json()).revisions.at(-1).id;
+   for(let n=0;n<20;n++)assert.equal((await update('save',{...page.draft,title:'Étape '+n})).status,200);
+   const {revisions}=await (await get(historyApi(),cookie)).json();assert.equal(revisions.length,20);assert.equal(revisions[0].version,page.version);assert.equal(revisions.at(-1).version,page.version-19);
+   assert.equal((await get(historyApi()+'/'+earliest,cookie)).status,404);assert.equal((await write(api()+'/'+page.id,{action:'restoreRevision',version:page.version,revisionId:earliest},cookie,'PUT')).status,404);
+  });
   await t.test('Withdrawal, stale deletion and cross-shop deletion preserve other pages',async()=>{
    assert.equal((await write('/api/v1/shops/'+otherShop+'/pages/'+page.id,{version:page.version},otherCookie,'DELETE')).status,404);
    assert.equal((await write(api()+'/'+page.id,{version:page.version-1},cookie,'DELETE')).status,409);
    assert.equal((await write(api()+'/'+page.id,{version:page.version},cookie,'DELETE')).status,200);
-   assert.equal((await get('/mes-boutiques/'+shopId+'/pages/'+page.id+'/apercu',cookie)).status,404);
+   assert.equal((await get('/mes-boutiques/'+shopId+'/pages/'+page.id+'/apercu',cookie)).status,404);assert.equal((await get(historyApi(),cookie)).status,404);
    assert.equal(await prisma.shopPage.count({where:{shopId:secondId}}),1);
   });
  }finally{

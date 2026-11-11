@@ -18,6 +18,7 @@ function BufferSafeSize(value:unknown){return new TextEncoder().encode(JSON.stri
 export const createPageInput=z.object({slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(60),content:pageContent}).strict();
 export const changePageInput=z.discriminatedUnion('action',[
  z.object({action:z.literal('save'),version:z.number().int().nonnegative(),content:pageContent}).strict(),
+ z.object({action:z.literal('restoreRevision'),version:z.number().int().nonnegative(),revisionId:z.uuid()}).strict(),
  z.object({action:z.enum(['publish','unpublish']),version:z.number().int().nonnegative()}).strict()
 ]);
 export const deletePageInput=z.object({version:z.number().int().nonnegative()}).strict();
