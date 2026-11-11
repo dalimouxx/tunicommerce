@@ -24,5 +24,6 @@ test('custom host paths expose only their own public storefront and its checkout
  assert.deepEqual(domainRoute('/vitrines/studio','studio','GET'),{kind:'redirect',path:'/'});
  assert.equal(domainRoute('/api/v1/public/vitrines/studio/checkout','studio','POST').kind,'pass');
  for(const path of ['/admin','/connexion','/mes-boutiques','/api/admin/plans','/api/commerce','/vitrines/foreign','/api/v1/public/vitrines/foreign/checkout','/pages/../admin','/_next/image'])assert.equal(domainRoute(path,'studio','POST').kind,'deny',path);
+ const photo='/images/00000000-0000-4000-8000-000000000000';assert.equal(domainRoute('/api/v1/public/vitrines/studio'+photo,'studio','GET').kind,'pass');assert.equal(domainRoute('/api/v1/public/vitrines/foreign'+photo,'studio','GET').kind,'deny');assert.equal(domainRoute('/api/v1/public/vitrines/studio'+photo,'studio','POST').kind,'deny');
  assert.equal(domainRoute('/produit/p1','studio','POST').kind,'deny');assert.equal(domainRoute('/_next/static/a.js','studio','GET').kind,'pass');
 });

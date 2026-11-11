@@ -55,4 +55,5 @@ Le rattachement des domaines par preuve TXT, les sous-domaines automatiques et l
 
 L'accueil dispose désormais de textes et sections en français/arabe, d'un ordre et d'une position configurables, d'un brouillon privé, d'un aperçu, d'un instantané publié et d'un retour à l'accueil du thème. La restauration depuis la version actuellement publiée ne constitue pas un historique. Le catalogue et le panier restent disponibles. La migration `ShopHome` est additive ; les données commerciales ne sont pas réécrites. Voir `docs/shop-home.md`.
 
-Le bloc 6 reste à compléter pour les images de section, l'historique de versions, la composition plus libre et la recette réelle des domaines sur VPS. Les autres blocs conservent leurs prérequis fournisseur et leurs limites indiquées plus haut.
+Les sections image de l’accueil utilisent désormais la médiathèque du propriétaire, les légendes et les formats de cadrage. Le bloc 6 reste à compléter pour le stockage objet, l'historique de versions, la composition plus libre et la recette réelle des domaines sur VPS. Les autres blocs conservent leurs prérequis fournisseur et leurs limites indiquées plus haut.
+

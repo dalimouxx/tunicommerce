@@ -1,9 +1,11 @@
 import type {HomeContent} from '../modules/shops/home-content';
 import styles from './shop-home.module.css';
+import {homeImageSource} from '../modules/shops/home-image';
 
-export default function ShopHomeSections({content,lang,preview=false}:{content:HomeContent;lang:'fr'|'ar';preview?:boolean}){
+export default function ShopHomeSections({content,lang,preview=false,shopSlug}:{content:HomeContent;lang:'fr'|'ar';preview?:boolean;shopSlug?:string}){
  return <div className={styles.sections} lang={lang} dir={lang==='ar'?'rtl':'ltr'}>{content[lang].sections.map(section=><section key={section.id} className={styles.section} data-section-type={section.type}>
   <h2 dir="auto">{section.title}</h2>
+  {section.type==='image'&&<figure className={styles.imageFigure}><div className={styles.imageFrame} data-image-layout={section.layout}><img src={homeImageSource(section.imageUrl,shopSlug,preview)} alt={section.alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" style={{objectFit:section.fit}}/></div>{section.caption&&<figcaption dir="auto">{section.caption}</figcaption>}</figure>}
   {(section.type==='hero'||section.type==='text'||section.type==='cta')&&<p className={styles.prose} dir="auto">{section.text}</p>}
   {section.type==='benefits'&&<ul className={styles.benefits}>{section.items.map((item,index)=><li key={index} dir="auto"><span aria-hidden="true">✦</span> {item}</li>)}</ul>}
   {section.type==='faq'&&<div className={styles.faq}>{section.items.map((item,index)=><details key={index}><summary dir="auto">{item.question}</summary><p className={styles.prose} dir="auto">{item.answer}</p></details>)}</div>}

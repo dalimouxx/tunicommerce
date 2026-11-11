@@ -133,9 +133,9 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     <div><span aria-hidden="true">◈</span><strong>{t.pillarCod}</strong><small>{t.pillarCodText}</small></div>
     <div><span aria-hidden="true">✦</span><strong>{t.pillarTracked}</strong><small>{t.pillarTrackedText}</small></div>
    </section>}
-   {home.sectionsPosition==='beforeCatalog'&&<ShopHomeSections content={home} lang={lang}/>} 
+   {home.sectionsPosition==='beforeCatalog'&&<ShopHomeSections content={home} lang={lang} shopSlug={slug}/>} 
    <CatalogBrowser slug={slug} products={catalog.products} lang={lang}/>
-   {home.sectionsPosition==='afterCatalog'&&<ShopHomeSections content={home} lang={lang}/>} 
+   {home.sectionsPosition==='afterCatalog'&&<ShopHomeSections content={home} lang={lang} shopSlug={slug}/>} 
    {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd}
     shipping={catalog.shipping} zones={catalog.zones} lang={lang}
     products={catalog.products.map(product=>({id:product.id,name:product.name,
@@ -155,4 +155,5 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   </div>
  </main>;
 }
+
 

@@ -1,19 +1,22 @@
 'use client';
-import {useCallback,useEffect,useState,type ChangeEvent} from 'react';
+import {useCallback,useEffect,useRef,useState,type ChangeEvent} from 'react';
 import {ImagePlus,Check,Trash2,RefreshCcw,ImageOff} from 'lucide-react';
 import {compressProductPhoto} from '../modules/product-media/compress-client';
 import styles from './product-media-library.module.css';
 
 type Photo={id:string;url:string;size:number;width:number;height:number;createdAt:string};
 type Collection={photos:Photo[];limit:number};
-type Props={value?:string;onChoose?:(url:string)=>void;standalone?:boolean};
+type Props={value?:string;onChoose?:(url:string)=>void;standalone?:boolean;onBusyChange?:(pending:boolean)=>void};
 
-export default function ProductMediaLibrary({value,onChoose,standalone=false}:Props){
+export default function ProductMediaLibrary({value,onChoose,standalone=false,onBusyChange}:Props){
  const [collection,setCollection]=useState<Collection>({photos:[],limit:30});
  const [pending,setPending]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [success,setSuccess]=useState('');
+ const mounted=useRef(true);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;onBusyChange?.(false);};},[onBusyChange]);
+ useEffect(()=>{onBusyChange?.(pending);},[pending,onBusyChange]);
 
  const refresh=useCallback(async()=>{
   const response=await fetch('/api/v1/product-media',{cache:'no-store'});
@@ -28,18 +31,20 @@ export default function ProductMediaLibrary({value,onChoose,standalone=false}:Pr
  async function upload(file:File){
   if(pending)return;
   setPending(true);setError('');setSuccess('');
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);
   try{
    const processed=await compressProductPhoto(file);
    const response=await fetch('/api/v1/product-media',{
-    method:'PUT',headers:{'Content-Type':processed.type},body:processed
+    method:'PUT',headers:{'Content-Type':processed.type},body:processed,signal:controller.signal
    });
    const result=await response.json() as Photo&{error?:string};
    if(!response.ok)throw new Error(result.error||'Importation impossible');
+   if(!mounted.current)return;
    onChoose?.(result.url);
    await refresh();
    setSuccess('Photo optimisée et enregistrée ('+Math.round(result.size/1024)+' Ko).');
-  }catch(e){setError(e instanceof Error?e.message:'Importation indisponible');}
-  finally{setPending(false);}
+  }catch(e){setError(controller.signal.aborted?'Importation trop lente. Réessaie avec une image plus légère.':e instanceof Error?e.message:'Importation indisponible');}
+  finally{clearTimeout(timeout);setPending(false);}
  }
 
  async function removePhoto(id:string){
@@ -98,6 +103,8 @@ export default function ProductMediaLibrary({value,onChoose,standalone=false}:Pr
      </div>
     </div>)}
    </div>:<div className={styles.empty}><ImageOff size={25}/><p>Aucune photo importée. Ajoutez la première image de votre catalogue.</p></div>}
-  {onChoose&&value&&<button type="button" className={styles.clear} onClick={()=>onChoose('')}>Retirer la photo de ce produit</button>}
+  {onChoose&&value&&<button type="button" className={styles.clear} onClick={()=>onChoose('')}>Retirer cette photo de la sélection</button>}
  </div>;
 }
+
+

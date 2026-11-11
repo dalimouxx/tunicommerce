@@ -19,7 +19,7 @@ export function mergeHomeDraft(base:HomeContent,local:HomeContent,remote:HomeCon
  return {content:merged,conflicts};
 }
 export function homeFieldLabel(path:readonly PropertyKey[]){
- const names:Record<string,string>={heroTitle:'titre principal',heroDescription:'présentation',announcement:'bandeau',sections:'sections',title:'titre',text:'texte',label:'bouton',question:'question',answer:'réponse',items:'éléments',showBenefits:'points de réassurance',sectionsPosition:'position des sections'};
+ const names:Record<string,string>={heroTitle:'titre principal',heroDescription:'présentation',announcement:'bandeau',sections:'sections',title:'titre',text:'texte',label:'bouton',question:'question',answer:'réponse',items:'éléments',showBenefits:'points de réassurance',sectionsPosition:'position des sections',imageUrl:'image',alt:'texte alternatif',caption:'légende',layout:'format de l’image',fit:'recadrage'};
  return path.map((part,index)=>typeof part==='number'?'nº '+(part+1):part==='fr'||part==='ar'?String(part).toUpperCase():names[String(part)]||String(part)).join(' · ');
 }
 export function homeValidationMessage(issue:{path:readonly PropertyKey[];code:string;message:string}){
@@ -34,7 +34,8 @@ const editingSection=z.discriminatedUnion('type',[
  z.object({id,type:z.literal('hero'),title:short,text}).strict(),z.object({id,type:z.literal('text'),title:short,text}).strict(),
  z.object({id,type:z.literal('cta'),title:short,text,label:z.string().max(60)}).strict(),
  z.object({id,type:z.literal('benefits'),title:short,items:z.array(short).max(6)}).strict(),
- z.object({id,type:z.literal('faq'),title:short,items:z.array(z.object({question:short,answer:text}).strict()).max(8)}).strict()
+ z.object({id,type:z.literal('faq'),title:short,items:z.array(z.object({question:short,answer:text}).strict()).max(8)}).strict(),
+ z.object({id,type:z.literal('image'),title:short,imageUrl:z.string().max(2000),alt:z.string().max(220),caption:z.string().max(500),layout:z.enum(['wide','square','portrait']),fit:z.enum(['cover','contain'])}).strict()
 ]);
 const editingLanguage=z.object({heroTitle:short,heroDescription:z.string().max(1000),announcement:z.string().max(180),sections:z.array(editingSection).max(8)}).strict();
 const editingHome=z.object({fr:editingLanguage,ar:editingLanguage,showBenefits:z.boolean(),sectionsPosition:z.enum(['beforeCatalog','afterCatalog'])}).strict();

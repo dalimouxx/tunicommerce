@@ -131,6 +131,42 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    await assert.rejects(saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,unreliable),/connection lost/);const savedVersion=(await (await get(endpoint,a.cookie)).json()).version;
    const retried=await saveHomeDraft(endpoint,baseRecord,mine,new AbortController().signal,editorFetch);assert.equal(retried.version,savedVersion);assert.equal(retried.draft.fr.heroDescription,mine.fr.heroDescription);
   });
+
+  await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000)}});
+  const photoBytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAOoqL8cAAAAASUVORK5CYII=','base64');const photoData={content:photoBytes,mimeType:'image/png',size:photoBytes.length,width:1,height:1};
+  const aw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:a.user.id}}),bw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:b.user.id}});
+  const ownPhoto=await prisma.productMedia.create({data:{workspaceId:aw.id,...photoData}}),unusedPhoto=await prisma.productMedia.create({data:{workspaceId:aw.id,...photoData}}),foreignPhoto=await prisma.productMedia.create({data:{workspaceId:bw.id,...photoData}});
+  const photoUrl=(id:string)=>'/api/media/products/'+id,publicPhoto=(slug:string,id:string)=>'/api/v1/public/vitrines/'+slug+'/images/'+id;
+  const imageSection=(url:string)=>({id:randomUUID(),type:'image' as const,title:'Image de collection',imageUrl:url,alt:'VISUEL-ACCESSIBLE-'+mark,caption:'LEGENDE-PUBLIQUE-'+mark,layout:'wide' as const,fit:'contain' as const});
+  const removePhoto=(id:string,cookie=a.cookie)=>fetch(base+'/api/v1/product-media/'+id,{method:'DELETE',headers:{origin,cookie}});
+  record=await (await get(endpoint,a.cookie)).json();const imageDraft=structuredClone(record.draft);imageDraft.fr.sections=[imageSection(photoUrl(ownPhoto.id))];
+  const beforeImages=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});
+  await t.test('image drafts are owner-scoped and do not expose an unreferenced image',async()=>{
+   assert.equal((await change('unpublish')).status,200);assert.equal((await change('save',imageDraft)).status,200);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,404);
+   const invalid=structuredClone(imageDraft);invalid.fr.sections=[imageSection(photoUrl(foreignPhoto.id))];assert.equal((await change('save',invalid)).status,403);assert.equal((await get(preview,a.cookie)).status,200);
+   assert.equal((await removePhoto(ownPhoto.id)).status,409);
+  });
+  await t.test('published image sections serve real bytes without requiring the legacy workspace to be published',async()=>{
+   assert.equal(aw.published,false);assert.equal((await change('publish')).status,200);const r=await get(publicPhoto(a.shop.slug,ownPhoto.id));assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/png');assert.equal(r.headers.get('cache-control'),'no-store');assert.deepEqual(Buffer.from(await r.arrayBuffer()),photoBytes);
+   const html=await (await get(publicPath+'?lang=fr')).text();assert.ok(html.includes(publicPhoto(a.shop.slug,ownPhoto.id)));assert.ok(html.includes('VISUEL-ACCESSIBLE-'+mark));assert.ok(html.includes('LEGENDE-PUBLIQUE-'+mark));assert.ok(html.includes('loading="lazy"'));
+   const after=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});assert.deepEqual(after.data,beforeImages.data);assert.equal(after.version,beforeImages.version);
+  });
+  await t.test('image routes refuse foreign and unused photos even with a valid owner cookie',async()=>{
+   for(const [slug,id] of [[b.shop.slug,ownPhoto.id],[a.shop.slug,unusedPhoto.id],[a.shop.slug,foreignPhoto.id]])assert.equal((await get(publicPhoto(slug,id),a.cookie)).status,404);
+   await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'SUSPENDED'}});assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id),a.cookie)).status,404);await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'ACTIVE'}});
+  });
+  await t.test('a published snapshot pins its photo after the draft changes, until it is unpublished',async()=>{
+   const next=structuredClone(imageDraft);next.fr.sections=[imageSection('https://cdn.example.com/another.jpg')];assert.equal((await change('save',next)).status,200);assert.equal((await removePhoto(ownPhoto.id)).status,409);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,200);
+   assert.equal((await change('unpublish')).status,200);assert.equal((await get(publicPhoto(a.shop.slug,ownPhoto.id))).status,404);assert.equal((await removePhoto(ownPhoto.id)).status,200);
+  });
+  await t.test('a photo deletion racing a home save never leaves a saved dangling reference',async()=>{
+   const next=structuredClone(record.draft);next.fr.sections=[imageSection(photoUrl(unusedPhoto.id))];const results=await Promise.all([put(endpoint,{action:'save',version:record.version,content:next},a.cookie),removePhoto(unusedPhoto.id)]);const statuses=results.map(r=>r.status);assert.ok(statuses[0]===200&&statuses[1]===409||statuses[0]===403&&statuses[1]===200,JSON.stringify(statuses));
+  });
+  await t.test('the existing legacy storefront uses its linked shop image scope and its workspace publication gate',async()=>{
+   const photo=await prisma.productMedia.create({data:{workspaceId:legacyWorkspace.id,...photoData}});const home=structuredClone(legacyRecord.draft);home.fr.sections=[imageSection(photoUrl(photo.id))];assert.equal((await legacyChange('save',home)).status,200);assert.equal((await legacyChange('publish')).status,200);
+   const html=await (await get(legacyPublic)).text();assert.ok(html.includes(publicPhoto(legacy.shop.slug,photo.id)));assert.equal((await get(publicPhoto(legacy.shop.slug,photo.id))).status,200);
+   await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:false}});assert.equal((await get(publicPhoto(legacy.shop.slug,photo.id),legacy.cookie)).status,404);const draftHtml=await (await get(legacyPreview,legacy.cookie)).text();assert.ok(draftHtml.includes(photoUrl(photo.id)));assert.equal((await get(photoUrl(photo.id),legacy.cookie)).status,200);
+  });
  }finally{stopTestServer(server);await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });
 
