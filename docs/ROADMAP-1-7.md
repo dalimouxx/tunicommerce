@@ -48,3 +48,11 @@ Validation : 330 tests unitaires réussis ; les 18 suites PostgreSQL/HTTP ont r�
 Le bloc 6 dispose maintenant d'un éditeur de pages complémentaires pour le propriétaire d'une boutique indépendante initialisée. Il comprend cinq types de sections réordonnables, le français/arabe, l'aperçu privé, les instantanés brouillon/publié, le retrait de publication et les liens dans la navigation publique. Une version attendue protège les écritures concurrentes ; la publication de la boutique et la validité de l'abonnement sont recontrôlées sur chaque accès public.
 
 Le plafond est de dix pages par boutique et douze sections par page. Les domaines personnalisés, les images de section, l'historique de restauration et la composition de la page d'accueil restent à développer. La migration ajoute `ShopPage` sans changer les données commerciales existantes. Le détail du parcours et des limites figure dans `docs/shop-pages.md`.
+
+## Lots suivants — domaines et accueil personnalisable
+
+Le rattachement des domaines par preuve TXT, les sous-domaines automatiques et le routage isolé sont implémentés. Leur activation DNS/HTTPS réelle reste à effectuer sur le futur VPS ; le routage demeure désactivé par défaut sur Render. Voir `docs/VPS-STOREFRONT-DOMAINS.md`.
+
+L'accueil dispose désormais de textes et sections en français/arabe, d'un ordre et d'une position configurables, d'un brouillon privé, d'un aperçu, d'un instantané publié et d'un retour à l'accueil du thème. La restauration depuis la version actuellement publiée ne constitue pas un historique. Le catalogue et le panier restent disponibles. La migration `ShopHome` est additive ; les données commerciales ne sont pas réécrites. Voir `docs/shop-home.md`.
+
+Le bloc 6 reste à compléter pour les images de section, l'historique de versions, la composition plus libre et la recette réelle des domaines sur VPS. Les autres blocs conservent leurs prérequis fournisseur et leurs limites indiquées plus haut.

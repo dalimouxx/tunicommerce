@@ -1,3 +1,4 @@
+import {initialHomeContent} from '../modules/shops/home-content';
 import {request as httpRequest} from 'node:http';
 import test from 'node:test';import assert from 'node:assert/strict';import {spawn,type ChildProcess} from 'node:child_process';import {randomBytes,randomUUID} from 'node:crypto';import {setTimeout as delay} from 'node:timers/promises';import {createSocket} from 'node:dgram';import {stopTestServer} from './server-process';
 const db=process.env.TEST_DATABASE_URL;if(!db||db!==process.env.DATABASE_URL||!new URL(db).pathname.endsWith('_test'))throw Error('Disposable *_test DB required');
@@ -26,13 +27,15 @@ test('Domain ownership, per-shop routing, checkout and revocation work through t
   });
   await t.test('real TXT lookup against a local DNS fixture binds exactly one shop',async()=>{
    txt.set(recordName,recordValue);assert.equal((await post(api,{action:'verify',id:claimId},a.cookie)).status,200);
-   const own=await get('/','',custom);assert.equal(own.status,200);const html=await own.text();assert.ok(html.includes('Domaine a'));assert.equal(html.includes('Domaine b'),false);
+   const home=initialHomeContent();home.fr.heroTitle='ACCUEIL-PUBLIE-'+mark;const hidden=structuredClone(home);hidden.fr.heroTitle='ACCUEIL-BROUILLON-SECRET-'+mark;
+   await prisma.shopHome.create({data:{shopId:a.shop.id,draft:hidden as never,published:home as never,publishedAt:new Date(),publishedVersion:1,version:2}});
+   const own=await get('/','',custom);assert.equal(own.status,200);const html=await own.text();assert.ok(html.includes('Domaine a'));assert.equal(html.includes('Domaine b'),false);assert.ok(html.includes('ACCUEIL-PUBLIE-'+mark));assert.equal(html.includes('ACCUEIL-BROUILLON-SECRET-'+mark),false);
    const bv=await (await get('/api/v1/shops/'+b.shop.id+'/domains',b.cookie)).json();txt.set(bv.claims[0].recordName,bv.claims[0].recordValue);assert.equal((await post('/api/v1/shops/'+b.shop.id+'/domains',{action:'verify',id:bv.claims[0].id},b.cookie)).status,409);assert.equal((await prisma.shopDomainBinding.findUniqueOrThrow({where:{hostname:custom}})).shopId,a.shop.id);txt.set(recordName,recordValue);
   });
   await t.test('private and other-tenant paths stay closed even with a valid platform cookie',async()=>{
    for(const path of ['/admin','/mes-boutiques','/api/commerce','/api/admin/plans','/vitrines/'+b.shop.slug,'/_next/image?url=/admin&w=640&q=75'])assert.equal((await get(path,a.cookie,custom)).status,404,path);
    const normal=await get('/vitrines/'+a.shop.slug,'',custom);assert.equal(normal.status,308);assert.equal(normal.headers.get('location'),'https://'+custom+'/');
-   const spoof=await get('/','',custom,{'x-forwarded-host':'evil.marque.tn','x-tunicom-domain-slug':b.shop.slug});assert.equal(spoof.status,200);const html=await spoof.text();assert.ok(html.includes('Domaine a'));assert.equal(html.includes('Domaine b'),false);
+   const spoof=await get('/','',custom,{'x-forwarded-host':'evil.marque.tn','x-tunicom-domain-slug':b.shop.slug});assert.equal(spoof.status,200);const html=await spoof.text();assert.ok(html.includes('Domaine a'));assert.equal(html.includes('Domaine b'),false);assert.ok(html.includes('ACCUEIL-PUBLIE-'+mark));assert.equal(html.includes('ACCUEIL-BROUILLON-SECRET-'+mark),false);
   });
   await t.test('uploaded photos and branding are public only when referenced by this shop and owned by its merchant',async()=>{
    const aw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:a.user.id}}),bw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:b.user.id}});
@@ -63,6 +66,7 @@ test('Domain ownership, per-shop routing, checkout and revocation work through t
   });
  }finally{stopTestServer(child);dns.close();await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });
+
 
 
 

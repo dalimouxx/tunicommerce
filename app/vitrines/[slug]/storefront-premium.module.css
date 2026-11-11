@@ -334,3 +334,6 @@
 @media(max-width:720px){.page:is([data-theme="PULSE"],[data-theme="SORBET"],[data-theme="CHROME"],[data-theme="GROOVE"]) .heroVisual::after{width:52px;height:52px;font-size:36px;top:15px;inset-inline-end:15px}}
 @media(prefers-reduced-motion:reduce){.page *,.page *::before,.page *::after{animation:none!important;transition:none!important}}
 
+
+/* Keep the brand readable when mobile navigation needs a second row, including RTL. */
+@media(max-width:720px){.storeHeader{flex-wrap:wrap;gap:16px;padding-block:16px}.identity{flex:1 1 100%}.brandText{flex:1}.fallbackLogo,.logo{flex-shrink:0}.nav{flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap}}
