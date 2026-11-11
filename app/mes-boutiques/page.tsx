@@ -90,6 +90,7 @@ export default async function MyShops(){
       {!access.manageOwnCommerce&&access.mayOpenTeam&&shop.legacyWorkspaceId===null&&<Link className={styles.primary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)}>Mon espace collaborateur</Link>}
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
       {publicPath&&<Link className={styles.secondary} href={publicPath}>Vitrine publique</Link>}
+      {role==='OWNER'&&(access.manageOwnCommerce||!shop.legacyWorkspaceId&&shop.commerce)&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/accueil'}>Modifier l’accueil</Link>}
       {role==='OWNER'&&!shop.legacyWorkspaceId&&shop.commerce&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/apercu'}>Aperçu privé</Link>}
      </div>
     </section>;

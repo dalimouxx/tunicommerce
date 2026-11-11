@@ -62,6 +62,10 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      <h1>{shop.name}</h1><p>Statut : {shop.status} · Votre rôle : {membership.role}</p></div>
     <Link className={styles.back} href="/mes-boutiques">Toutes mes boutiques</Link>
    </header>
+   {canRead&&workspace&&membership.role==='OWNER'&&shop.organization.ownerId===actor.userId&&<section className={styles.card}>
+    <h2 id="vitrine">Ma vitrine</h2><p>Personnalise l’accueil de ta boutique existante, sans déplacer ton catalogue ni tes commandes.</p>
+    <div className={styles.actions}><Link className={styles.primary} href={'/mes-boutiques/'+shopId+'/accueil'}>Composer et publier l’accueil de ma boutique</Link><Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/accueil/apercu'}>Aperçu du brouillon enregistré</Link><Link className={styles.secondary} href="/personnalisation">Thèmes, logo et bannière</Link></div>
+   </section>}
    {isolated&&shop.organization.ownerId===actor.userId&&<ShopLaunchChecklist shopId={shopId} initialized={isolated.initialized} readiness={launch!}/>}
    {isolated?.initialized&&<MerchantShopWorkspace shopId={shopId}/>}
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>

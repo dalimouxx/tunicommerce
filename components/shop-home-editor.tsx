@@ -6,7 +6,7 @@ import {pageSectionLabels,type PageSection} from '../modules/shops/page-content'
 import styles from './shop-pages.module.css';
 import homeStyles from './shop-home.module.css';
 
-export default function ShopHomeEditor({shopId,shopSlug,initial}:{shopId:string;shopSlug:string;initial:HomeEditorRecord}){
+export default function ShopHomeEditor({shopId,publicPath,legacy=false,initial}:{shopId:string;publicPath:string|null;legacy?:boolean;initial:HomeEditorRecord}){
  const [record,setRecord]=useState(initial),[content,setContent]=useState(initial.draft),[lang,setLang]=useState<'fr'|'ar'>('fr');
  const [type,setType]=useState<PageSection['type']>('text'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  const inFlight=useRef(false),dirty=JSON.stringify(content)!==JSON.stringify(record.draft),current=content[lang];
@@ -61,15 +61,15 @@ export default function ShopHomeEditor({shopId,shopSlug,initial}:{shopId:string;
     <div className={styles.actions}><select aria-label="Type de section" value={type} onChange={e=>setType(e.target.value as PageSection['type'])}>{Object.entries(pageSectionLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><button type="button" className={styles.secondary} disabled={current.sections.length>=8} onClick={addSection}>Ajouter une section</button></div>
     <h2>Disposition commune aux deux langues</h2>
     <label>Position des sections<select value={content.sectionsPosition} onChange={e=>setContent({...content,sectionsPosition:e.target.value as HomeContent['sectionsPosition']})}><option value="beforeCatalog">Avant le catalogue</option><option value="afterCatalog">Après le catalogue</option></select></label>
-    <label><span><input type="checkbox" checked={content.showBenefits} onChange={e=>setContent({...content,showBenefits:e.target.checked})}/> Afficher les trois points de réassurance du thème</span></label>
+    {!legacy&&<label><span><input type="checkbox" checked={content.showBenefits} onChange={e=>setContent({...content,showBenefits:e.target.checked})}/> Afficher les trois points de réassurance du thème</span></label>}
    </div></fieldset>
   </section>
   <div className={styles.actions}>
    <button className={styles.primary} disabled={busy||!dirty&&record.version>0} onClick={()=>void request('save')}>Enregistrer le brouillon</button>
-   <Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/apercu?lang='+lang} target="_blank" rel="noopener noreferrer">Aperçu du brouillon enregistré ↗</Link>
+   <Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/accueil/apercu?lang='+lang} target="_blank" rel="noopener noreferrer">Aperçu du brouillon enregistré ↗</Link>
    <button className={styles.primary} disabled={busy||dirty||record.version===0||!!record.publishedAt&&!record.hasUnpublishedChanges} onClick={()=>void request('publish')}>Publier l’accueil enregistré</button>
    {record.publishedAt&&<><button className={styles.secondary} disabled={busy||dirty} onClick={()=>void request('restore')}>Restaurer le brouillon depuis la version publiée</button><button className={styles.secondary} disabled={busy||dirty} onClick={()=>void request('unpublish')}>Revenir à l’accueil du thème</button></>}
-   <Link href={'/vitrines/'+encodeURIComponent(shopSlug)+'?lang='+lang} target="_blank" rel="noopener noreferrer">Voir la boutique publique ↗</Link>
+   {publicPath&&<Link href={publicPath+'?lang='+lang} target="_blank" rel="noopener noreferrer">Voir la boutique publique ↗</Link>}
   </div><p className={styles.muted}>La publication exige une boutique publiée et un abonnement valide. Les images de l’en-tête se règlent dans Apparence. Le catalogue, le panier et les conditions de commande restent gérés par la boutique.</p>
  </div>;
 }
