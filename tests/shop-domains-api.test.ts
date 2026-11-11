@@ -34,6 +34,17 @@ test('Domain ownership, per-shop routing, checkout and revocation work through t
    const normal=await get('/vitrines/'+a.shop.slug,'',custom);assert.equal(normal.status,308);assert.equal(normal.headers.get('location'),'https://'+custom+'/');
    const spoof=await get('/','',custom,{'x-forwarded-host':'evil.marque.tn','x-tunicom-domain-slug':b.shop.slug});assert.equal(spoof.status,200);const html=await spoof.text();assert.ok(html.includes('Domaine a'));assert.equal(html.includes('Domaine b'),false);
   });
+  await t.test('uploaded photos and branding are public only when referenced by this shop and owned by its merchant',async()=>{
+   const aw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:a.user.id}}),bw=await prisma.workspace.findUniqueOrThrow({where:{ownerId:b.user.id}});
+   const image={content:Buffer.from('fixture-image'),mimeType:'image/png',size:13,width:1,height:1};
+   const own=await prisma.productMedia.create({data:{workspaceId:aw.id,...image}}),unused=await prisma.productMedia.create({data:{workspaceId:aw.id,...image}}),foreign=await prisma.productMedia.create({data:{workspaceId:bw.id,...image}}),logo=await prisma.shopMedia.create({data:{workspaceId:aw.id,slot:'logo',...image}});
+   const row=await prisma.shopCommerce.findUniqueOrThrow({where:{shopId:a.shop.id}});const state=row.data as unknown as ReturnType<typeof initialState>;state.products[0].imageUrl='/api/media/products/'+own.id;state.shop.logoUrl='/api/media/assets/'+logo.id;
+   await prisma.shopCommerce.update({where:{shopId:a.shop.id},data:{data:state as never}});
+   assert.equal((await get('/api/media/products/'+own.id,'',custom)).status,200);assert.equal((await get('/api/media/assets/'+logo.id,'',custom)).status,200);
+   assert.equal((await get('/api/media/products/'+unused.id,a.cookie,custom)).status,404);assert.equal((await get('/api/media/products/'+own.id,a.cookie,b.shop.slug+'.shops.tunicom-audit.tn')).status,404);
+   state.products[0].imageUrl='/api/media/products/'+foreign.id;await prisma.shopCommerce.update({where:{shopId:a.shop.id},data:{data:state as never}});assert.equal((await get('/api/media/products/'+foreign.id,b.cookie,custom)).status,404);
+   state.products[0].imageUrl='/api/media/products/'+own.id;await prisma.shopCommerce.update({where:{shopId:a.shop.id},data:{data:state as never}});
+  });
   await t.test('same-origin custom checkout works, cross-origin and other shop checkout fail',async()=>{
    const body={requestId:randomUUID(),name:'Acheteur fictif',phone:'22123456',city:'Tunis',address:'Adresse de recette',items:[{productId:'p1',quantity:1}]};const endpoint='/api/v1/public/vitrines/'+a.shop.slug+'/checkout';
    assert.equal((await post(endpoint,body,'',custom,'https://evil.marque.tn')).status,403);assert.equal((await post('/api/v1/public/vitrines/'+b.shop.slug+'/checkout',body,'',custom,'https://'+custom)).status,404);
@@ -52,6 +63,7 @@ test('Domain ownership, per-shop routing, checkout and revocation work through t
   });
  }finally{stopTestServer(child);dns.close();await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });
+
 
 
 

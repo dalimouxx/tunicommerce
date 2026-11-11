@@ -1,5 +1,6 @@
 /** A domain can address only its own public storefront. Private routes are never rewritten. */
-export function domainRoute(path:string,slug:string,method:string):{kind:'pass'|'rewrite'|'redirect'|'deny';path?:string}{
+export function domainRoute(path:string,slug:string,method:string):{kind:'pass'|'rewrite'|'redirect'|'deny'|'media';path?:string}{
+ if((method==='GET'||method==='HEAD')&&/^\/api\/media\/(?:products|assets)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path))return {kind:'media'};
  if(path.startsWith('/_next/static/')||path==='/favicon.svg')return method==='GET'||method==='HEAD'?{kind:'pass'}:{kind:'deny'};
  const base='/vitrines/'+encodeURIComponent(slug);
  const suffix=path===base?'':path.startsWith(base+'/')?path.slice(base.length):null;

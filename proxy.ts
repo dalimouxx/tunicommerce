@@ -12,6 +12,10 @@ export async function proxy(request:NextRequest){
   const domain=host?await resolveStorefrontHost(host):null;
   if(!domain)return new NextResponse('Boutique indisponible',{status:404,headers:{'Cache-Control':'no-store'}});
   const action=domainRoute(request.nextUrl.pathname,domain.slug,request.method);
+  if(action.kind==='media'){
+   const {storefrontDomainMedia}=await import('./modules/shops/domains-media');
+   return await storefrontDomainMedia(domain.slug,request.nextUrl.pathname)||new NextResponse(null,{status:404,headers:{'Cache-Control':'no-store'}});
+  }
   if(action.kind==='deny')return new NextResponse('Page introuvable',{status:404,headers:{'Cache-Control':'no-store'}});
   if(action.kind==='pass')return NextResponse.next({request:{headers}});
   const target=request.nextUrl.clone();target.pathname=action.path!;
