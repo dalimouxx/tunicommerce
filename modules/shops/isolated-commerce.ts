@@ -24,6 +24,7 @@ export async function requireIsolatedOwner(userId:string,shopId:string){
 export function newShopState(name:string):State{
  const state=initialState(false);
  state.shop.name=name;
+ state.shop.address='';
  return state;
 }
 export async function readIsolatedCommerce(shopId:string,shopName:string){

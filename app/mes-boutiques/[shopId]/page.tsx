@@ -9,6 +9,8 @@ import {isolatedShopFinanceOverview} from '../../../modules/shops/finance-overvi
 import {carrierCodReport} from '../../../modules/shops/carrier-cod-report';
 import {readIsolatedCommerce} from '../../../modules/shops/isolated-commerce';
 import InitializeShop from './initialize-shop';
+import ShopLaunchChecklist from './shop-launch-checklist';
+import {shopLaunchReadiness} from '../../../modules/shops/shop-launch';
 import ShopPublication from './shop-publication';
 import MerchantShopWorkspace from './merchant-shop-workspace';
 import TeamCommerce from './team-commerce';
@@ -24,7 +26,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
   where:{shopId_userId:{shopId,userId:actor.userId}},
   select:{active:true,role:true,shop:{
    select:{name:true,slug:true,status:true,legacyWorkspaceId:true,
-    organization:{select:{name:true,ownerId:true}},
+    organization:{select:{name:true,ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}},
     legacyWorkspace:{select:{ownerId:true,data:true}}
    }
   }}
@@ -42,6 +44,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    isolated?.initialized?commercialOverview(isolated.state):null;
  const finance=isolated?.initialized?isolatedShopFinanceOverview(isolated.state):null;
  const carrierRows=isolated?.initialized?carrierCodReport(isolated.state):null;
+ const launch=isolated?shopLaunchReadiness({state:isolated.state,initialized:isolated.initialized,status:shop.status,subscriptionStatus:shop.organization.owner.workspace?.subscriptionStatus||'',subscriptionEndsAt:shop.organization.owner.workspace?.subscriptionEndsAt||null}):null;
  const cards=summary?[
   ['Produits',String(summary.products)],
   ['Unités en stock',String(summary.stockUnits)],
@@ -59,6 +62,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
      <h1>{shop.name}</h1><p>Statut : {shop.status} · Votre rôle : {membership.role}</p></div>
     <Link className={styles.back} href="/mes-boutiques">Toutes mes boutiques</Link>
    </header>
+   {isolated&&shop.organization.ownerId===actor.userId&&<ShopLaunchChecklist shopId={shopId} initialized={isolated.initialized} readiness={launch!}/>}
    {isolated?.initialized&&<MerchantShopWorkspace shopId={shopId}/>}
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>
     <section key={name} className={styles.card}><span className={styles.kicker}>{name}</span><h2>{value}</h2></section>
@@ -132,14 +136,14 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/abonnement'}>Voir mon offre et mes quotas</Link>
    </section>}
    {isolated?.initialized&&<section className={styles.card}>
-    <h2>Ma vitrine · Aperçu privé</h2>
+    <h2 id="vitrine">Ma vitrine · Aperçu privé</h2>
     <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/pages'}>Créer et publier les pages de ma boutique</Link></p>
-    <ShopPublication shopId={shopId} slug={shop.slug} initialPublished={shop.status==='PUBLISHED'}/>
+    <ShopPublication shopId={shopId} slug={shop.slug} initialPublished={shop.status==='PUBLISHED'} initialPubliclyAvailable={launch?.publiclyAvailable===true}/>
     <p>Prévisualisez votre catalogue ou publiez-le pour accepter des commandes COD. La publication nécessite un abonnement marchand valide.</p>
     <div className={styles.actions}><Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}>Prévisualiser la boutique</Link></div>
    </section>}
    </>:
-   <section className={styles.card}><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
+   <section className={styles.card} id="initialisation-boutique"><h2>{isolated?'Activer mon commerce indépendant':'Vue commerciale indisponible'}</h2>
     <p>{isolated?'Votre nouvelle boutique possède un espace commercial distinct. Vous pouvez initialiser un catalogue vide sans toucher aux données de vos autres boutiques.':workspace?'Seul le propriétaire commercial lié peut consulter ces chiffres.':'Cette boutique ne dispose pas encore d’un espace commercial accessible à votre rôle.'}</p>
     {isolated?<InitializeShop shopId={shopId}/>:<Link href="/equipe" className={styles.secondary}>Équipe et permissions</Link>}
     {!workspace&&membership.role!=='OWNER'&&<TeamCommerce shopId={shopId} role={membership.role}/>}

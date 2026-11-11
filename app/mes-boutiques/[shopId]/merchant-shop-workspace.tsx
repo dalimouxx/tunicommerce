@@ -31,7 +31,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
  const [active,setActive]=useState<MerchantWorkspaceTab>('orders');
  const current=merchantWorkspaceTabs.find(tab=>tab.id===active)!;
  useEffect(()=>{
-  const sync=()=>setActive(parseMerchantWorkspaceHash(window.location.hash)||'orders');
+  const sync=()=>{const tab=parseMerchantWorkspaceHash(window.location.hash);setActive(tab||'orders');if(tab)document.getElementById('gestion-boutique')?.scrollIntoView({block:'start'});};
   sync();window.addEventListener('hashchange',sync);
   return()=>window.removeEventListener('hashchange',sync);
  },[]);
@@ -39,7 +39,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
   setActive(tab);
   window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search+merchantWorkspaceHash(tab));
  }
- return <section aria-label="Espaces de gestion de ma boutique" className={styles.workspaceShell}>
+ return <section id="gestion-boutique" aria-label="Espaces de gestion de ma boutique" className={styles.workspaceShell}>
   <header className={styles.workspaceHeader}>
    <h2>Gestion de ma boutique</h2>
    <p>Choisissez un espace de travail. Les autres boutiques et l'administration globale restent indépendantes.</p>
