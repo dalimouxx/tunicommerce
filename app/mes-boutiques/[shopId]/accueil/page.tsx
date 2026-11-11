@@ -10,5 +10,5 @@ export default async function HomeEditorPage({params}:{params:Promise<{shopId:st
  const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');const {shopId}=await params;
  const shop=await homeOwner(actor.userId,shopId).catch(()=>null);if(!shop)notFound();
  const initial=await getShopHome(actor.userId,shopId);
- return <main className={styles.shell}><Link href={'/mes-boutiques/'+shopId}>← Ma boutique</Link><ShopHomeEditor shopId={shopId} publicPath={homePublicPath(shop)} legacy={!!shop.legacyWorkspaceId} initial={initial}/></main>;
+ return <main className={styles.shell}><Link href={'/mes-boutiques/'+shopId}>← Ma boutique</Link><ShopHomeEditor key={actor.userId+':'+shopId} shopId={shopId} userId={actor.userId} publicPath={homePublicPath(shop)} legacy={!!shop.legacyWorkspaceId} initial={initial}/></main>;
 }
