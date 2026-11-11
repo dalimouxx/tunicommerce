@@ -56,3 +56,7 @@ Développer sur audit/stabilisation-2026-11 puis branches de fonctionnalités, o
 `ShopDomainClaim` conserve les demandes et preuves TXT ; `ShopDomainBinding` assure l'unicité globale des domaines vérifiés. La gestion appartient au propriétaire de la boutique indépendante. Le Proxy Next associe le véritable Host à une seule boutique et refuse les routes privées et les autres boutiques. Les commandes restent validées côté serveur avec une origine HTTPS correspondant à cette boutique. Les sous-domaines automatiques utilisent le slug sous une racine réservée à l'exploitant.
 
 Le routage est désactivé par défaut sur Render. Le futur VPS devra fournir le DNS, le reverse proxy et les certificats HTTPS. L'autorisation d'émission TLS est contrôlée par `/api/v1/public/domains/allow`. Voir [le guide VPS](VPS-STOREFRONT-DOMAINS.md). La revérification périodique et le transfert administratif guidé restent à développer.
+
+## Composition de l'accueil
+
+`ShopHome` sépare le brouillon privé et l'instantané public en français/arabe, sans modifier les JSON commerciaux existants. Le propriétaire dispose d'une édition avec version attendue et verrou de boutique, d'un aperçu privé, d'une publication explicite et d'un retour au thème. Les accès publics conservent les contrôles de publication, d'abonnement et de domaine. Les sections restent du contenu typé, sans code marchand exécutable ; le catalogue et le checkout restent des composants métier protégés. Voir [le fonctionnement de l'accueil](shop-home.md).

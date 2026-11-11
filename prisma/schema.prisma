@@ -111,6 +111,7 @@ model Shop {
   memberships    Membership[]
   invitations    ShopInvitation[]
   commerce       ShopCommerce?
+  home           ShopHome?
   pages          ShopPage[]
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
@@ -386,4 +387,17 @@ model ShopDomainBinding {
  claim ShopDomainClaim @relation(fields:[claimId],references:[id],onDelete:Cascade)
  verifiedAt DateTime
  @@index([shopId])
+}
+
+/** Independent storefront homepage: a saved draft never alters the published snapshot. */
+model ShopHome {
+  shopId String @id
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  draft Json
+  published Json?
+  version Int @default(1)
+  publishedVersion Int?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

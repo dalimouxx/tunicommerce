@@ -1,3 +1,5 @@
+import {publishedShopHome} from '../../../modules/shops/home-service';
+import ShopHomeSections from '../../../components/shop-home-sections';
 import {notFound} from 'next/navigation';
 import {cookies} from 'next/headers';
 import Link from 'next/link';
@@ -56,6 +58,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  }))notFound();
  const catalog=isolatedStorefrontPreview(normalizeState(shop.commerce!.data as unknown as State));
  const pages=await publishedPageLinks(shop.id);
+ const home=await publishedShopHome(shop.id);
  const lang=resolveStorefrontLang(query.lang,(await cookies()).get(STOREFRONT_LANG_COOKIE)?.value,catalog.marketing.language);
  const t=storefrontDictionary(lang);
  const theme=catalog.theme;
@@ -73,7 +76,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  return <main className={styles.page+' '+arabicFont.variable} data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
   <StorefrontPixels metaPixelId={catalog.marketing.metaPixelId} tiktokPixelId={catalog.marketing.tiktokPixelId}/>
   <div className={styles.announcement}>
-   <span>{t.announcementZones}</span>
+   <span dir="auto">{home[lang].announcement||t.announcementZones}</span>
    <span aria-hidden="true">✦</span>
    <span>{t.announcementCod}</span>
   </div>
@@ -100,8 +103,8 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
    <section className={styles.hero} aria-labelledby="storefront-title">
     <div className={styles.heroCopy}>
      <span className={styles.kicker}>{t.heroKicker}</span>
-     <h1 id="storefront-title">{shopName}</h1>
-     <p className={styles.heroDescription} dir="auto">{catalog.description||t.heroFallback}</p>
+     <h1 id="storefront-title" dir="auto">{home[lang].heroTitle||shopName}</h1>
+     <p className={styles.heroDescription} dir="auto">{home[lang].heroDescription||catalog.description||t.heroFallback}</p>
      <div className={styles.heroActions}>
       <a href="#catalogue" className={styles.primaryAction}>{t.discover} <span aria-hidden="true">↗</span></a>
       {catalog.products.length>0&&<a href="#panier" className={styles.secondaryAction}>{t.orderOnline}</a>}
@@ -125,12 +128,14 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
      </div>}
     </div>
    </section>
-   <section className={styles.pillars} aria-label={t.orderInfo}>
+   {home.showBenefits&&<section className={styles.pillars} aria-label={t.orderInfo}>
     <div><span aria-hidden="true">✧</span><strong>{t.pillarChoice}</strong><small>{t.pillarChoiceText}</small></div>
     <div><span aria-hidden="true">◈</span><strong>{t.pillarCod}</strong><small>{t.pillarCodText}</small></div>
     <div><span aria-hidden="true">✦</span><strong>{t.pillarTracked}</strong><small>{t.pillarTrackedText}</small></div>
-   </section>
+   </section>}
+   {home.sectionsPosition==='beforeCatalog'&&<ShopHomeSections content={home} lang={lang}/>} 
    <CatalogBrowser slug={slug} products={catalog.products} lang={lang}/>
+   {home.sectionsPosition==='afterCatalog'&&<ShopHomeSections content={home} lang={lang}/>} 
    {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd}
     shipping={catalog.shipping} zones={catalog.zones} lang={lang}
     products={catalog.products.map(product=>({id:product.id,name:product.name,
@@ -150,3 +155,4 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   </div>
  </main>;
 }
+

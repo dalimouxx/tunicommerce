@@ -84,3 +84,8 @@ Les téléversements de médias historiques sont disponibles. Les comptes client
 
 La gestion des sous-domaines et preuves TXT est accessible au propriétaire dans Mes boutiques → boutique → Ma vitrine → Sous-domaine et domaines personnels. Le routage reste désactivé par défaut pour Render. La configuration DNS et HTTPS du futur VPS est décrite dans [le guide dédié](docs/VPS-STOREFRONT-DOMAINS.md).
 
+
+## Accueil personnalisable
+
+Mes boutiques → boutique indépendante → Ma vitrine → Composer et publier l’accueil : textes et sections FR/AR, aperçu privé, brouillon séparé de la publication et retour au thème. Les produits et le panier restent disponibles. [Fonctionnement et limites](docs/shop-home.md).
+
