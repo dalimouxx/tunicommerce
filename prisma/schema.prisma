@@ -45,6 +45,8 @@ model Workspace {
   plan      String @default("STARTER")
   subscriptionStatus String @default("TRIAL")
   subscriptionEndsAt DateTime?
+  subscriptionMailEnabled Boolean @default(false)
+  subscriptionMailVersion Int @default(0)
   receipts PublicReceipt[]
   shop Shop?
   media ShopMedia[]
@@ -57,6 +59,7 @@ model Workspace {
   version   Int @default(0)
   catalogVersion Int @default(0)
   updatedAt DateTime @updatedAt
+  @@index([subscriptionMailEnabled, subscriptionEndsAt, id])
 }
 model SetupLock {
   id        Int @id

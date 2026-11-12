@@ -21,7 +21,7 @@ export async function maintainJobs(now=new Date()){
  return prisma.$transaction(async tx=>{
   const expired=await tx.$executeRaw`WITH victims AS MATERIALIZED (
    SELECT "id" FROM "BackgroundJob" WHERE "status"='PENDING'
-    AND "kind" IN ('ACCOUNT_EMAIL','ORDER_EMAIL','BUSINESS_WEBHOOK') AND "createdAt"<${expiredCutoff}
+    AND "kind" IN ('ACCOUNT_EMAIL','ORDER_EMAIL','BUSINESS_WEBHOOK','SUBSCRIPTION_EMAIL') AND "createdAt"<${expiredCutoff}
     ORDER BY "createdAt","id" LIMIT 500 FOR UPDATE SKIP LOCKED)
    UPDATE "BackgroundJob" SET "status"='FAILED',"errorCode"='EXPIRED',"payload"=NULL,"finishedAt"=${now},"leaseId"=NULL,"lockedUntil"=NULL
     WHERE "id" IN (SELECT "id" FROM victims)`;

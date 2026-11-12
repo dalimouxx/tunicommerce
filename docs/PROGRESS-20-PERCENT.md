@@ -16,3 +16,13 @@ Les tâches restantes au-delà de ces lots comprennent les connexions réelles a
 À chaque livraison, mettre à jour les preuves et réévaluer le reste à faire. Un nouveau pourcentage restera une estimation de périmètre, et ne constituera pas une autorisation de lancement commercial.
 
 Après les PR 139 à 141, les trois lots opérationnels livrés ramènent l'estimation autour de 25 % restants, toujours avec une incertitude d'environ dix points. Les échanges métier signés et la préparation d'exploitation VPS constituent les prochains lots du jalon ; ils ne remplacent pas les connexions réelles aux prestataires.
+
+## Priorités confirmées par le propriétaire
+
+1. Abonnements SaaS automatiques : préparer les rappels et le cycle d’échéance ; les débits nécessitent un prestataire et sa recette.
+2. Données et médias : poursuivre la migration additive et préparer un stockage externe réversible.
+3. Domaines, HTTPS et sauvegardes réelles : préparer l’exploitation, puis activer avec les accès VPS/DNS et la destination de sauvegarde.
+4. Bugs et recette complète : vérifier les parcours réels et conserver un registre des anomalies corrigées et encore ouvertes.
+5. Connexions livraison, paiement, e-mails et SMS/WhatsApp : choisir les services, développer et tester les adaptateurs, puis activer explicitement.
+
+Les événements métier signés sont fusionnés par la PR 142 après 26 workflows réussis. Les rappels d’abonnement font l’objet du lot suivant ; ils ne rendent pas les paiements automatiques opérationnels. Aucun nouveau pourcentage n’est déduit du seul ajout de ces rappels.

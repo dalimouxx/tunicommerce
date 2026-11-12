@@ -7,11 +7,13 @@ import {sendAccountEmail} from '../messaging/email';
 import {finishJob,leaseNextJob,readJobPayload} from './service';
 import {processOrderMail} from '../messaging/order-mail-service';
 import {processBusinessWebhook} from '../messaging/webhook-outbox';
+import {processSubscriptionReminder} from '../billing/reminders';
 import type {sendBusinessWebhook} from '../messaging/webhook-transport';
 
 export async function processOneJob(send:typeof sendAccountEmail=sendAccountEmail,options:{kinds?:readonly string[];sendWebhook?:typeof sendBusinessWebhook}={}){
  const job=await leaseNextJob(options.kinds);
  if(!job)return false;
+ if(job.kind==='SUBSCRIPTION_EMAIL'){await processSubscriptionReminder(job,send);return true;}
  if(job.kind==='BUSINESS_WEBHOOK'){await processBusinessWebhook(job,options.sendWebhook);return true;}
  if(job.kind==='ORDER_EMAIL'){await processOrderMail(job,send);return true;}
  if(job.kind!=='ACCOUNT_EMAIL'){await finishJob(job,'UNSUPPORTED_KIND');return true;}
