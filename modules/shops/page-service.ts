@@ -7,16 +7,16 @@ import type {z} from 'zod';
 import {randomUUID} from 'node:crypto';
 import {readPageHistory,appendPageHistory,summarizePageRevision,type PageRevision} from './page-history';
 import {assertPagePhotoOwnership} from './page-image-service';
+import {homeOwner,homePublicPath} from './home-service';
+import {isOpen} from '../platform/public';
 
 export async function pageOwner(userId:string,shopId:string,tx:Prisma.TransactionClient=prisma){
- const member=await tx.membership.findUnique({where:{shopId_userId:{shopId,userId}},select:{active:true,role:true,
-  shop:{select:{id:true,name:true,slug:true,status:true,legacyWorkspaceId:true,commerce:{select:{shopId:true}},
-   organization:{select:{ownerId:true,owner:{select:{workspace:{select:{id:true,subscriptionStatus:true,subscriptionEndsAt:true}}}}}}}}}});
- if(!member?.active)throw new HttpError(404,'Boutique introuvable');
- if(member.role!=='OWNER'||member.shop.organization.ownerId!==userId||member.shop.legacyWorkspaceId)
-  throw new HttpError(403,'Édition réservée au propriétaire d’une boutique indépendante');
- if(!member.shop.commerce)throw new HttpError(409,'Initialisez votre boutique');
- return member.shop;
+ return homeOwner(userId,shopId,tx);
+}
+/** Stable public address; availability is checked separately on publication and every public read. */
+export function pageStorefrontPath(shop:Awaited<ReturnType<typeof pageOwner>>){
+ if(shop.legacyWorkspaceId)return shop.legacyWorkspace?.slug?'/boutiques/'+encodeURIComponent(shop.legacyWorkspace.slug):null;
+ return '/vitrines/'+encodeURIComponent(shop.slug);
 }
 function record(row:{id:string;slug:string;draft:Prisma.JsonValue;version:number;publishedAt:Date|null}):PageEditorRecord{
  return {id:row.id,slug:row.slug,draft:pageContent.parse(row.draft),version:row.version,publishedAt:row.publishedAt?.toISOString()||null};
@@ -24,7 +24,7 @@ function record(row:{id:string;slug:string;draft:Prisma.JsonValue;version:number
 export async function listShopPages(userId:string,shopId:string){
  const shop=await pageOwner(userId,shopId);
  const rows=await prisma.shopPage.findMany({where:{shopId},select:{id:true,slug:true,draft:true,version:true,publishedAt:true},orderBy:[{createdAt:'asc'},{id:'asc'}]});
- return {shop:{name:shop.name,slug:shop.slug},pages:rows.map(record)};
+ return {shop:{name:shop.name,slug:shop.slug,publicBasePath:pageStorefrontPath(shop),legacy:!!shop.legacyWorkspaceId},pages:rows.map(record)};
 }
 export async function getShopPageHistory(userId:string,shopId:string,pageId:string,revisionId?:string){
  await pageOwner(userId,shopId);
@@ -37,12 +37,12 @@ export async function getShopPageHistory(userId:string,shopId:string,pageId:stri
  return revision;
 }
 async function lockShop(tx:Prisma.TransactionClient,userId:string,shopId:string){
- const candidate=await pageOwner(userId,shopId,tx),workspaceId=candidate.organization.owner.workspace?.id;
+ const candidate=await pageOwner(userId,shopId,tx),workspaceId=candidate.legacyWorkspaceId||candidate.organization.owner.workspace?.id;
  // Match the workspace-before-shop order used by media deletion and commerce writes.
  if(workspaceId)await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${workspaceId} FOR UPDATE`;
  await tx.$queryRaw`SELECT id FROM "Shop" WHERE id=${shopId} FOR UPDATE`;
  const shop=await pageOwner(userId,shopId,tx);
- if(shop.organization.owner.workspace?.id!==workspaceId)throw new HttpError(409,'Le compte boutique a changé. Rechargez avant de réessayer.');
+ if((shop.legacyWorkspaceId||shop.organization.owner.workspace?.id)!==workspaceId||shop.legacyWorkspaceId!==candidate.legacyWorkspaceId)throw new HttpError(409,'Le compte boutique a changé. Rechargez avant de réessayer.');
  return shop;
 }
 export async function createShopPage(userId:string,shopId:string,input:z.infer<typeof createPageInput>){
@@ -80,9 +80,7 @@ export async function changeShopPage(userId:string,shopId:string,pageId:string,i
    data={...data,draft:revision.content as Prisma.InputJsonValue};snapshot('restoreRevision',revision.content,row.version+1);
   }
   else{
-   const subscription=shop.organization.owner.workspace;
-   if(!isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,initialized:!!shop.commerce,
-    subscriptionStatus:subscription?.subscriptionStatus||'',subscriptionEndsAt:subscription?.subscriptionEndsAt||null}))
+   if(!homePublicPath(shop))
     throw new HttpError(409,'Publiez la boutique avec un abonnement valide avant de publier une page');
    await assertPagePhotoOwnership(tx,userId,pageContent.parse(row.draft));
    data={...data,published:pageContent.parse(row.draft) as Prisma.InputJsonValue,publishedAt:new Date()};
@@ -115,4 +113,17 @@ export async function readPublicShopPage(slug:string,pageSlug:string){
 export async function publishedPageLinks(shopId:string){
  const rows=await prisma.shopPage.findMany({where:{shopId,publishedAt:{not:null}},select:{slug:true,published:true},orderBy:[{createdAt:'asc'},{id:'asc'}],take:10});
  return rows.flatMap(row=>{const content=pageContent.safeParse(row.published);return content.success?[{slug:row.slug,title:content.data.title}]:[];});
+}
+/** The caller of the legacy storefront already checks its Workspace publication gate. */
+export async function publishedWorkspacePageLinks(workspaceId:string,ownerId:string){
+ const shop=await prisma.shop.findUnique({where:{legacyWorkspaceId:workspaceId},select:{id:true,organization:{select:{ownerId:true}}}});
+ return shop?.organization.ownerId===ownerId?publishedPageLinks(shop.id):[];
+}
+export async function readPublicWorkspacePage(workspaceSlug:string,pageSlug:string){
+ const workspace=await prisma.workspace.findUnique({where:{slug:workspaceSlug},select:{ownerId:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true,
+  shop:{select:{name:true,slug:true,organization:{select:{ownerId:true}},pages:{where:{slug:pageSlug,publishedAt:{not:null}},select:{published:true},take:1}}}
+ }});
+ if(!workspace||!isOpen(workspace)||workspace.shop?.organization.ownerId!==workspace.ownerId||!workspace.shop.pages[0])return null;
+ const content=pageContent.safeParse(workspace.shop.pages[0].published);
+ return content.success?{shopName:workspace.shop.name,shopSlug:workspace.shop.slug,content:content.data,storefrontPath:'/boutiques/'+encodeURIComponent(workspaceSlug)}:null;
 }

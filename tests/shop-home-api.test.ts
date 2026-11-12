@@ -1,3 +1,4 @@
+import {initialPageContent,type PageEditorRecord} from '../modules/shops/page-content';
 import {saveHomeDraft,HomeConflictError,type HomeFetcher} from '../modules/shops/home-editor-state';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -211,6 +212,68 @@ test('Homepage editor: private drafts, bilingual publication, version conflicts 
    const {revisions}=await (await get(legacyApi+'/history',legacy.cookie)).json();assert.equal(revisions.length,3);assert.deepEqual(revisions.map((r:Summary)=>r.action),['save','checkpoint','publishedCheckpoint']);
    const oldDraft=await (await get(legacyApi+'/history/'+revisions[1].id,legacy.cookie)).json(),oldPublished=await (await get(legacyApi+'/history/'+revisions[2].id,legacy.cookie)).json();assert.deepEqual(oldDraft.content,previous.draft);assert.deepEqual(oldPublished.content,older);
    const response=await put(legacyApi,{action:'restoreRevision',version:legacyRecord.version,revisionId:revisions[1].id},legacy.cookie);assert.equal(response.status,200);legacyRecord=await response.json();assert.deepEqual(legacyRecord.draft,previous.draft);assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);
+  });
+  const legacyPages='/api/v1/shops/'+legacy.shop.id+'/pages';let legacyPage:PageEditorRecord;
+  const legacyPagePath=legacyPublic+'/pages/a-propos',legacyPageImage='/api/v1/public/vitrines/'+legacy.shop.slug+'/pages/a-propos/images/';
+  let pageCommerceBaseline=await prisma.workspace.findUniqueOrThrow({where:{id:legacyWorkspace.id}});
+  const pagePhoto=await prisma.productMedia.create({data:{workspaceId:legacyWorkspace.id,...photoData}});
+  const pageContent=initialPageContent('PAGE-EXISTANTE-'+mark);pageContent.language='ar';pageContent.description='Description publique '+mark;pageContent.sections=[
+   {id:randomUUID(),type:'hero',title:'مرحبا',text:'متجر موجود'},
+   {id:randomUUID(),type:'text',title:'Notre histoire',text:'Texte sûr <script>alert(1)</script>'},
+   {id:randomUUID(),type:'benefits',title:'Nos atouts',items:['Équipe locale','Paiement à la livraison']},
+   {id:randomUUID(),type:'faq',title:'Questions',items:[{question:'Comment commander ?',answer:'Depuis le catalogue'}]},
+   {id:randomUUID(),type:'cta',title:'Découvrez nos produits',text:'Catalogue conservé',label:'Voir les produits'},
+   {id:randomUUID(),type:'image',title:'Notre équipe',imageUrl:photoUrl(pagePhoto.id),alt:'Équipe de recette',caption:'PHOTO-PAGE-'+mark,layout:'wide',fit:'contain'}];
+  const postLegacyPage=(content:unknown=pageContent,from=origin)=>fetch(base+legacyPages,{method:'POST',headers:{cookie:legacy.cookie,origin:from,'content-type':'application/json'},body:JSON.stringify({slug:'a-propos',content})});
+  async function legacyPageChange(action:'save'|'publish'|'unpublish'|'restoreRevision',content?:unknown,revisionId?:string){const r=await put(legacyPages+'/'+legacyPage.id,{action,version:legacyPage.version,...(content?{content}:{}),...(revisionId?{revisionId}:{})},legacy.cookie);if(r.ok)legacyPage=(await r.json()).page;return r;}
+  let publishedPageRevision='';
+  await t.test('existing Workspace owners discover and read the page editor without provisioning independent commerce',async()=>{
+   await prisma.shop.update({where:{id:legacy.shop.id},data:{status:'DRAFT'}});
+   assert.equal((await get(legacyPages)).status,401);assert.equal((await get(legacyPages,b.cookie)).status,403);assert.equal((await get('/mes-boutiques/'+legacy.shop.id+'/pages',legacy.cookie)).status,200);
+   const list=await (await get(legacyPages,legacy.cookie)).json();assert.deepEqual(list.pages,[]);assert.equal(list.shop.publicBasePath,legacyPublic);assert.equal(list.shop.legacy,true);
+   for(const path of ['/personnalisation','/mes-boutiques/'+legacy.shop.id,'/mes-boutiques'])assert.ok((await (await get(path,legacy.cookie)).text()).includes('/mes-boutiques/'+legacy.shop.id+'/pages'),path);
+   assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);assert.equal(await prisma.shopPage.count({where:{shopId:legacy.shop.id}}),0);
+  });
+  await t.test('legacy pages use private drafts and the real Workspace publication gate',async()=>{
+   assert.equal((await postLegacyPage(pageContent,'https://evil.test')).status,403);
+   const wrong=structuredClone(pageContent);wrong.sections=[imageSection(photoUrl(foreignPhoto.id))];assert.equal((await postLegacyPage(wrong)).status,403);
+   const created=await postLegacyPage();assert.equal(created.status,201);legacyPage=(await created.json()).page;
+   assert.equal((await get(legacyPagePath,legacy.cookie)).status,404);assert.equal((await get(legacyPageImage+pagePhoto.id,legacy.cookie)).status,404);assert.equal((await legacyPageChange('publish')).status,409);
+   const preview='/mes-boutiques/'+legacy.shop.id+'/pages/'+legacyPage.id+'/apercu';const response=await get(preview,legacy.cookie);assert.equal(response.status,200);const html=await response.text();assert.ok(html.includes('dir="rtl"'));assert.ok(html.includes(legacyPublic+'?lang=ar#catalogue'));assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));assert.ok(html.includes(photoUrl(pagePhoto.id)));assert.equal((await get(preview,b.cookie)).status,404);
+  });
+  await t.test('published legacy pages and images keep the Workspace URL and navigation snapshot',async()=>{
+   await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000)}});
+   assert.equal((await legacyPageChange('publish')).status,200);publishedPageRevision=(await (await get(legacyPages+'/'+legacyPage.id+'/history',legacy.cookie)).json()).revisions[0].id;
+   const response=await get(legacyPagePath);assert.equal(response.status,200);const html=await response.text();assert.ok(html.includes(pageContent.title));assert.ok(html.includes(legacyPublic+'?lang=ar#catalogue'));assert.ok(html.includes(legacyPageImage+pagePhoto.id));assert.equal(html.includes('href="/vitrines/'+legacy.shop.slug+'?'),false);assert.equal((await get(legacyPageImage+pagePhoto.id)).status,200);
+   assert.equal((await get('/vitrines/'+legacy.shop.slug+'/pages/a-propos',legacy.cookie)).status,404);assert.equal((await get('/boutiques/'+legacy.shop.slug+'/pages/a-propos',legacy.cookie)).status,404);
+   const changed=structuredClone(pageContent);changed.title='BROUILLON-PAGE-SECRET-'+mark;assert.equal((await legacyPageChange('save',changed)).status,200);
+   const main=await (await get(legacyPublic)).text();assert.ok(main.includes(legacyPagePath));assert.ok(main.includes(pageContent.title));assert.equal(main.includes(changed.title),false);assert.equal((await (await get(legacyPagePath)).text()).includes(changed.title),false);
+  });
+  await t.test('Workspace withdrawal, expiry and suspension hide legacy pages and their images despite Shop status',async()=>{
+   await prisma.shop.update({where:{id:legacy.shop.id},data:{status:'PUBLISHED'}});
+   for(const values of [{published:false},{published:true,subscriptionStatus:'SUSPENDED'},{published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(0)}]){
+    await prisma.workspace.update({where:{id:legacyWorkspace.id},data:values});assert.equal((await get(legacyPagePath,legacy.cookie)).status,404);assert.equal((await get(legacyPageImage+pagePhoto.id,legacy.cookie)).status,404);assert.equal((await legacyPageChange('publish')).status,409);
+    assert.equal((await get(legacyPages+'/'+legacyPage.id+'/history',legacy.cookie)).status,200);assert.equal((await get('/mes-boutiques/'+legacy.shop.id+'/pages/'+legacyPage.id+'/apercu',legacy.cookie)).status,200);
+   }
+   await prisma.workspace.update({where:{id:legacyWorkspace.id},data:{published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000)}});assert.equal((await get(legacyPagePath)).status,200);
+  });
+  await t.test('fake OWNER, global admin, mismatched Workspace owner and inactive membership cannot edit legacy pages',async()=>{
+   const path=legacyPages+'/'+legacyPage.id,history=path+'/history';assert.equal((await get(history,b.cookie)).status,403);assert.equal((await put(path,{action:'unpublish',version:legacyPage.version},b.cookie)).status,403);
+   await prisma.organization.update({where:{id:legacy.shop.organizationId},data:{ownerId:b.user.id}});assert.equal((await get(legacyPages,legacy.cookie)).status,403);assert.equal((await get(legacyPages,b.cookie)).status,403);assert.equal((await get(legacyPagePath)).status,404);assert.equal((await get(legacyPageImage+pagePhoto.id)).status,404);assert.equal((await (await get(legacyPublic)).text()).includes(legacyPagePath),false);
+   await prisma.organization.update({where:{id:legacy.shop.organizationId},data:{ownerId:legacy.user.id}});await prisma.membership.update({where:{shopId_userId:{shopId:legacy.shop.id,userId:legacy.user.id}},data:{active:false}});assert.equal((await get(history,legacy.cookie)).status,404);assert.equal((await put(path,{action:'unpublish',version:legacyPage.version},legacy.cookie)).status,404);await prisma.membership.update({where:{shopId_userId:{shopId:legacy.shop.id,userId:legacy.user.id}},data:{active:true}});
+  });
+  await t.test('legacy page concurrency and historical restore preserve the saved public content',async()=>{
+   const version=legacyPage.version,results=await Promise.all(['ONGLET-UN-'+mark,'ONGLET-DEUX-'+mark].map(title=>put(legacyPages+'/'+legacyPage.id,{action:'save',version,content:{...legacyPage.draft,title}},legacy.cookie)));assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);legacyPage=(await results.find(r=>r.ok)!.json()).page;
+   const before=await prisma.shopPage.findUniqueOrThrow({where:{id:legacyPage.id}});assert.equal((await legacyPageChange('restoreRevision',undefined,publishedPageRevision)).status,200);assert.deepEqual(legacyPage.draft,pageContent);assert.deepEqual((await prisma.shopPage.findUniqueOrThrow({where:{id:legacyPage.id}})).published,before.published);assert.equal((await removePhoto(pagePhoto.id,legacy.cookie)).status,409);
+  });
+  await t.test('legacy COD checkout remains on the original API after page publication without commerce migration',async()=>{
+   const before=await prisma.workspace.findUniqueOrThrow({where:{id:legacyWorkspace.id}});assert.deepEqual(before.data,pageCommerceBaseline.data);assert.equal(before.version,pageCommerceBaseline.version);assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);
+   const response=await fetch(base+'/api/boutiques/'+legacyWorkspace.slug+'/checkout',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({requestId:randomUUID(),customer:{name:'Client de recette pages',phone:'22123456',city:'Tunis',address:'Adresse fictive'},items:[{productId:'p1',quantity:1}]})});assert.equal(response.status,201);const receipt=await response.json();assert.match(receipt.trackingUrl,/^\/suivi\/[a-f0-9]{64}$/);assert.ok((await (await get(legacyPagePath)).text()).includes(pageContent.title));pageCommerceBaseline=await prisma.workspace.findUniqueOrThrow({where:{id:legacyWorkspace.id}});
+  });
+  await t.test('withdrawing and deleting a legacy page removes its navigation and history without altering commerce',async()=>{
+   assert.equal((await legacyPageChange('unpublish')).status,200);assert.equal((await get(legacyPagePath)).status,404);assert.equal((await get(legacyPageImage+pagePhoto.id,legacy.cookie)).status,404);const html=await (await get(legacyPublic)).text();assert.equal(html.includes(legacyPagePath),false);assert.ok(html.includes('Casque sans fil Studio'));assert.equal((await removePhoto(pagePhoto.id,legacy.cookie)).status,409);
+   const path=legacyPages+'/'+legacyPage.id;const del=(version:number)=>fetch(base+path,{method:'DELETE',headers:{cookie:legacy.cookie,origin,'content-type':'application/json'},body:JSON.stringify({version})});assert.equal((await del(legacyPage.version-1)).status,409);assert.equal((await del(legacyPage.version)).status,200);assert.equal((await get(path+'/history',legacy.cookie)).status,404);
+   const after=await prisma.workspace.findUniqueOrThrow({where:{id:legacyWorkspace.id}});assert.deepEqual(after.data,pageCommerceBaseline.data);assert.equal(after.version,pageCommerceBaseline.version);assert.equal(await prisma.shopCommerce.count({where:{shopId:legacy.shop.id}}),0);assert.equal((await removePhoto(pagePhoto.id,legacy.cookie)).status,200);
   });
  }finally{stopTestServer(server);await prisma.organization.deleteMany({where:{ownerId:{in:ids}}});await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect();}
 });

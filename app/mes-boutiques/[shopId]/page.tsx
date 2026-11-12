@@ -64,7 +64,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    </header>
    {canRead&&workspace&&membership.role==='OWNER'&&shop.organization.ownerId===actor.userId&&<section className={styles.card}>
     <h2 id="vitrine">Ma vitrine</h2><p>Personnalise l’accueil de ta boutique existante, sans déplacer ton catalogue ni tes commandes.</p>
-    <div className={styles.actions}><Link className={styles.primary} href={'/mes-boutiques/'+shopId+'/accueil'}>Composer et publier l’accueil de ma boutique</Link><Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/accueil/apercu'}>Aperçu du brouillon enregistré</Link><Link className={styles.secondary} href="/personnalisation">Thèmes, logo et bannière</Link></div>
+    <div className={styles.actions}><Link className={styles.primary} href={'/mes-boutiques/'+shopId+'/accueil'}>Composer et publier l’accueil de ma boutique</Link><Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/accueil/apercu'}>Aperçu du brouillon enregistré</Link><Link className={styles.secondary} href="/personnalisation">Thèmes, logo et bannière</Link><Link className={styles.secondary} href={'/mes-boutiques/'+shopId+'/pages'}>Créer et publier les pages de ma boutique</Link></div>
    </section>}
    {isolated&&shop.organization.ownerId===actor.userId&&<ShopLaunchChecklist shopId={shopId} initialized={isolated.initialized} readiness={launch!}/>}
    {isolated?.initialized&&<MerchantShopWorkspace shopId={shopId}/>}

@@ -10,5 +10,5 @@ export default async function Pages({params}:{params:Promise<{shopId:string}>}){
  const actor=await getCurrentUser();if(!actor)redirect('/connexion/boutique');
  const {shopId}=await params;const data=await listShopPages(actor.userId,shopId).catch(()=>null);if(!data)notFound();
  return <main className={styles.shell}><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)}>← {data.shop.name}</Link>
-  <ShopPageEditor shopId={shopId} shopSlug={data.shop.slug} initialPages={data.pages}/></main>;
+  <ShopPageEditor shopId={shopId} shopSlug={data.shop.slug} publicBasePath={data.shop.publicBasePath} initialPages={data.pages}/></main>;
 }

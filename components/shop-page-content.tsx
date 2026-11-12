@@ -15,8 +15,8 @@ export function ShopPageSections({content,catalog='',interactive=true,shopSlug,p
  </section>)}</div>;
 }
 
-export default function ShopPageContent({content,shopName,slug,pageSlug,preview=false}:{content:PageContent;shopName:string;slug:string;pageSlug?:string;preview?:boolean}){
- const catalog='/vitrines/'+encodeURIComponent(slug)+'?lang='+content.language+'#catalogue';
+export default function ShopPageContent({content,shopName,slug,pageSlug,preview=false,storefrontPath}:{content:PageContent;shopName:string;slug:string;pageSlug?:string;preview?:boolean;storefrontPath?:string}){
+ const catalog=(storefrontPath||'/vitrines/'+encodeURIComponent(slug))+'?lang='+content.language+'#catalogue';
  return <main className={styles.publicPage} lang={content.language} dir={content.language==='ar'?'rtl':'ltr'}>
   {preview&&<aside className={styles.preview}>APERÇU PRIVÉ · Brouillon enregistré. Les modifications non enregistrées ne sont pas affichées.</aside>}
   <header className={styles.publicHeader}><strong>{shopName}</strong><Link href={catalog}>{content.language==='ar'?'العودة إلى المتجر':'Retour à la boutique'} ↗</Link></header>
