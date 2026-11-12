@@ -6,8 +6,8 @@ Le suivi ci-dessous distingue le développement vérifié de l'exploitation à c
 
 | Chantier suivant | Preuve nécessaire | État au début du jalon |
 | --- | --- | --- |
-| Exploitation des traitements | Présence du worker, diagnostic privé, purge bornée et concurrente, sonde VPS, tests et déploiement | Code et tests ciblés réalisés ; validation complète et livraison en cours |
-| Communications de commande | Préférences explicites, modèles, file transactionnelle, isolation, suivi des tentatives ; aucun envoi réel sans configuration | À développer |
+| Exploitation des traitements | Présence du worker, diagnostic privé, purge bornée et concurrente, sonde VPS, tests et déploiement | Livré par la PR 139, quinze workflows réussis, Render Live le 12 novembre ; worker et alertes externes non activés |
+| Communications de commande | Préférences explicites, modèles, file transactionnelle, isolation, suivi des tentatives ; aucun envoi réel sans configuration | Alertes au propriétaire en cours de validation ; communications automatiques aux acheteurs toujours à développer |
 | Intégrations métier | Événements durables, authentification des échanges, déduplication, reprises bornées, paramètres privés | À développer selon le périmètre indépendant des prestataires |
 | Données et médias | Migration additive, conservation des boutiques existantes, contrôle de parité et stockage configurable | À développer progressivement |
 

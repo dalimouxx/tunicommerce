@@ -65,3 +65,9 @@ Les pages complémentaires, leurs images et leur historique sont également acce
 ## Exploitation du worker — 12 novembre 2026
 
 Le bloc 7 comprend maintenant des signaux de présence persistants, la détection des baux expirés et de l'âge du travail disponible dans `/admin/taches`, une sonde locale avec codes de sortie et une purge concurrente bornée des anciennes tâches terminées, jetons expirés et traces de sécurité. Un modèle systemd prépare l'exploitation du futur VPS. Voir `worker-operations.md`. Ces fichiers n'activent ni service d'envoi ni alerte externe ; les essais SMTP réels, l'installation du worker et les webhooks métier restent à réaliser.
+
+## Communications de commande — alertes au propriétaire
+
+Le bloc 4 dispose d'un parcours privé de préférences et de modèles pour avertir le propriétaire vérifié des nouvelles commandes et changements de statut, sur les commerces historiques et indépendants. Les tâches sont insérées avec la mutation commerciale et dédupliquées ; le worker revérifie l'activation et le destinataire avant chaque tentative. Le journal reste isolé par boutique. Les modèles sont préparables sans activer d'envoi ; les alertes sont désactivées par défaut. Voir `order-alerts.md`.
+
+Cette première communication de commande ne couvre pas les e-mails automatiques aux acheteurs, les campagnes, les SMS ou WhatsApp. La recette SMTP et l'exploitation du worker restent des prérequis distincts ; aucun envoi réel n'a été effectué par les tests.

@@ -113,6 +113,7 @@ model Shop {
   commerce       ShopCommerce?
   home           ShopHome?
   pages          ShopPage[]
+  orderMail      ShopOrderMail?
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
   createdAt      DateTime @default(now())
@@ -348,6 +349,16 @@ model WorkerHeartbeat {
  lastSeenAt DateTime @default(now())
  stoppedAt DateTime?
  @@index([lastSeenAt])
+}
+
+/** Opt-in operational messages to the verified shop owner only. */
+model ShopOrderMail {
+ shopId String @id
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ enabled Boolean @default(false)
+ templates Json
+ version Int @default(0)
+ updatedAt DateTime @updatedAt
 }
 
 model MfaRecoveryCode {

@@ -8,6 +8,7 @@ import {readWorkspace} from '../storage/repository';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import type {State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
+import {enqueueOrderMail} from '../messaging/order-mail-service';
 
 type LegacyInput={action:string;payload?:unknown;requestId:string};
 
@@ -48,6 +49,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
    data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(update.count!==1)throw new HttpError(409,'Modification concurrente : réessayez');
+  await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
   return {state:next,version:workspace.version+1,alreadyApplied:false};
  },{timeout:15000});
 }

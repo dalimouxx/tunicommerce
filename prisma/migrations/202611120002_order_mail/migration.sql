@@ -1,0 +1,8 @@
+CREATE TABLE "ShopOrderMail" (
+ "shopId" TEXT NOT NULL PRIMARY KEY,
+ "enabled" BOOLEAN NOT NULL DEFAULT false,
+ "templates" JSONB NOT NULL,
+ "version" INTEGER NOT NULL DEFAULT 0,
+ "updatedAt" TIMESTAMP(3) NOT NULL,
+ CONSTRAINT "ShopOrderMail_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);

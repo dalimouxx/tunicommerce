@@ -9,6 +9,7 @@ import {assertCommerceQuotas,loadWorkspaceQuotas,type EnforcedQuotas} from '../s
 import {requireIsolatedOwner} from './isolated-commerce';
 import {canAccessShop,type ShopPermission} from './permissions';
 import {assertPlanForNewCommerce,isCommerceGrowth} from './plan-growth-policy';
+import {enqueueOrderMail} from '../messaging/order-mail-service';
 
 export function tunisianMonth(value:Date|string):string{
  const date=typeof value==='string'?new Date(value):value;
@@ -107,6 +108,7 @@ export async function writeIsolatedCommerce(
    data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(updated.count!==1)throw new HttpError(409,'Modification concurrente. Actualisez puis réessayez.');
+  await enqueueOrderMail(tx,{shopId},before,next,row.version+1);
   return {state:next,version:row.version+1,alreadyApplied:false};
  },{timeout:15000});
 }
