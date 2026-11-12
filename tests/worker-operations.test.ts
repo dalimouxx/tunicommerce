@@ -59,7 +59,7 @@ test('Worker supervision and bounded retention',async t=>{
    assert.equal(await prisma.backgroundJob.count({where:{subjectKey:prefix,status:'PENDING'}}),1);
   });
   await t.test('Expired known communications are failed without sending while recent and generic jobs survive',async()=>{
-   const old=await Promise.all(['ACCOUNT_EMAIL','ORDER_EMAIL','BUSINESS_WEBHOOK'].map(kind=>job('PENDING',null,{kind,createdAt:ago(3),payload:'fixture-protected'})));
+   const old=await Promise.all(['ACCOUNT_EMAIL','ORDER_EMAIL','BUSINESS_WEBHOOK','SUBSCRIPTION_EMAIL'].map(kind=>job('PENDING',null,{kind,createdAt:ago(3),payload:'fixture-protected'})));
    const recent=await job('PENDING',null,{kind:'BUSINESS_WEBHOOK',createdAt:ago(1),payload:'fixture-protected'});
    const result=await maintainJobs(now);assert.ok(result.expired>=3);
    for(const row of await prisma.backgroundJob.findMany({where:{id:{in:old.map(j=>j.id)}}})){

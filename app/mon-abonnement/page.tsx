@@ -15,6 +15,8 @@ import {ownerCommerceBillingSummary} from '../../modules/shops/merchant-billing-
 import {enabledReceptionMethods} from '../../modules/billing/reception';
 import styles from './plan.module.css';
 import SubscriptionBilling,{type PaymentHistory,type PaymentOffer} from './subscription-billing';
+import SubscriptionReminders from '../../components/subscription-reminders';
+import {readSubscriptionReminders} from '../../modules/billing/reminders';
 
 export const dynamic='force-dynamic';
 
@@ -26,6 +28,7 @@ export default async function MySubscription(){
  if(!user)redirect('/connexion/boutique');
  const workspace=await prisma.workspace.findUnique({where:{ownerId:user.userId}});
  if(!workspace)redirect(user.role==='ADMIN'?'/admin':'/equipe');
+ const reminders=await readSubscriptionReminders(user.userId);
  const [plan,quotas,photos,availablePlans,payments,methods,shopCount,staffMemberships,linkedShop,isolatedStates]=await Promise.all([
   prisma.subscriptionPlan.findUnique({where:{code:workspace.plan}}),
   loadWorkspaceQuotas(workspace),
@@ -114,6 +117,10 @@ export default async function MySubscription(){
      decidedAt:p.decidedAt?.toISOString()||null
     })) satisfies PaymentHistory[]}
    /></div>
+   <section className={styles.card}>
+    <h2>Rappels d’abonnement</h2>
+    <SubscriptionReminders initial={{...reminders,jobs:reminders.jobs.map(job=>({...job,createdAt:job.createdAt.toISOString(),finishedAt:job.finishedAt?.toISOString()??null}))}}/>
+   </section>
    <section className={styles.card}>
     <h2>Renouvellement et contrôle</h2>
     <p>Les déclarations sont examinées par l'administration. Seule sa validation prolonge l’abonnement ; aucune carte bancaire n'est débitée automatiquement.</p>
