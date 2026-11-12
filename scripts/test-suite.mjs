@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 // Database suites reset shared tables: always run them serially on a disposable DB.
 const integration=new Set([
+ 'worker-operations.test.ts',
  'shop-home-api.test.ts',
  'shop-domains-api.test.ts',
  'merchant-shop-journey-api.test.ts',
