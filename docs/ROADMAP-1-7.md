@@ -71,3 +71,9 @@ Le bloc 7 comprend maintenant des signaux de présence persistants, la détectio
 Le bloc 4 dispose d'un parcours privé de préférences et de modèles pour avertir le propriétaire vérifié des nouvelles commandes et changements de statut, sur les commerces historiques et indépendants. Les tâches sont insérées avec la mutation commerciale et dédupliquées ; le worker revérifie l'activation et le destinataire avant chaque tentative. Le journal reste isolé par boutique. Les modèles sont préparables sans activer d'envoi ; les alertes sont désactivées par défaut. Voir `order-alerts.md`.
 
 Cette première communication de commande ne couvre pas les e-mails automatiques aux acheteurs, les campagnes, les SMS ou WhatsApp. La recette SMTP et l'exploitation du worker restent des prérequis distincts ; aucun envoi réel n'a été effectué par les tests.
+
+## Données — première transition relationnelle du catalogue
+
+Le bloc 2 ajoute une copie relationnelle des produits, un catalogue privé paginé et une vérification de parité. Une version PostgreSQL dédiée détecte tous les changements de produits ; les lectures utilisent les lignes normalisées uniquement si elles correspondent à la source actuelle, avec retour compatible sinon. Les écritures principales maintiennent les copies prêtes dans leurs transactions. L'actualisation explicite et la commande opérateur reconstruisent la copie sans changer les JSON commerciaux. Voir `catalog-read-model.md`.
+
+La source commerciale de référence reste le JSON pendant cette étape. La migration complète des produits, commandes et clients et le stockage objet restent à développer.

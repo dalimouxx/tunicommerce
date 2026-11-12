@@ -1,5 +1,6 @@
 import {randomBytes} from 'node:crypto';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
+import {syncCatalog} from './catalog-index-service';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../storage/client';
@@ -68,6 +69,7 @@ export async function createLegacyPublicOrder(slug:string,input:LegacyPublicChec
    data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   await enqueueOrderMail(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.version+1);
+  await syncCatalog(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.catalogVersion);
   return tx.publicReceipt.create({data:{
    id:receiptId,workspaceId:row.id,requestId:input.requestId,
    reference:next.orders[0].reference,total:next.orders[0].total

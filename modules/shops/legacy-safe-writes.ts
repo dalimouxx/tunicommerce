@@ -9,6 +9,7 @@ import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import type {State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
+import {syncCatalog} from './catalog-index-service';
 
 type LegacyInput={action:string;payload?:unknown;requestId:string};
 
@@ -23,7 +24,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
  return prisma.$transaction(async tx=>{
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${ownerId}))`;
   const workspace=await tx.workspace.findUnique({
-   where:{ownerId},select:{id:true,plan:true,data:true,version:true}
+   where:{ownerId},select:{id:true,plan:true,data:true,version:true,catalogVersion:true}
   });
   if(!workspace)throw new HttpError(404,'Espace commercial introuvable');
   const before=normalizeState(workspace.data as unknown as State);
@@ -50,6 +51,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
   });
   if(update.count!==1)throw new HttpError(409,'Modification concurrente : réessayez');
   await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
+  await syncCatalog(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.catalogVersion);
   return {state:next,version:workspace.version+1,alreadyApplied:false};
  },{timeout:15000});
 }
