@@ -77,3 +77,9 @@ Cette première communication de commande ne couvre pas les e-mails automatiques
 Le bloc 2 ajoute une copie relationnelle des produits, un catalogue privé paginé et une vérification de parité. Une version PostgreSQL dédiée détecte tous les changements de produits ; les lectures utilisent les lignes normalisées uniquement si elles correspondent à la source actuelle, avec retour compatible sinon. Les écritures principales maintiennent les copies prêtes dans leurs transactions. L'actualisation explicite et la commande opérateur reconstruisent la copie sans changer les JSON commerciaux. Voir `catalog-read-model.md`.
 
 La source commerciale de référence reste le JSON pendant cette étape. La migration complète des produits, commandes et clients et le stockage objet restent à développer.
+
+## Automatisations — événements externes signés
+
+Le bloc 7 dispose maintenant d'une file transactionnelle d'événements de commande, de destinations et clés chiffrées, d'un journal privé et de relances idempotentes bornées. L'activation appartient au propriétaire vérifié et exige un hôte exact autorisé par l'exploitant. Le transport HMAC-SHA256 impose HTTPS, les contrôles réseau, les délais et l'absence de redirection. Une perte de configuration ou une limite d'intégration ne bloque pas la commande.
+
+Le worker peut assurer la maintenance sans SMTP et ne réclame que les canaux configurés, afin de ne pas consommer leurs tentatives inutilement. Les communications connues encore en attente après 48 heures expirent sans envoi. Voir `business-webhooks.md`. Les connexions réelles aux prestataires, leurs événements entrants authentifiés, l'hébergement du worker et la recette réseau restent distincts ; aucun destinataire réel n'est contacté par les tests.

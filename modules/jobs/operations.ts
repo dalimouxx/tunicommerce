@@ -17,7 +17,14 @@ export async function maintainJobs(now=new Date()){
  const cutoff=new Date(now.getTime()-JOB_RETENTION_DAYS*day);
  const securityCutoff=new Date(now.getTime()-SECURITY_RETENTION_DAYS*day);
  const workerCutoff=new Date(now.getTime()-7*day);
+ const expiredCutoff=new Date(now.getTime()-2*day);
  return prisma.$transaction(async tx=>{
+  const expired=await tx.$executeRaw`WITH victims AS MATERIALIZED (
+   SELECT "id" FROM "BackgroundJob" WHERE "status"='PENDING'
+    AND "kind" IN ('ACCOUNT_EMAIL','ORDER_EMAIL','BUSINESS_WEBHOOK') AND "createdAt"<${expiredCutoff}
+    ORDER BY "createdAt","id" LIMIT 500 FOR UPDATE SKIP LOCKED)
+   UPDATE "BackgroundJob" SET "status"='FAILED',"errorCode"='EXPIRED',"payload"=NULL,"finishedAt"=${now},"leaseId"=NULL,"lockedUntil"=NULL
+    WHERE "id" IN (SELECT "id" FROM victims)`;
   const jobs=await tx.$executeRaw`WITH victims AS MATERIALIZED (
    SELECT "id" FROM "BackgroundJob" WHERE "status" IN ('SUCCEEDED','FAILED','CANCELLED')
     AND "finishedAt"<${cutoff} ORDER BY "finishedAt","id" LIMIT 500 FOR UPDATE SKIP LOCKED)
@@ -34,7 +41,11 @@ export async function maintainJobs(now=new Date()){
    SELECT "id" FROM "WorkerHeartbeat" WHERE "lastSeenAt"<${workerCutoff}
    ORDER BY "lastSeenAt","id" LIMIT 500 FOR UPDATE SKIP LOCKED)
    DELETE FROM "WorkerHeartbeat" WHERE "id" IN (SELECT "id" FROM victims)`;
-  return {jobs,tokens,events,workers};
+  const webhooks=await tx.$executeRaw`WITH victims AS MATERIALIZED (
+   SELECT "id" FROM "ShopWebhookEvent" WHERE "createdAt"<${cutoff}
+   ORDER BY "createdAt","id" LIMIT 500 FOR UPDATE SKIP LOCKED)
+   DELETE FROM "ShopWebhookEvent" WHERE "id" IN (SELECT "id" FROM victims)`;
+  return {expired,jobs,tokens,events,workers,webhooks};
  });
 }
 /** Aggregate diagnostics only. No encrypted payload, recipient or process hostname. */

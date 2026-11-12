@@ -11,6 +11,7 @@ import {canAccessShop,type ShopPermission} from './permissions';
 import {assertPlanForNewCommerce,isCommerceGrowth} from './plan-growth-policy';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
 import {syncCatalog} from './catalog-index-service';
+import {enqueueBusinessWebhooks} from '../messaging/webhook-outbox';
 
 export function tunisianMonth(value:Date|string):string{
  const date=typeof value==='string'?new Date(value):value;
@@ -111,6 +112,7 @@ export async function writeIsolatedCommerce(
   if(updated.count!==1)throw new HttpError(409,'Modification concurrente. Actualisez puis réessayez.');
   await enqueueOrderMail(tx,{shopId},before,next,row.version+1);
   await syncCatalog(tx,{shopId},before,next,row.catalogVersion);
+  await enqueueBusinessWebhooks(tx,{shopId},before,next,row.version+1);
   return {state:next,version:row.version+1,alreadyApplied:false};
  },{timeout:15000});
 }

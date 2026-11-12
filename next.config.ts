@@ -23,10 +23,7 @@ const config: NextConfig = {
    {source:'/api/auth/account/:path*',headers:privateTrackingHeaders},
    {source:'/api/suivi/:token',headers:privateTrackingHeaders},
    {source:'/api/v1/public/vitrines/:slug/suivi/:token/requests',headers:privateTrackingHeaders},
-   {source:'/api/v1/shops/:shopId/:path*',headers:[
-    {key:'Cache-Control',value:'private, no-store, max-age=0'},
-    {key:'X-Robots-Tag',value:'noindex, nofollow, noarchive'}
-   ]}
+   {source:'/api/v1/shops/:shopId/:path*',headers:privateTrackingHeaders}
   ];
  }
 };

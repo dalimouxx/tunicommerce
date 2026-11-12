@@ -10,6 +10,7 @@ import type {State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
 import {syncCatalog} from './catalog-index-service';
+import {enqueueBusinessWebhooks} from '../messaging/webhook-outbox';
 
 type LegacyInput={action:string;payload?:unknown;requestId:string};
 
@@ -52,6 +53,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
   if(update.count!==1)throw new HttpError(409,'Modification concurrente : réessayez');
   await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
   await syncCatalog(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.catalogVersion);
+  await enqueueBusinessWebhooks(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
   return {state:next,version:workspace.version+1,alreadyApplied:false};
  },{timeout:15000});
 }
