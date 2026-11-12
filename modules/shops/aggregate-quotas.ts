@@ -10,6 +10,7 @@ import {requireIsolatedOwner} from './isolated-commerce';
 import {canAccessShop,type ShopPermission} from './permissions';
 import {assertPlanForNewCommerce,isCommerceGrowth} from './plan-growth-policy';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
+import {syncCatalog} from './catalog-index-service';
 
 export function tunisianMonth(value:Date|string):string{
  const date=typeof value==='string'?new Date(value):value;
@@ -63,7 +64,7 @@ export async function writeIsolatedCommerce(
   if(!membership?.active||membership.shop.legacyWorkspaceId!==null||
    (permission?!canAccessShop(membership.role,permission):membership.role!=='OWNER'))
    throw new HttpError(403,'Accès à cette boutique interdit');
-  const row=await tx.shopCommerce.findUnique({where:{shopId},select:{data:true,version:true}});
+  const row=await tx.shopCommerce.findUnique({where:{shopId},select:{data:true,version:true,catalogVersion:true}});
   if(!row)throw new HttpError(409,'Initialisez votre boutique avant toute opération.');
   const before=normalizeState(row.data as unknown as State);
   if(before.requests.includes(input.requestId))
@@ -109,6 +110,7 @@ export async function writeIsolatedCommerce(
   });
   if(updated.count!==1)throw new HttpError(409,'Modification concurrente. Actualisez puis réessayez.');
   await enqueueOrderMail(tx,{shopId},before,next,row.version+1);
+  await syncCatalog(tx,{shopId},before,next,row.catalogVersion);
   return {state:next,version:row.version+1,alreadyApplied:false};
  },{timeout:15000});
 }

@@ -55,6 +55,7 @@ model Workspace {
   owner     User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   data      Json
   version   Int @default(0)
+  catalogVersion Int @default(0)
   updatedAt DateTime @updatedAt
 }
 model SetupLock {
@@ -114,6 +115,7 @@ model Shop {
   home           ShopHome?
   pages          ShopPage[]
   orderMail      ShopOrderMail?
+  catalogIndex   ShopCatalogIndex?
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
   createdAt      DateTime @default(now())
@@ -296,6 +298,7 @@ model ShopCommerce {
   shop      Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
   data      Json
   version   Int @default(0)
+  catalogVersion Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -359,6 +362,42 @@ model ShopOrderMail {
  templates Json
  version Int @default(0)
  updatedAt DateTime @updatedAt
+}
+
+/** Rebuildable read model; commercial JSON remains authoritative during transition. */
+model ShopCatalogIndex {
+ shopId String @id
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ sourceKind String
+ sourceId String
+ sourceVersion Int
+ productCount Int
+ updatedAt DateTime @updatedAt
+ products ShopCatalogProduct[]
+}
+
+model ShopCatalogProduct {
+ shopId String
+ catalog ShopCatalogIndex @relation(fields:[shopId],references:[shopId],onDelete:Cascade)
+ productId String
+ ordinal Int
+ name String
+ sku String
+ category String
+ variant String
+ price BigInt
+ cost BigInt
+ stock BigInt
+ threshold BigInt
+ color String
+ active Boolean
+ lowStock Boolean
+ searchText String
+ extra Json @default("{}")
+ @@id([shopId,productId])
+ @@index([shopId,ordinal])
+ @@index([shopId,active,ordinal])
+ @@index([shopId,lowStock,ordinal])
 }
 
 model MfaRecoveryCode {

@@ -69,7 +69,8 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
    {isolated&&shop.organization.ownerId===actor.userId&&<ShopLaunchChecklist shopId={shopId} initialized={isolated.initialized} readiness={launch!}/>}
    {isolated?.initialized&&<MerchantShopWorkspace shopId={shopId}/>}
    {membership.role==='OWNER'&&shop.organization.ownerId===actor.userId&&(workspace||isolated?.initialized)&&<section className={styles.card}>
-    <h2>Alertes de commande</h2><p>Préparez vos modèles et suivez les alertes destinées à votre adresse de propriétaire.</p>
+    <h2>Catalogue et alertes</h2><p>Retrouvez vos produits et préparez les alertes destinées à votre adresse de propriétaire.</p>
+    <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/catalogue'}>Consulter mon catalogue</Link>{' '}
     <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/notifications'}>Gérer mes alertes e-mail</Link>
    </section>}
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>
