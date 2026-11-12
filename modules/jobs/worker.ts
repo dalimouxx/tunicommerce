@@ -5,10 +5,12 @@ import {accountMailPayload} from '../auth/account-actions';
 import {portalRoleAllowed} from '../auth/portal';
 import {sendAccountEmail} from '../messaging/email';
 import {finishJob,leaseNextJob,readJobPayload} from './service';
+import {processOrderMail} from '../messaging/order-mail-service';
 
 export async function processOneJob(send:typeof sendAccountEmail=sendAccountEmail){
  const job=await leaseNextJob();
  if(!job)return false;
+ if(job.kind==='ORDER_EMAIL'){await processOrderMail(job,send);return true;}
  if(job.kind!=='ACCOUNT_EMAIL'){await finishJob(job,'UNSUPPORTED_KIND');return true;}
  let payload;
  try{

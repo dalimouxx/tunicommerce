@@ -10,6 +10,7 @@ import {governors,type State} from '../commerce/types';
 import {assertMerchantAggregateQuotas} from './aggregate-quotas';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import {assertPlanForNewCommerce} from './plan-growth-policy';
+import {enqueueOrderMail} from '../messaging/order-mail-service';
 
 export const publicCodCheckoutInput=z.object({
  requestId:z.string().uuid().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
@@ -118,6 +119,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   const updated=await tx.shopCommerce.updateMany({where:{shopId:candidate.id,version:row.version},
    data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}});
   if(updated.count!==1)throw new HttpError(409,'Commande concurrente. Veuillez réessayer.');
+  await enqueueOrderMail(tx,{shopId:candidate.id},before,next,row.version+1);
   const newCount=throttle&&throttle.expiresAt>new Date()?throttle.count+1:1;
   const expiresAt=throttle&&throttle.expiresAt>new Date()?throttle.expiresAt:new Date(Date.now()+3600_000);
   await tx.authThrottle.upsert({where:{key},create:{key,count:1,expiresAt},
