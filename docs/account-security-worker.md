@@ -32,9 +32,9 @@ Chaque worker réclame atomiquement une tâche avec `SKIP LOCKED`, un bail de 90
 
 Le transport impose TLS sur 465 ou STARTTLS sur 587, vérifie les certificats et borne les délais réseau. Un identifiant de message stable est utilisé pour les reprises. La livraison est **au moins une fois** : une coupure après acceptation SMTP et avant acquittement PostgreSQL peut provoquer un doublon. Un identifiant stable ne garantit pas la déduplication chez tous les prestataires. Le lien reste à usage unique et le worker vérifie sa validité avant chaque tentative. Une demande remplacée pendant un envoi déjà commencé peut produire un e-mail contenant un lien invalidé.
 
-Les contenus chiffrés sont effacés après succès, annulation ou échec terminal. Les métadonnées de tâches et événements de sécurité sont conservées ; une politique de purge périodique reste à définir avant exploitation prolongée. Les tâches échouées n'ont pas de bouton de relance avec conservation de lien : l'utilisateur peut demander un nouveau lien, sous réserve des limites de tentatives.
+Les contenus chiffrés sont effacés après succès, annulation ou échec terminal. Les métadonnées des tâches terminées sont purgées après 30 jours, les événements de sécurité après 180 jours, par lots bornés exécutés par le worker. Les tâches échouées n'ont pas de bouton de relance avec conservation de lien : l'utilisateur peut demander un nouveau lien, sous réserve des limites de tentatives.
 
-`/admin/taches` est réservé au superadministrateur et présente les 50 dernières tâches avec état, nombre de tentatives et code d'erreur limité. Cette vue ne publie ni adresse de destinataire, ni contenu, ni jeton, ni secret SMTP. Elle n'est pas un dispositif de supervision du worker ; les alertes de disponibilité restent à mettre en place.
+`/admin/taches` est réservé au superadministrateur et présente les 50 dernières tâches avec état, nombre de tentatives et code d'erreur limité. Cette vue ne publie ni adresse de destinataire, ni contenu, ni jeton, ni secret SMTP. Elle présente maintenant les signaux de présence des workers et les tâches bloquées. La sonde locale et le modèle systemd sont décrits dans `worker-operations.md` ; la configuration d'alertes sur le futur VPS reste à effectuer.
 
 ## Validation
 

@@ -60,7 +60,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
   assert.equal(ready,true,'Next production server ready');
 
   await t.test('Global admin routes and actions are not public',async()=>{
-   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/abonnements/complet','/admin/journal','/admin/gestion-boutiques'])
+   for(const path of ['/admin','/admin/marchands','/admin/abonnements','/admin/abonnements/complet','/admin/journal','/admin/gestion-boutiques','/admin/taches'])
     assert.equal((await get(path)).status,307,path);
    assert.equal((await get('/admin/boutiques/00000000-0000-4000-8000-000000000000')).status,307);
    assert.equal((await post('/api/admin/shops',{action:'link',id:'00000000-0000-4000-8000-000000000000'})).status,401);
@@ -74,6 +74,17 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
   const login=await post('/api/auth/admin/login',{email:'admin@example.test',password});
   assert.equal(login.status,200);
   const adminCookie=login.headers.get('set-cookie')!.split(';')[0];
+
+  await t.test('Worker supervision exposes aggregate diagnostics without encrypted job payloads',async()=>{
+   const workerId='admin-health-fixture';
+   await prisma.workerHeartbeat.upsert({where:{id:workerId},create:{id:workerId},update:{lastSeenAt:new Date(),stoppedAt:null}});
+   try{
+    const response=await get('/admin/taches',adminCookie);assert.equal(response.status,200);
+    const markup=(await response.text()).replace(/<!--[\s\S]*?-->/g,'');assert.ok(markup.includes('worker(s) actif(s)'));
+    assert.ok(markup.includes('bail(s) expiré(s)'));assert.ok(markup.includes('180 jours'));
+    assert.equal(markup.includes(workerId),false);assert.equal(markup.includes('payload'),false);
+   }finally{await prisma.workerHeartbeat.delete({where:{id:workerId}});}
+  });
 
   await t.test('New overview and directories load with empty stats',async()=>{
    const home=await get('/admin',adminCookie);

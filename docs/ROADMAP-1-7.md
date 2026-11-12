@@ -61,3 +61,7 @@ Les sections image de l’accueil utilisent désormais la médiathèque du propr
 Les pages complémentaires prennent maintenant en charge les images de médiathèque, les légendes et les formats de cadrage, avec vérification du propriétaire, conservation des références historiques et accès public limité à la page publiée.
 
 Les pages complémentaires, leurs images et leur historique sont également accessibles aux propriétaires des boutiques historiques liées à un Workspace, avec publication sous leur adresse existante et conservation du commerce historique. Les domaines personnalisés de ces boutiques restent un chantier distinct.
+
+## Exploitation du worker — 12 novembre 2026
+
+Le bloc 7 comprend maintenant des signaux de présence persistants, la détection des baux expirés et de l'âge du travail disponible dans `/admin/taches`, une sonde locale avec codes de sortie et une purge concurrente bornée des anciennes tâches terminées, jetons expirés et traces de sécurité. Un modèle systemd prépare l'exploitation du futur VPS. Voir `worker-operations.md`. Ces fichiers n'activent ni service d'envoi ni alerte externe ; les essais SMTP réels, l'installation du worker et les webhooks métier restent à réaliser.
