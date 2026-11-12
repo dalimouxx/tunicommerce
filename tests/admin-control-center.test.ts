@@ -80,7 +80,7 @@ test('Global SaaS admin: merchant directory, subscription control, linked shops 
    await prisma.workerHeartbeat.upsert({where:{id:workerId},create:{id:workerId},update:{lastSeenAt:new Date(),stoppedAt:null}});
    try{
     const response=await get('/admin/taches',adminCookie);assert.equal(response.status,200);
-    const markup=await response.text();assert.ok(markup.includes('worker(s) actif(s)'));
+    const markup=(await response.text()).replace(/<!--[\s\S]*?-->/g,'');assert.ok(markup.includes('worker(s) actif(s)'));
     assert.ok(markup.includes('bail(s) expiré(s)'));assert.ok(markup.includes('180 jours'));
     assert.equal(markup.includes(workerId),false);assert.equal(markup.includes('payload'),false);
    }finally{await prisma.workerHeartbeat.delete({where:{id:workerId}});}
