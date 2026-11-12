@@ -14,6 +14,8 @@ Le worker TypeScript utilise `tsx`, inclus dans les dépendances de production. 
 
 Sans configuration SMTP complète, l'écran de récupération signale l'indisponibilité et l'API retourne 503 sans créer de jeton. Sans clé de chiffrement, l'activation TOTP est indisponible. Une configuration renseignée ne prouve ni la délivrabilité des e-mails ni le fonctionnement d'un worker.
 
+Le worker peut désormais démarrer pour la maintenance et les autres canaux sans SMTP. Il ne réclame les tâches ACCOUNT_EMAIL et ORDER_EMAIL que lorsque le SMTP est complet ; leur indisponibilité ne consomme pas de tentative d'envoi. Les communications restées en attente plus de 48 heures expirent sans envoi lors de la maintenance. Les vérifications de jeton et de destinataire avant chaque envoi restent inchangées.
+
 ## Parcours et protections
 
 - `/compte/recuperer` enregistre une demande avec une réponse identique pour une adresse connue ou inconnue. Les limites persistantes couvrent le volume global et chaque adresse, y compris quand plusieurs serveurs web fonctionnent ensemble.

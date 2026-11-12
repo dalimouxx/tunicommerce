@@ -116,6 +116,8 @@ model Shop {
   pages          ShopPage[]
   orderMail      ShopOrderMail?
   catalogIndex   ShopCatalogIndex?
+  webhook        ShopWebhook?
+  webhookEvents  ShopWebhookEvent[]
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
   createdAt      DateTime @default(now())
@@ -398,6 +400,35 @@ model ShopCatalogProduct {
  @@index([shopId,ordinal])
  @@index([shopId,active,ordinal])
  @@index([shopId,lowStock,ordinal])
+}
+
+model ShopWebhook {
+ shopId String @id
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ ownerId String
+ endpointEnvelope String?
+ enabled Boolean @default(false)
+ secretEnvelope String?
+ version Int @default(0)
+ budgetDay String @default("")
+ budgetCount Int @default(0)
+ droppedCount Int @default(0)
+ lastDropAt DateTime?
+ updatedAt DateTime @updatedAt
+}
+
+model ShopWebhookEvent {
+ id String @id @default(uuid())
+ shopId String
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ ownerId String
+ kind String
+ body String?
+ lastJobId String?
+ deliveryCount Int @default(1)
+ createdAt DateTime @default(now())
+ @@index([shopId,createdAt])
+ @@index([createdAt])
 }
 
 model MfaRecoveryCode {

@@ -72,6 +72,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <h2>Catalogue et alertes</h2><p>Retrouvez vos produits et préparez les alertes destinées à votre adresse de propriétaire.</p>
     <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/catalogue'}>Consulter mon catalogue</Link>{' '}
     <Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/notifications'}>Gérer mes alertes e-mail</Link>
+    {' '}<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/integrations'}>Connecter mes outils et suivre les événements</Link>
    </section>}
    {summary?<><div className={styles.grid}>{cards.map(([name,value])=>
     <section key={name} className={styles.card}><span className={styles.kicker}>{name}</span><h2>{value}</h2></section>
