@@ -1,0 +1,20 @@
+# Copy into a private .env file outside the build context; never paste secrets in chat.
+PLATFORM_DOMAIN=platform.example.test
+ACME_EMAIL=operator@example.test
+# Three distinct random values, each 64 lowercase hexadecimal characters.
+POSTGRES_PASSWORD=
+APP_DATABASE_PASSWORD=
+APP_ENCRYPTION_SECRET=
+# Optional first-install bootstrap value, 64 hexadecimal characters; remove after setup.
+SETUP_TOKEN=
+TUNICOM_IMAGE_TAG=local
+STOREFRONT_DOMAIN_ROUTING=disabled
+STOREFRONT_ROOT_DOMAIN=
+DOMAIN_DNS_SERVERS=
+MEDIA_STORAGE_MODE=database
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+MAIL_FROM=
+WEBHOOK_ALLOWED_HOSTS=

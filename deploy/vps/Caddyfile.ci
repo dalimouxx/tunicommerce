@@ -1,0 +1,10 @@
+{
+ admin off
+ persist_config off
+ auto_https off
+ grace_period 5s
+ import /etc/caddy/logging.caddy
+}
+:8080 {
+ reverse_proxy web:3000
+}

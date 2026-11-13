@@ -1,0 +1,14 @@
+# Access logging is disabled. Runtime errors must also omit bearer URLs and headers.
+log default {
+ output stdout
+ format filter {
+  wrap json
+  fields {
+   request delete
+   uri delete
+   url delete
+   headers delete
+   resp_headers delete
+  }
+ }
+}
