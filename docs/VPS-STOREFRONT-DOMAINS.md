@@ -8,7 +8,13 @@ L'administration reste sur `APP_URL`. Une boutique indépendante publiée peut u
 
 Une demande `ShopDomainClaim` génère un code aléatoire, valable sept jours tant qu'il n'est pas vérifié. Le marchand crée le TXT `_tunicom-verification.<domaine>` avec la valeur affichée puis demande la vérification. Les fragments TXT sont réunis avant comparaison exacte. Une demande en attente ne réserve pas le domaine ; seule une preuve réussie crée un `ShopDomainBinding`, unique sur toute la plateforme. Retirer la demande supprime aussi la liaison sans supprimer la boutique.
 
-La preuve TXT confirme la propriété. Elle ne confirme ni le pointage A/AAAA/CNAME, ni un certificat HTTPS. Conserver le TXT après validation. Le transfert d'un domaine déjà lié nécessite pour l'instant une intervention administrative après vérification de la propriété ; aucun transfert automatique n'est implémenté. La revérification périodique des domaines reste à développer.
+La preuve TXT confirme la propriété. Elle ne confirme ni le pointage A/AAAA/CNAME, ni un certificat HTTPS. Conserver le TXT après validation. Quand le routage est activé, le worker revérifie les liaisons chaque jour, par lots de cinq avec des baux de 90 secondes. Les recherches DNS se font hors transaction et les réponses devenues obsolètes sont écartées.
+
+Un TXT absent ou différent suspend la liaison ; une panne DNS conserve la dernière preuve sans prolonger sa validité et entraîne une nouvelle tentative après une heure. Au bout de 72 heures sans preuve valide, les requêtes et l'autorisation de certificat sont refusées, même si le worker est arrêté. Les sous-domaines automatiques gérés par la plateforme ne dépendent pas de ces TXT personnels. Une vérification manuelle réussie rétablit la liaison.
+
+Chaque demande et liaison mémorise le propriétaire qui a fourni la preuve. Après un changement de propriétaire de l'organisation, l'ancien code est masqué, la liaison refusée et le nouveau propriétaire doit renouveler le code, modifier le TXT puis vérifier. La migration initialise les anciens enregistrements avec le propriétaire actuel : elle ne reconstitue pas l'historique des transferts antérieurs. Une liaison historique dont la preuve a plus de 72 heures exige une nouvelle vérification. Les déclencheurs SQL initialisent les insertions des anciennes instances pendant le déploiement sans réécrire une preuve existante lors d'une modification.
+
+L'écran Domaines affiche l'état, la dernière preuve valide et le dernier contrôle. « Actualiser l'état » conserve le domaine en cours de saisie. Un transfert entre deux boutiques distinctes exige encore le retrait de la liaison précédente ; il n'existe pas de transfert automatique entre boutiques.
 
 ## Préparer le serveur
 
@@ -21,6 +27,8 @@ La preuve TXT confirme la propriété. Elle ne confirme ni le pointage A/AAAA/CN
 L'endpoint `allow?domain=<nom>` renvoie 200 seulement pour une boutique initialisée, indépendante, publiée et dont l'abonnement est actif et non expiré, avec un sous-domaine autorisé ou une liaison vérifiée. Un refus renvoie 403 ; une panne renvoie 503. Cette réponse autorise Caddy à demander un certificat, elle ne prouve pas qu'un certificat a été émis. Configurer aussi la protection et les limites du reverse proxy et respecter les limites de l'autorité de certification.
 
 `DOMAIN_DNS_SERVERS` est facultatif : liste de résolveurs DNS de confiance séparés par des virgules. Sans valeur, les résolveurs du système sont utilisés. Ce paramètre est réservé à l'exploitant, jamais fourni par un marchand.
+
+Le web et le worker doivent partager les paramètres de routage et la base ; lancer et superviser le worker même sans SMTP. Sans worker actif, les preuves personnelles finissent par expirer. Sur Render de test, le routage reste désactivé et aucune revérification DNS automatique n'est lancée.
 
 ## Validation avant ouverture réelle
 

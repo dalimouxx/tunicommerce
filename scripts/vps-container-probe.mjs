@@ -33,6 +33,20 @@ try{
  }else if(action==='verify'){
   const photo=await prisma.productMedia.findUniqueOrThrow({where:{id:photoId}});assert.equal(mediaDigest(photo.content),mediaDigest(png));
   assert.deepEqual(await readMediaObject(workspaceId,photo.storageKey,photo.contentSha256,photo.size),new Uint8Array(png));
+ }else if(action==='domains'){
+  const orgId=id('domain-org'),shopId=id('domain-shop'),claimId=id('domain-claim'),otherId=id('domain-other'),hostname='container-'+mark+'.example';
+  await prisma.organization.create({data:{id:orgId,ownerId:userId,name:'Disposable proof fixture'}});
+  await prisma.shop.create({data:{id:shopId,organizationId:orgId,name:'Disposable proof shop',slug:'proof-'+mark}});
+  await prisma.$executeRaw`INSERT INTO "ShopDomainClaim" ("id","shopId","hostname","token","expiresAt","createdAt","updatedAt")
+   VALUES (${claimId},${shopId},${hostname},${'a'.repeat(64)},${new Date(Date.now()+86400000)},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+  await prisma.$executeRaw`INSERT INTO "ShopDomainBinding" ("hostname","shopId","claimId","verifiedAt") VALUES (${hostname},${shopId},${claimId},CURRENT_TIMESTAMP)`;
+  assert.equal((await prisma.shopDomainClaim.findUniqueOrThrow({where:{id:claimId}})).ownerId,userId);
+  assert.equal((await prisma.shopDomainBinding.findUniqueOrThrow({where:{hostname}})).ownerId,userId);
+  await prisma.user.create({data:{id:otherId,email:'proof-other-'+mark+'@example.test',name:'Disposable new owner',passwordHash:'not-a-login-password'}});
+  await prisma.organization.update({where:{id:orgId},data:{ownerId:otherId}});
+  await prisma.$executeRaw`UPDATE "ShopDomainBinding" SET "verifiedAt"=CURRENT_TIMESTAMP WHERE "hostname"=${hostname}`;
+  assert.equal((await prisma.shopDomainBinding.findUniqueOrThrow({where:{hostname}})).ownerId,userId);
+  await prisma.organization.delete({where:{id:orgId}});await prisma.user.delete({where:{id:otherId}});
  }else if(action==='worker-active'){
   assert.equal(await prisma.workerHeartbeat.count({where:{stoppedAt:null,lastSeenAt:{gte:new Date(Date.now()-120000)}}}),1);
  }else if(action==='worker-stopped'){
