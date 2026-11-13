@@ -1,0 +1,11 @@
+[Unit]
+Description=Run a bounded Tunicom media cleanup pass every fifteen minutes
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+RandomizedDelaySec=60
+Unit=tunicom-media-cleanup.service
+
+[Install]
+WantedBy=timers.target

@@ -56,6 +56,8 @@ try{
  const seeded=await probe('seed');await probe('verify');
  const image=await fetch(proxy+'/api/media/products/'+seeded.photoId);assert.equal(image.status,200);
  assert.equal(createHash('sha256').update(Buffer.from(await image.arrayBuffer())).digest('hex'),seeded.digest);pass('Private media volume permissions and public image integrity');
+ const cleanup=JSON.parse((await compose(['exec','-T','web','node','--import','tsx','scripts/media-cleanup.ts','--scheduled'])).trim().split('\n').at(-1));
+ assert.equal(cleanup.enabled,true);assert.equal(cleanup.busy,false);assert.equal(cleanup.deleted,0);assert.equal(cleanup.unavailable,0);await probe('verify');pass('Bounded media maintenance runs with application privileges and preserves live files');
  await probe('worker-active');await compose(['stop','-t','100','worker']);await probe('worker-stopped');
  await compose(['up','-d','--wait','--wait-timeout','120','worker']);await probe('worker-active');pass('SIGTERM records a clean worker stop and restart');
  await compose(['up','-d','--no-deps','--force-recreate','--wait','--wait-timeout','120','db']);await waitHealth(origin);await probe('verify');pass('Database persistence after container replacement');

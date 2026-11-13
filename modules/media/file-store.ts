@@ -40,6 +40,14 @@ async function objectPath(workspaceId:string,key:string,create=false){
  }
  return {path:join(path,parts[2]),parent:path,base};
 }
+/** Private maintenance only; does not create a directory when the mount or workspace is absent. */
+export async function mediaMaintenanceDirectory(workspaceId:string){
+ mediaObjectKey(workspaceId,'0'.repeat(64));const base=await root();let path=base;
+ for(const segment of ['v1',workspaceId]){
+  path=join(path,segment);try{await directory(path);}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}
+ }
+ return path;
+}
 export async function readMediaObject(workspaceId:string,key:string,digest:string,size:number){
  if(!sha.test(digest)||key!==mediaObjectKey(workspaceId,digest)||!Number.isSafeInteger(size)||size<1||size>MEDIA_MAX_BYTES)throw Error('Invalid media metadata');
  const {path}=await objectPath(workspaceId,key),info=await lstat(path);

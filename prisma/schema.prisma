@@ -363,6 +363,18 @@ model WorkerHeartbeat {
  @@index([lastSeenAt])
 }
 
+/** Aggregate operational cursor only: no asset names or customer content. */
+model MaintenanceProgress {
+ id String @id
+ cursor String?
+ lastRunAt DateTime?
+ lastCompletedAt DateTime?
+ lastScanned Int @default(0)
+ lastDeleted Int @default(0)
+ lastError String?
+ version Int @default(0)
+}
+
 /** Opt-in operational messages to the verified shop owner only. */
 model ShopOrderMail {
  shopId String @id

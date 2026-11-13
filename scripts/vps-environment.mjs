@@ -13,6 +13,8 @@ export function vpsEnvironmentErrors(env,{allowTestDomain=false}={}){
  if(!['disabled','enabled',undefined,''].includes(env.STOREFRONT_DOMAIN_ROUTING))errors.push('STOREFRONT_DOMAIN_ROUTING : valeur invalide');
  if(env.STOREFRONT_DOMAIN_ROUTING==='enabled'&&!host(env.STOREFRONT_ROOT_DOMAIN))errors.push('STOREFRONT_ROOT_DOMAIN : domaine requis pour activer le routage');
  if(!['database','filesystem-mirror',undefined,''].includes(env.MEDIA_STORAGE_MODE))errors.push('MEDIA_STORAGE_MODE : valeur invalide');
+ if(!['true','false',undefined,''].includes(env.MEDIA_GC_ENABLED))errors.push('MEDIA_GC_ENABLED : valeur invalide');
+ if(env.MEDIA_GC_ENABLED==='true'&&env.MEDIA_STORAGE_MODE!=='filesystem-mirror')errors.push('Le nettoyage planifié nécessite le miroir privé');
  if(!/^[a-zA-Z0-9_.-]{1,80}$/.test(env.TUNICOM_IMAGE_TAG||'local'))errors.push('TUNICOM_IMAGE_TAG : valeur invalide');
  return errors;
 }

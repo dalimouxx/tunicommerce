@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 // Database suites reset shared tables: always run them serially on a disposable DB.
 const integration=new Set([
+ 'media-cleanup.test.ts',
  'media-mirror-api.test.ts',
  'subscription-reminders-api.test.ts',
  'webhooks-api.test.ts',
