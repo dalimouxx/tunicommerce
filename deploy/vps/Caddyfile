@@ -1,0 +1,46 @@
+{
+ admin off
+ persist_config off
+ email {$ACME_EMAIL}
+ grace_period 10s
+ servers {
+  protocols h1 h2
+  strict_sni_host on
+ }
+ on_demand_tls {
+  ask http://127.0.0.1:9080/api/v1/public/domains/allow
+ }
+ import /etc/caddy/logging.caddy
+}
+
+{$PLATFORM_DOMAIN} {
+ encode zstd gzip
+ reverse_proxy web:3000
+}
+
+# Only Caddy can reach this listener. The canonical Host permits the internal ask
+# request while storefront routing correctly refuses Docker's service hostname.
+http://127.0.0.1:9080 {
+ @allowed {
+  path /api/v1/public/domains/allow
+  expression `"{$STOREFRONT_DOMAIN_ROUTING:disabled}" == "enabled"`
+ }
+ handle @allowed {
+  reverse_proxy web:3000 {
+   header_up Host {$PLATFORM_DOMAIN}
+  }
+ }
+ respond 403
+}
+
+https:// {
+ tls {
+  on_demand
+ }
+ @routing expression `"{$STOREFRONT_DOMAIN_ROUTING:disabled}" == "enabled"`
+ handle @routing {
+  encode zstd gzip
+  reverse_proxy web:3000
+ }
+ respond 404
+}

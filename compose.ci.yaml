@@ -1,0 +1,19 @@
+services:
+  web:
+    ports: ['127.0.0.1::3000']
+    environment:
+      TUNICOM_CONTAINER_TEST: '1'
+  caddy-ci:
+    image: caddy:2-alpine
+    ports: ['127.0.0.1::8080']
+    volumes:
+      - ./deploy/vps/Caddyfile.ci:/etc/caddy/Caddyfile:ro
+      - ./deploy/vps/logging.caddy:/etc/caddy/logging.caddy:ro
+    networks: [front]
+    depends_on:
+      web:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp:size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
