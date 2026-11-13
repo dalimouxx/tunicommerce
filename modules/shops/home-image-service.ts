@@ -4,6 +4,7 @@ import {HttpError} from '../auth/http';
 import {isOpen} from '../platform/public';
 import {isPublicIsolatedShop} from './publication';
 import {homeContent,homePhotoIds,type HomeContent} from './home-content';
+import {readMediaContent,mediaReadSelect} from '../media/content-store';
 
 export async function assertHomePhotoOwnership(tx:Prisma.TransactionClient,ownerId:string,content:HomeContent){
  const ids=homePhotoIds(content);if(!ids.length)return;
@@ -21,5 +22,6 @@ export async function readPublicHomeImage(slug:string,id:string){
   isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,initialized:!!shop.commerce,subscriptionStatus:subscription?.subscriptionStatus||'',subscriptionEndsAt:subscription?.subscriptionEndsAt||null});
  if(!open)return null;
  const content=homeContent.safeParse(shop.home.published);if(!content.success||!homePhotoIds(content.data).includes(id))return null;
- return prisma.productMedia.findFirst({where:{id,workspace:{ownerId}},select:{content:true,mimeType:true,size:true}});
+ const row=await prisma.productMedia.findFirst({where:{id,workspace:{ownerId}},select:mediaReadSelect()});
+ return row?{content:await readMediaContent('product',row),mimeType:row.mimeType,size:row.size}:null;
 }

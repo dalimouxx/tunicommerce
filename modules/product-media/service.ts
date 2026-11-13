@@ -9,6 +9,7 @@ import {homeContent,homePhotoIds} from '../shops/home-content';
 import {readHomeHistory} from '../shops/home-history';
 import {pageContent,pagePhotoIds} from '../shops/page-content';
 import {readPageHistory} from '../shops/page-history';
+import {prepareMediaContent,readMediaContent,mediaReadSelect} from '../media/content-store';
 
 export async function listProductPhotos(ownerId:string){
  const shop=await prisma.workspace.findUnique({where:{ownerId},select:{id:true,plan:true}});
@@ -38,7 +39,7 @@ export async function uploadProductPhoto(
   const count=await tx.productMedia.count({where:{workspaceId:workspace.id}});
   if(count>=maxPhotos)throw new HttpError(409,`Quota de photos atteint (${maxPhotos}). Supprimez une image inutilisée ou changez de formule.`);
   const saved=await tx.productMedia.create({
-   data:{workspaceId:workspace.id,content:copy,...info},
+   data:{workspaceId:workspace.id,...await prepareMediaContent(workspace.id,copy),...info},
    select:{id:true,size:true,width:true,height:true,createdAt:true}
   });
   return {
@@ -84,7 +85,7 @@ export async function removeProductPhoto(ownerId:string,id:string){
 
 export async function getVisibleProductPhoto(id:string,viewerId:string|null){
  const row=await prisma.productMedia.findUnique({
-  where:{id},include:{workspace:{
+  where:{id},select:{...mediaReadSelect(),workspace:{
    select:{ownerId:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}
   }}
  });
@@ -92,6 +93,6 @@ export async function getVisibleProductPhoto(id:string,viewerId:string|null){
  const publicAsset=isOpen(row.workspace);
  if(!publicAsset&&row.workspace.ownerId!==viewerId)return null;
  return {
-  content:row.content,mimeType:row.mimeType,size:row.size,publicAsset
+  content:await readMediaContent('product',row),mimeType:row.mimeType,size:row.size,publicAsset
  };
 }

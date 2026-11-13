@@ -6,6 +6,7 @@ import {isOpen} from '../platform/public';
 import type {State} from '../commerce/types';
 import type {MediaSlot} from './validation';
 import {getInternalMediaId} from './validation';
+import {prepareMediaContent,readMediaContent,mediaReadSelect} from './content-store';
 
 export const mediaUrl=(id:string)=>'/api/media/assets/'+id;
 
@@ -16,19 +17,25 @@ export async function saveMerchantMedia(
 ){
  const storedBytes=new Uint8Array(bytes);
  return prisma.$transaction(async tx=>{
+  const initial=await tx.workspace.findUnique({
+   where:{ownerId},select:{id:true}
+  });
+  if(!initial)throw new HttpError(404,'Votre boutique est introuvable');
+  await tx.$queryRaw`SELECT "id" FROM "Workspace" WHERE "id"=${initial.id} FOR UPDATE`;
   const row=await tx.workspace.findUnique({
    where:{ownerId},select:{id:true,data:true,version:true}
   });
   if(!row)throw new HttpError(404,'Votre boutique est introuvable');
+  const stored=await prepareMediaContent(row.id,storedBytes);
 
   const media=await tx.shopMedia.upsert({
    where:{workspaceId_slot:{workspaceId:row.id,slot}},
    create:{
-    workspaceId:row.id,slot,content:storedBytes,
+    workspaceId:row.id,slot,...stored,
     mimeType:details.mimeType,size:details.size,width:details.width,height:details.height
    },
    update:{
-    content:storedBytes,mimeType:details.mimeType,size:details.size,
+    ...stored,mimeType:details.mimeType,size:details.size,
     width:details.width,height:details.height
    },
    select:{id:true}
@@ -65,7 +72,7 @@ export async function verifyAppearanceMediaOwnership(
 
 export async function getVisibleMedia(id:string,currentOwnerId:string|null){
  const media=await prisma.shopMedia.findUnique({
-  where:{id},include:{workspace:{
+  where:{id},select:{...mediaReadSelect(),workspace:{
    select:{ownerId:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}
   }}
  });
@@ -73,7 +80,7 @@ export async function getVisibleMedia(id:string,currentOwnerId:string|null){
  const publicAsset=isOpen(media.workspace);
  if(!publicAsset&&media.workspace.ownerId!==currentOwnerId)return null;
  return {
-  content:media.content,
+  content:await readMediaContent('brand',media),
   mimeType:media.mimeType,
   size:media.size,
   publicAsset

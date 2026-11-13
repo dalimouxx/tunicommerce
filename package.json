@@ -13,6 +13,7 @@
     "worker": "node --import tsx scripts/worker.ts",
     "worker:health": "node --import tsx scripts/worker-health.ts",
     "catalog:verify": "node --import tsx scripts/catalog-index.ts",
+    "media:storage": "node --import tsx scripts/media-storage.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "db:generate": "prisma generate",
     "typecheck": "tsc --noEmit",
