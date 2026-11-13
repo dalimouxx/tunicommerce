@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build && node scripts/container-config.mjs
 
 FROM builder AS production-dependencies
-RUN npm prune --omit=dev --ignore-scripts
+RUN npm prune --omit=dev --omit=peer --ignore-scripts && rm -rf node_modules/prisma node_modules/typescript
 
 # Only this one-shot image carries the Prisma migration CLI and development tooling.
 FROM builder AS migrator

@@ -21,7 +21,7 @@ try{
     FROM pg_roles r WHERE r.rolname=current_user`;
   assert.equal(row.name,'tunicom_app');for(const key of ['super','createdb','createrole','schema_create','db_create','temporary','migrations'])assert.equal(row[key],false,key);
   assert.notEqual(process.getuid(),0);assert.equal(process.env.POSTGRES_PASSWORD,undefined);assert.equal(process.env.APP_DATABASE_PASSWORD,undefined);
-  assert.equal(existsSync('node_modules/prisma/build/index.js'),false);assert.equal(existsSync('.env'),false);
+  assert.equal(existsSync('node_modules/prisma/build/index.js'),false,'Migration CLI must not be shipped in runtime');assert.equal(existsSync('.env'),false,'No baked environment file');
   let writable=false;try{const handle=await open('/app/package.json','r+');writable=true;await handle.close();}catch{}
   assert.equal(writable,false);
   await writeFile('/app/.next/cache/container-probe','fixture');await unlink('/app/.next/cache/container-probe');

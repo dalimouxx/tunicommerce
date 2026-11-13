@@ -70,7 +70,13 @@ try{
  const logs=await compose(['logs','--no-color','caddy-ci']);assert.ok(!logs.includes(bearer));pass('Proxy error logs omit private bearer URLs');
  await compose(['up','-d','--wait','--wait-timeout','120','web']);origin=await originFor('web',3000);await waitHealth(origin);await waitHealth(proxy);pass('Application recovers after proxy upstream failure');
  process.stdout.write(JSON.stringify({ok:true,checks,disposable:true,realMessagesSent:false,realCertificatesRequested:false})+'\n');
-}catch(error){process.stderr.write('Disposable container verification failed: '+(error instanceof Error?error.message.split('\n')[0]:'unknown')+'\n');process.exitCode=1;}
+}catch(error){
+ process.stderr.write('Disposable container verification failed: '+(error instanceof Error?error.message.split('\n')[0]:'unknown')+'\n');
+ let diagnostic=[error?.stderr||'',error?.stdout||''].join('\n');
+ for(const key of ['POSTGRES_PASSWORD','APP_DATABASE_PASSWORD','APP_ENCRYPTION_SECRET','SETUP_TOKEN'])diagnostic=diagnostic.replaceAll(env[key],'[redacted]');
+ if(diagnostic.trim())process.stderr.write(diagnostic.trim().split('\n').slice(-30).join('\n')+'\n');
+ process.exitCode=1;
+}
 finally{
  // The generated project is the only possible deletion target; user projects are never accepted.
  if(!/^tunicom-ci-[a-f0-9]{20}$/.test(project))throw Error('Unsafe cleanup project');
