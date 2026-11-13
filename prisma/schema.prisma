@@ -479,6 +479,7 @@ model ShopPage {
 model ShopDomainClaim {
  id String @id @default(uuid())
  shopId String
+ ownerId String
  shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
  hostname String
  token String
@@ -493,11 +494,19 @@ model ShopDomainClaim {
 model ShopDomainBinding {
  hostname String @id
  shopId String
+ ownerId String
  shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
  claimId String @unique
  claim ShopDomainClaim @relation(fields:[claimId],references:[id],onDelete:Cascade)
  verifiedAt DateTime
+ proofStatus String @default("VERIFIED")
+ lastError String?
+ lastCheckedAt DateTime?
+ nextCheckAt DateTime @default(now())
+ checkLeaseId String?
+ checkLockedUntil DateTime?
  @@index([shopId])
+ @@index([nextCheckAt])
 }
 
 /** Independent storefront homepage: a saved draft never alters the published snapshot. */
