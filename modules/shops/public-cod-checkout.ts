@@ -12,6 +12,7 @@ import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import {assertPlanForNewCommerce} from './plan-growth-policy';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
 import {syncCatalog} from './catalog-index-service';
+import {syncActivity} from './activity-index-service';
 import {enqueueBusinessWebhooks} from '../messaging/webhook-outbox';
 
 export const publicCodCheckoutInput=z.object({
@@ -66,7 +67,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${ownerId}))`;
   const shop=await tx.shop.findUnique({where:{id:candidate.id},select:{
    status:true,legacyWorkspaceId:true,
-   commerce:{select:{data:true,version:true,catalogVersion:true}},
+   commerce:{select:{data:true,version:true,catalogVersion:true,activityVersion:true}},
    organization:{select:{ownerId:true}}
   }});
   if(!shop||shop.organization.ownerId!==ownerId)throw new HttpError(404,'Boutique indisponible');
@@ -123,6 +124,7 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
   if(updated.count!==1)throw new HttpError(409,'Commande concurrente. Veuillez réessayer.');
   await enqueueOrderMail(tx,{shopId:candidate.id},before,next,row.version+1);
   await syncCatalog(tx,{shopId:candidate.id},before,next,row.catalogVersion);
+  await syncActivity(tx,{shopId:candidate.id},before,next,row.activityVersion);
   await enqueueBusinessWebhooks(tx,{shopId:candidate.id},before,next,row.version+1);
   const newCount=throttle&&throttle.expiresAt>new Date()?throttle.count+1:1;
   const expiresAt=throttle&&throttle.expiresAt>new Date()?throttle.expiresAt:new Date(Date.now()+3600_000);

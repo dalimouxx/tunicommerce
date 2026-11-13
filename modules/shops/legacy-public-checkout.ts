@@ -1,6 +1,7 @@
 import {randomBytes} from 'node:crypto';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
 import {syncCatalog} from './catalog-index-service';
+import {syncActivity} from './activity-index-service';
 import {enqueueBusinessWebhooks} from '../messaging/webhook-outbox';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
@@ -71,6 +72,7 @@ export async function createLegacyPublicOrder(slug:string,input:LegacyPublicChec
   });
   await enqueueOrderMail(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.version+1);
   await syncCatalog(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.catalogVersion);
+  await syncActivity(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.activityVersion);
   await enqueueBusinessWebhooks(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.version+1);
   return tx.publicReceipt.create({data:{
    id:receiptId,workspaceId:row.id,requestId:input.requestId,
