@@ -1,7 +1,7 @@
 import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import {normalizeState} from '../commerce/normalize';
-import {isOpen} from '../platform/public';
+import {hasPublicMediaReference} from '../media/public-reference';
 import type {State} from '../commerce/types';
 import {LIBRARY_LIMIT,productPhotoUrl} from './validation';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
@@ -90,7 +90,7 @@ export async function getVisibleProductPhoto(id:string,viewerId:string|null){
   }}
  });
  if(!row)return null;
- const publicAsset=isOpen(row.workspace);
+ const publicAsset=await hasPublicMediaReference(row.workspaceId,row.workspace.ownerId,productPhotoUrl(id),'product');
  if(!publicAsset&&row.workspace.ownerId!==viewerId)return null;
  return {
   content:await readMediaContent('product',row),mimeType:row.mimeType,size:row.size,publicAsset

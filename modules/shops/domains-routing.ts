@@ -3,16 +3,21 @@ import {isPublicIsolatedShop} from './publication';
 import {automaticStoreSlug,normalizeDomain,platformHosts,storefrontRoot} from './domains-validation';
 import {assertSameOrigin,HttpError} from '../auth/http';
 import {domainProofAllowsRouting} from './domain-health';
+import {isOpen} from '../platform/public';
 export async function resolveStorefrontHost(host:string){
  const hostname=normalizeDomain(host);if(!hostname||process.env.STOREFRONT_DOMAIN_ROUTING!=='enabled')return null;
  if(platformHosts().includes(hostname))return null;
  const automatic=automaticStoreSlug(hostname);const root=storefrontRoot();
  if(root&&(hostname===root||hostname.endsWith('.'+root)&&!automatic))return null;
- const select={slug:true,status:true,legacyWorkspaceId:true,commerce:{select:{shopId:true}},organization:{select:{ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}} as const;
+ const select={slug:true,status:true,legacyWorkspaceId:true,legacyWorkspace:{select:{id:true,ownerId:true,slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}},commerce:{select:{shopId:true}},organization:{select:{ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}} as const;
  const binding=automatic?null:await prisma.shopDomainBinding.findUnique({where:{hostname},include:{claim:{select:{ownerId:true}},shop:{select}}});
  const shop=automatic?await prisma.shop.findUnique({where:{slug:automatic},select}):
   binding&&binding.claim.ownerId===binding.shop.organization.ownerId&&domainProofAllowsRouting(binding,binding.shop.organization.ownerId)?binding.shop:null;
  const subscription=shop?.organization.owner.workspace;
+ if(shop?.legacyWorkspaceId){
+  const workspace=shop.legacyWorkspace;
+  return workspace?.slug&&workspace.ownerId===shop.organization.ownerId&&isOpen(workspace)?{slug:shop.slug,hostname,legacySlug:workspace.slug,legacyWorkspaceId:workspace.id}:null;
+ }
  if(!shop||!isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,initialized:!!shop.commerce,subscriptionStatus:subscription?.subscriptionStatus||'',subscriptionEndsAt:subscription?.subscriptionEndsAt||null}))return null;
  return {slug:shop.slug,hostname};
 }
@@ -21,10 +26,23 @@ export function requestHostname(raw:string|null){
  const match=/^([^:]+)(?::\d{1,5})?$/.exec(raw);return match?match[1].toLowerCase():null;
 }
 /** Only the actual Host header is considered. Forwarded hosts never grant a tenant context. */
-export async function assertPublicStorefrontOrigin(request:Request,slug:string){
+export async function assertPublicStorefrontOrigin(request:Request,slug:string,legacy=false){
  if(process.env.STOREFRONT_DOMAIN_ROUTING!=='enabled'){assertSameOrigin(request);return;}
  const host=requestHostname(request.headers.get('host'));
  if(host&&platformHosts().includes(host)){assertSameOrigin(request);return;}
  const domain=host?await resolveStorefrontHost(host):null;
- if(!domain||domain.slug!==slug||request.headers.get('origin')!=='https://'+domain.hostname)throw new HttpError(403,'Origine interdite');
+ const expected=domain&&(legacy?domain.legacySlug:domain.legacyWorkspaceId?null:domain.slug);
+ if(!domain||expected!==slug||request.headers.get('origin')!=='https://'+domain.hostname)throw new HttpError(403,'Origine interdite');
+}
+/** The bearer still belongs to exactly this historical store, including on custom hosts. */
+export async function legacyDomainTrackingAllowed(workspaceId:string,path:string){
+ const token=path.slice(path.lastIndexOf('/')+1);if(!/^[a-f0-9]{64}$/.test(token))return false;
+ return !!await prisma.publicReceipt.findFirst({where:{id:token,workspaceId},select:{id:true}});
+}
+export async function assertPublicTrackingOrigin(request:Request,token:string){
+ if(process.env.STOREFRONT_DOMAIN_ROUTING!=='enabled'){assertSameOrigin(request);return;}
+ const host=requestHostname(request.headers.get('host'));if(host&&platformHosts().includes(host)){assertSameOrigin(request);return;}
+ const receipt=await prisma.publicReceipt.findUnique({where:{id:token},select:{workspace:{select:{slug:true}}}});
+ if(!receipt?.workspace.slug)throw new HttpError(403,'Origine interdite');
+ await assertPublicStorefrontOrigin(request,receipt.workspace.slug,true);
 }

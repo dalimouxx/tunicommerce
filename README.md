@@ -2,6 +2,8 @@
 
 Plateforme multi-boutique sur Next.js, Node.js, PostgreSQL et Prisma. Les espaces marchand et Super Admin ont des sessions distinctes. Le socle commercial historique et les boutiques indépendantes sont conservés. Les prestataires externes restent à choisir et à valider avant un lancement commercial.
 
+État courant : [architecture de transition](docs/TUNICOMMERCE-TARGET-ARCHITECTURE.md), [suivi des cinq priorités](docs/PROGRESS-15-PERCENT.md), [pack VPS](docs/VPS-CONTAINERS.md), [domaines des boutiques](docs/VPS-STOREFRONT-DOMAINS.md) et [recherche des commandes et clients](docs/activity-read-model.md). Les sections Version 0.5 et Version 0.6 ci-dessous retracent des étapes historiques ; elles ne remplacent pas ces états actuels.
+
 ## Socle technique et parcours marchands
 
 Le socle utilise désormais Next.js 16.4.6, Prisma 7.10.1 avec `@prisma/adapter-pg`, et Zod 4.6.7. `prisma.config.ts` configure la CLI ; les migrations SQL existantes sont conservées. Les commandes de démarrage ci-dessous restent applicables. Voir [le bilan de développement et de vérification](docs/administration-saas-2026-11-10.md) pour les fonctions SaaS ajoutées et les limites de validation.
@@ -54,7 +56,7 @@ Pour les tests d’intégration, appliquer d’abord les migrations à cette bas
 ## Limites
 Inscription publique, comptes, MFA configurable, équipes/RBAC, abonnements, boutiques publiques et gestion multi-boutique sont implémentés. La création guidée est accessible depuis « Mes boutiques ». La récupération par e-mail dépend d’un SMTP et d’un worker configurés ; les transporteurs, paiements en ligne, SMS/WhatsApp et l’IA attendent leurs prestataires. Les factures commerciales nécessitent une adaptation avant un usage fiscal.
 
-Les données métier restent un agrégat JSON versionné dans PostgreSQL. Les comptes, sessions et compteurs de sécurité ont leurs tables relationnelles ; la normalisation complète des produits, commandes, stocks et organisations reste à réaliser avant la montée en charge. La migration technique vers PostgreSQL/Prisma ne signifie donc pas que l’architecture SaaS complète est terminée.
+Les écritures métier conservent un agrégat JSON versionné dans PostgreSQL. Les comptes, organisations, boutiques, adhésions et sessions ont leurs tables relationnelles ; produits, commandes et clients possèdent aussi des copies de lecture structurées, paginées et contrôlées par version de source. La normalisation complète des écritures et des stocks reste à réaliser avant la montée en charge. La migration technique vers PostgreSQL/Prisma ne signifie donc pas que l’architecture SaaS complète est terminée.
 
 Les données de l’ancien site ne sont pas copiées automatiquement. Les boutiques créées depuis l’inscription ou le nouveau parcours démarrent vides ; les démonstrations sont signalées séparément. Aucun contenu réel du site privé n’a été extrait. Préparer un export/import contrôlé si des données réelles doivent être transférées.
 

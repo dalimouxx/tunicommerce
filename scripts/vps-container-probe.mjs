@@ -26,8 +26,9 @@ try{
   assert.equal(writable,false);
   await writeFile('/app/.next/cache/container-probe','fixture');await unlink('/app/.next/cache/container-probe');
  }else if(action==='seed'){
+  const state=initialState(false);state.products=[{...initialState(true).products[0],imageUrl:'/api/media/products/'+photoId}];
   await prisma.user.create({data:{id:userId,email:'vps-ci-'+mark+'@example.test',name:'Disposable container fixture',passwordHash:'not-a-login-password',
-   workspace:{create:{id:workspaceId,data:initialState(false),slug:'vps-ci-'+mark,published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000)}}}});
+   workspace:{create:{id:workspaceId,data:state,slug:'vps-ci-'+mark,published:true,subscriptionStatus:'ACTIVE',subscriptionEndsAt:new Date(Date.now()+86400000)}}}});
   const mirror=await writeMediaObject(workspaceId,png);
   await prisma.productMedia.create({data:{id:photoId,workspaceId,content:png,mimeType:'image/png',size:png.length,width:1,height:1,...mirror}});
  }else if(action==='verify'){

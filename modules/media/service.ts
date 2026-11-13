@@ -2,7 +2,7 @@ import {Prisma} from '@prisma/client';
 import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import {normalizeState} from '../commerce/normalize';
-import {isOpen} from '../platform/public';
+import {hasPublicMediaReference} from './public-reference';
 import type {State} from '../commerce/types';
 import type {MediaSlot} from './validation';
 import {getInternalMediaId} from './validation';
@@ -77,7 +77,7 @@ export async function getVisibleMedia(id:string,currentOwnerId:string|null){
   }}
  });
  if(!media)return null;
- const publicAsset=isOpen(media.workspace);
+ const publicAsset=await hasPublicMediaReference(media.workspaceId,media.workspace.ownerId,mediaUrl(id),'brand');
  if(!publicAsset&&media.workspace.ownerId!==currentOwnerId)return null;
  return {
   content:await readMediaContent('brand',media),
