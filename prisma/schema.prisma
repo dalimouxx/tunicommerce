@@ -166,6 +166,8 @@ model ShopMedia {
   slot        String
   mimeType    String
   content     Bytes
+  storageKey  String?
+  contentSha256 String?
   size        Int
   width       Int
   height      Int
@@ -178,7 +180,7 @@ model ShopMedia {
 /**
  * Limited merchant product-photo library. 30 images of <= 400 KiB each.
  * Stored separately from products, orders and the existing ShopMedia logo/banner.
- * Move blobs to Neon object storage when Render storage credentials are provisioned.
+ * Canonical bytes retained during the optional private-filesystem mirror transition.
  */
 model ProductMedia {
   id          String    @id @default(uuid())
@@ -186,6 +188,8 @@ model ProductMedia {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   mimeType    String
   content     Bytes
+  storageKey  String?
+  contentSha256 String?
   size        Int
   width       Int
   height      Int

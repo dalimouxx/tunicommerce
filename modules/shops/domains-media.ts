@@ -1,6 +1,7 @@
 import {prisma} from '../storage/client';
 import {normalizeState} from '../commerce/normalize';
 import type {State} from '../commerce/types';
+import {readMediaContent,mediaReadSelect} from '../media/content-store';
 
 /** Called only after public-host authorization; sessions never grant access to another asset. */
 export async function storefrontDomainMedia(slug:string,path:string){
@@ -12,8 +13,8 @@ export async function storefrontDomainMedia(slug:string,path:string){
  const referenced=product?state.products.some(item=>item.imageUrl===path):[state.shop.logoUrl,state.shop.bannerUrl].includes(path);
  if(!referenced)return null;
  const where={id,workspace:{ownerId}};
- const select={content:true,mimeType:true,size:true};
+ const select=mediaReadSelect();
  const media=product?await prisma.productMedia.findFirst({where,select}):await prisma.shopMedia.findFirst({where,select});
  if(!media)return null;
- return new Response(new Uint8Array(media.content),{headers:{'Content-Type':media.mimeType,'Content-Length':String(media.size),'X-Content-Type-Options':'nosniff','Content-Disposition':'inline','Cache-Control':'no-store'}});
+ return new Response(new Uint8Array(await readMediaContent(product?'product':'brand',media)),{headers:{'Content-Type':media.mimeType,'Content-Length':String(media.size),'X-Content-Type-Options':'nosniff','Content-Disposition':'inline','Cache-Control':'no-store'}});
 }

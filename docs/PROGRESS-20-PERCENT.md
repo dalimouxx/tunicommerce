@@ -26,3 +26,5 @@ Après les PR 139 à 141, les trois lots opérationnels livrés ramènent l'esti
 5. Connexions livraison, paiement, e-mails et SMS/WhatsApp : choisir les services, développer et tester les adaptateurs, puis activer explicitement.
 
 Les événements métier signés sont fusionnés par la PR 142 après 26 workflows réussis. Les rappels d’abonnement font l’objet du lot suivant ; ils ne rendent pas les paiements automatiques opérationnels. Aucun nouveau pourcentage n’est déduit du seul ajout de ces rappels.
+
+Au 13 novembre, les rappels d’abonnement de la PR 143 sont déjà livrés sur Render depuis le 12 novembre, avec 657 tests locaux et quinze workflows réussis. Le lot médias suivant prépare un miroir privé sur VPS, une copie et une vérification par lots, et un repli PostgreSQL. Il conserve volontairement tous les originaux en base et ne constitue ni une activation de disque sur Render ni une migration complète des données métier. La réduction de taille en base reste conditionnée à une restauration vérifiée et à une étape ultérieure.
