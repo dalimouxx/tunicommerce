@@ -1,13 +1,14 @@
 import {z} from 'zod';
 import {prisma} from '../../../../../modules/storage/client';
-import {assertSameOrigin,readJson,respond,HttpError} from '../../../../../modules/auth/http';
+import {readJson,respond,HttpError} from '../../../../../modules/auth/http';
+import {assertPublicStorefrontOrigin} from '../../../../../modules/shops/domains-routing';
 import {consumeAttempt} from '../../../../../modules/auth/service';
 import {legacyPublicCheckoutInput,createLegacyPublicOrder} from '../../../../../modules/shops/legacy-public-checkout';
 
 export async function POST(req:Request,{params}:{params:Promise<{slug:string}>}){
  try{
-  assertSameOrigin(req);
   const {slug}=await params;
+  await assertPublicStorefrontOrigin(req,slug,true);
   const input=legacyPublicCheckoutInput.parse(await readJson(req));
   const shop=await prisma.workspace.findUnique({where:{slug},select:{id:true}});
   if(!shop)throw new HttpError(404,'Boutique introuvable');

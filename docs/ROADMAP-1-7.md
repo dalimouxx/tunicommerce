@@ -60,7 +60,7 @@ Les sections image de l’accueil utilisent désormais la médiathèque du propr
 
 Les pages complémentaires prennent maintenant en charge les images de médiathèque, les légendes et les formats de cadrage, avec vérification du propriétaire, conservation des références historiques et accès public limité à la page publiée.
 
-Les pages complémentaires, leurs images et leur historique sont également accessibles aux propriétaires des boutiques historiques liées à un Workspace, avec publication sous leur adresse existante et conservation du commerce historique. Les domaines personnalisés de ces boutiques restent un chantier distinct.
+Les pages complémentaires, leurs images et leur historique sont également accessibles aux propriétaires des boutiques historiques liées à un Workspace, avec publication sous leur adresse existante et conservation du commerce historique. Les domaines personnalisés et sous-domaines de ces boutiques sont maintenant pris en charge avec conservation du checkout et du suivi historiques ; leur activation DNS/HTTPS réelle reste à réaliser sur le VPS.
 
 ## Exploitation du worker — 12 novembre 2026
 

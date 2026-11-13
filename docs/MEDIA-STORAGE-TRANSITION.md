@@ -64,3 +64,9 @@ Les suppressions concernent des copies sans référence, pas les lignes PostgreS
 La sauvegarde PostgreSQL existante contient toujours les octets des médias et permet le retour au mode `database`. Tester une restauration de cette sauvegarde sur une base isolée et vérifier les images. Une future suppression des octets PostgreSQL exigera auparavant la sauvegarde coordonnée du disque, son exercice de restauration, un traitement sûr des fichiers sans référence et une migration réversible supplémentaire. Ces travaux ne sont pas déclarés terminés ici.
 
 Références techniques : [fichiers Node.js](https://nodejs.org/download/release/v24.18.0/docs/api/fs.html), [SHA-256 PostgreSQL 18](https://www.postgresql.org/docs/18/functions-binarystring.html).
+
+## Accès public des fichiers
+
+Publier une vitrine ne publie pas toute sa médiathèque. Une URL globale de photo doit être référencée par un produit actif d'une vitrine actuellement publique du même propriétaire. Un logo ou une bannière doit figurer dans la marque d'une telle vitrine. Les commerces indépendants publiés peuvent afficher ces images même lorsque le Workspace historique n'est pas publié ; l'abonnement du propriétaire doit rester valide. Une référence créée par un autre propriétaire ne donne aucun droit sur le fichier.
+
+Le propriétaire conserve l'aperçu privé des images sans référence, avec `private, no-store`. Les photos de sections publiées restent servies par les endpoints dédiés à l'accueil et aux pages, après contrôle de publication et de référence. Sur un domaine boutique, seules les images de cette boutique sont permises, même si un autre magasin du même propriétaire est public. Les réponses globales publiques conservent un cache de 60 secondes : une copie déjà reçue peut subsister pendant ce délai après dépublication.

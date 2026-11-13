@@ -28,3 +28,12 @@ test('custom host paths expose only their own public storefront and its checkout
  assert.equal(domainRoute('/produit/p1','studio','POST').kind,'deny');assert.equal(domainRoute('/_next/static/a.js','studio','GET').kind,'pass');
  const pagePhoto='/pages/a-propos'+photo;assert.equal(domainRoute('/api/v1/public/vitrines/studio'+pagePhoto,'studio','GET').kind,'pass');assert.equal(domainRoute('/api/v1/public/vitrines/studio'+pagePhoto,'studio','HEAD').kind,'pass');assert.equal(domainRoute('/api/v1/public/vitrines/foreign'+pagePhoto,'studio','GET').kind,'deny');assert.equal(domainRoute('/api/v1/public/vitrines/studio'+pagePhoto,'studio','POST').kind,'deny');
 });
+
+test('historical domains keep distinct shop and workspace slugs and require scoped tracking authorization',()=>{
+ const route=(path:string,method='GET')=>domainRoute(path,'shop-link',method,'old-workspace');
+ assert.deepEqual(route('/'),{kind:'rewrite',path:'/boutiques/old-workspace'});assert.deepEqual(route('/boutiques/old-workspace/pages/a-propos'),{kind:'redirect',path:'/pages/a-propos'});
+ assert.equal(route('/api/boutiques/old-workspace/checkout','POST').kind,'pass');assert.equal(route('/api/boutiques/foreign/checkout','POST').kind,'deny');
+ assert.equal(route('/suivi/'+'a'.repeat(64)).kind,'legacyTracking');assert.equal(route('/api/suivi/'+'a'.repeat(64),'POST').kind,'legacyTracking');assert.equal(route('/api/suivi/'+'a'.repeat(64)).kind,'deny');
+ for(const path of ['/admin','/mes-boutiques','/vitrines/shop-link','/api/v1/public/vitrines/shop-link/checkout','/boutiques/foreign','/suivi/not-a-token'])assert.equal(route(path).kind,'deny',path);
+ assert.deepEqual(route('/boutiques'),{kind:'platformRedirect',path:'/boutiques'});
+});

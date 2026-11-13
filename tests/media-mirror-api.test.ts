@@ -64,7 +64,9 @@ test('Media transition: private files, original URLs, authorization and canonica
    await prisma.productMedia.update({where:{id:photoId},data:{content:png}});await mediaMirrorBatch({kind:'product',action:'copy',workspaceId});
   });
   await t.test('Public images, homepage and page references use the same authorized media path',async()=>{
-   await prisma.workspace.update({where:{id:workspaceId},data:{published:true}});await assertPhoto(photoUrl,'');
+   const current=await prisma.workspace.findUniqueOrThrow({where:{id:workspaceId}}),state=current.data as unknown as ReturnType<typeof initialState>;
+   state.products=[{...initialState(true).products[0],imageUrl:photoUrl}];
+   await prisma.workspace.update({where:{id:workspaceId},data:{published:true,data:state as never}});await assertPhoto(photoUrl,'');
    const org=await prisma.organization.create({data:{ownerId:userId,name:'Media fixture group'}});
    shopId=(await prisma.shop.create({data:{organizationId:org.id,legacyWorkspaceId:workspaceId,name:'Media shop',slug:'mirror-shop-'+mark,status:'PUBLISHED'}})).id;
    const image={id:randomUUID(),type:'image' as const,title:'Fixture',imageUrl:photoUrl,alt:'Fictitious test image',caption:'',layout:'wide' as const,fit:'contain' as const};
