@@ -89,6 +89,7 @@ services:
       SETUP_TOKEN: ${SETUP_TOKEN:-}
       MEDIA_STORAGE_MODE: ${MEDIA_STORAGE_MODE:-database}
       MEDIA_STORAGE_ROOT: /srv/tunicom-media
+      MEDIA_GC_ENABLED: ${MEDIA_GC_ENABLED:-false}
     volumes:
       - media-data:/srv/tunicom-media
     mem_limit: 768m

@@ -43,7 +43,23 @@ Codes de sortie : 0 si le passage ne rencontre aucune anomalie, 1 pour copies ma
 
 ## Rétention et sauvegardes
 
-Les anciens fichiers ne sont pas effacés automatiquement lors d’un remplacement ou d’une suppression de photo : cette étape privilégie le retour arrière et la restauration. Des fichiers sans référence peuvent donc occuper le disque. Les limites de copie évitent une croissance illimitée par compte ; un nettoyage coordonné et une supervision restent nécessaires avant une exploitation prolongée.
+Les anciens fichiers ne sont pas effacés au moment d’un remplacement ou d’une suppression de photo. Un nettoyage contrôlé peut retirer les copies sans référence après sept jours, en tenant compte de la date de modification et du dernier changement de métadonnées du fichier. Les fichiers encore référencés par une photo ou un logo sont conservés, de même que les fichiers récents, les liens symboliques et les noms inconnus. Un répertoire dépassant 512 entrées est laissé à l’inspection de l’exploitant. Aucun répertoire n’est supprimé.
+
+Le nettoyage prend le même verrou de compte que les dépôts, remplacements et copies. Avant d’effacer un candidat, il vérifie à nouveau son identité, sa taille et ses dates ; un changement entraîne son report. Il vérifie aussi que les colonnes d’octets PostgreSQL restent obligatoires : une future migration qui retire cette garantie bloque ce nettoyage jusqu’à adaptation de sa politique.
+
+L’aperçu ne supprime rien :
+
+```sh
+npm run media:cleanup -- --workspace-id=UUID
+npm run media:cleanup -- --workspace-id=UUID --apply
+npm run media:cleanup -- --limit=10
+```
+
+Une passe traite au plus dix comptes et sélectionne au plus 25 fichiers par compte. Pour parcourir les comptes, reprendre `nextCursor` avec `--after=UUID` jusqu’à `null`. Le surplus de copies anciennes d’un même compte attend une passe suivante. Les résultats agrégés distinguent candidats, suppressions, fichiers conservés, changements concurrents et indisponibilités, sans afficher les noms des médias.
+
+La planification est désactivée par défaut. Sur le VPS, après aperçu et configuration du miroir, `MEDIA_GC_ENABLED=true` dans le service web autorise `npm run media:cleanup -- --scheduled`. Ce mode traite une page et conserve son curseur dans `MaintenanceProgress`, avec verrou concurrent non bloquant. Une erreur de stockage est conservée sur le cycle ; la date de cycle réussi n’avance pas en cas d’erreur. Les modèles systemd `tunicom-media-cleanup.service` et `.timer` exécutent une passe toutes les quinze minutes, uniquement après installation explicite par l’exploitant. Adapter leur répertoire au VPS. Ils ne sont pas installés ni activés sur Render par cette livraison.
+
+Les suppressions concernent des copies sans référence, pas les lignes PostgreSQL ou les images conservées par les historiques. Les fichiers orphelins d’anciens médias remplacés peuvent disparaître après le délai : ce répertoire ne remplace pas une sauvegarde historique. Les originaux des médias courants restent en base et permettent leur récupération. Les opérations sur disque et PostgreSQL ne constituent pas une transaction atomique ; vérifier le résultat de chaque passage et superviser les erreurs.
 
 La sauvegarde PostgreSQL existante contient toujours les octets des médias et permet le retour au mode `database`. Tester une restauration de cette sauvegarde sur une base isolée et vérifier les images. Une future suppression des octets PostgreSQL exigera auparavant la sauvegarde coordonnée du disque, son exercice de restauration, un traitement sûr des fichiers sans référence et une migration réversible supplémentaire. Ces travaux ne sont pas déclarés terminés ici.
 

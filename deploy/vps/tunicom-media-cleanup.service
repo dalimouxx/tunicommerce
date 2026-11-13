@@ -1,0 +1,11 @@
+[Unit]
+Description=Tunicom bounded cleanup of old unreferenced media copies
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/tunicom/current
+ExecStart=/usr/bin/docker compose --project-name tunicom --env-file /etc/tunicom/platform.env exec -T web node --import tsx scripts/media-cleanup.ts --scheduled
+TimeoutStartSec=90
+NoNewPrivileges=true

@@ -38,5 +38,5 @@ try{
  }else if(action==='worker-stopped'){
   assert.equal(await prisma.workerHeartbeat.count({where:{stoppedAt:null}}),0);assert.ok(await prisma.workerHeartbeat.count({where:{stoppedAt:{not:null}}}));
  }else throw Error('Unknown probe');
- process.stdout.write(JSON.stringify({ok:true,action,photoId,digest:mediaDigest(png)})+'\n');
+ process.stdout.write(JSON.stringify({ok:true,action,workspaceId,photoId,digest:mediaDigest(png)})+'\n');
 }finally{await prisma.$disconnect();}

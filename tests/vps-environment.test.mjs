@@ -20,5 +20,7 @@ test('VPS routing, image tags and media modes must be explicit and valid',()=>{
  assert.ok(vpsEnvironmentErrors({...env,STOREFRONT_DOMAIN_ROUTING:'enabled'},{allowTestDomain:true}).length);
  assert.deepEqual(vpsEnvironmentErrors({...env,STOREFRONT_DOMAIN_ROUTING:'enabled',STOREFRONT_ROOT_DOMAIN:'shops.example.test'},{allowTestDomain:true}),[]);
  assert.ok(vpsEnvironmentErrors({...env,MEDIA_STORAGE_MODE:'public-files'},{allowTestDomain:true}).length);
+ assert.ok(vpsEnvironmentErrors({...env,MEDIA_GC_ENABLED:'TRUE'},{allowTestDomain:true}).length);
+ assert.ok(vpsEnvironmentErrors({...env,MEDIA_GC_ENABLED:'true',MEDIA_STORAGE_MODE:'database'},{allowTestDomain:true}).length);
  assert.ok(vpsEnvironmentErrors({...env,TUNICOM_IMAGE_TAG:'bad tag'},{allowTestDomain:true}).length);
 });

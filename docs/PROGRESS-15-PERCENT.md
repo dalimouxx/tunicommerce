@@ -6,7 +6,7 @@ Les lots sont enchaînés avec leurs preuves, sans arrêt après chaque proposit
 
 | Lot | Critère de livraison | État initial |
 | --- | --- | --- |
-| Exploitation VPS | Images, services isolés, migrations, démarrage et arrêt du worker, proxy, persistance et exercice de restauration dans des conteneurs jetables | À réaliser |
+| Exploitation VPS | Images, services isolés, migrations, démarrage et arrêt du worker, proxy, persistance et exercice de restauration dans des conteneurs jetables | PR 145 fusionnée après deux workflows réussis, dont quinze contrôles conteneurs réels ; installation sur VPS réel non effectuée |
 | Médias durables | Nettoyage borné des copies sans référence, protection des fichiers actifs, diagnostic, vérification de récupération depuis PostgreSQL | Miroir réversible livré par la PR 144 ; nettoyage à réaliser |
 | Domaines | Revérification des preuves DNS, comportement sûr en panne et refus des liaisons devenues invalides, tests HTTP/DNS | Rattachement et routage existants ; revérification à réaliser |
 | Données métier | Poursuite des lectures structurées et paginées avec contrôle de parité, isolation et transition compatible pour les boutiques existantes | Première copie du catalogue existante ; suite à réaliser |

@@ -3,6 +3,7 @@ services:
     ports: ['127.0.0.1::3000']
     environment:
       TUNICOM_CONTAINER_TEST: '1'
+      MEDIA_GC_ENABLED: 'true'
   caddy-ci:
     image: caddy:2-alpine
     ports: ['127.0.0.1::8080']
