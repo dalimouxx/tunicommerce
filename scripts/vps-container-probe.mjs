@@ -47,6 +47,22 @@ try{
   await prisma.$executeRaw`UPDATE "ShopDomainBinding" SET "verifiedAt"=CURRENT_TIMESTAMP WHERE "hostname"=${hostname}`;
   assert.equal((await prisma.shopDomainBinding.findUniqueOrThrow({where:{hostname}})).ownerId,userId);
   await prisma.organization.delete({where:{id:orgId}});await prisma.user.delete({where:{id:otherId}});
+ }else if(action==='activity'){
+  const {rebuildActivity,readActivity,verifyActivity}=await import('../modules/shops/activity-index-service.ts');
+  const {activityQuery}=await import('../modules/shops/activity-query.ts');
+  const orgId=id('activity-org'),shopId=id('activity-shop'),legacyId=id('activity-legacy'),state=initialState(false);
+  state.customers=[{id:'fixture-client',name:'Client fictif',phone:'22123456',city:'Tunis',address:'Adresse locale fictive',notes:''}];
+  state.orders=[{...initialState(true).orders[0],id:'fixture-order',customerId:'fixture-client',reference:'VPS-LOCAL-1'}];
+  await prisma.organization.create({data:{id:orgId,ownerId:userId,name:'Disposable activity fixture'}});
+  await prisma.shop.create({data:{id:shopId,organizationId:orgId,name:'Activity fixture',slug:'activity-'+mark,commerce:{create:{data:state}},memberships:{create:{userId,role:'OWNER'}}}});
+  await rebuildActivity(userId,shopId);assert.equal((await verifyActivity(userId,shopId)).matches,true);
+  assert.equal((await readActivity(userId,shopId,activityQuery.parse({}))).source,'relational');
+  state.customers[0].name='Révision locale';await prisma.$executeRaw`UPDATE "ShopCommerce" SET "data"=${JSON.stringify(state)}::jsonb WHERE "shopId"=${shopId}`;
+  assert.equal((await readActivity(userId,shopId,activityQuery.parse({}))).source,'compatible');
+  await rebuildActivity(userId,shopId);assert.equal((await verifyActivity(userId,shopId)).matches,true);
+  await prisma.shop.create({data:{id:legacyId,organizationId:orgId,name:'Legacy fixture',slug:'activity-legacy-'+mark,legacyWorkspaceId:workspaceId,memberships:{create:{userId,role:'OWNER'}}}});
+  await rebuildActivity(userId,legacyId);assert.equal((await verifyActivity(userId,legacyId)).matches,true);
+  await prisma.organization.delete({where:{id:orgId}});assert.equal(await prisma.shopActivityIndex.count({where:{shopId:{in:[shopId,legacyId]}}}),0);
  }else if(action==='worker-active'){
   assert.equal(await prisma.workerHeartbeat.count({where:{stoppedAt:null,lastSeenAt:{gte:new Date(Date.now()-120000)}}}),1);
  }else if(action==='worker-stopped'){

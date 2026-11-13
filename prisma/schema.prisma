@@ -58,6 +58,7 @@ model Workspace {
   data      Json
   version   Int @default(0)
   catalogVersion Int @default(0)
+  activityVersion Int @default(0)
   updatedAt DateTime @updatedAt
   @@index([subscriptionMailEnabled, subscriptionEndsAt, id])
 }
@@ -119,6 +120,7 @@ model Shop {
   pages          ShopPage[]
   orderMail      ShopOrderMail?
   catalogIndex   ShopCatalogIndex?
+  activityIndex  ShopActivityIndex?
   webhook        ShopWebhook?
   webhookEvents  ShopWebhookEvent[]
   domainClaims   ShopDomainClaim[]
@@ -308,6 +310,7 @@ model ShopCommerce {
   data      Json
   version   Int @default(0)
   catalogVersion Int @default(0)
+  activityVersion Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -386,6 +389,61 @@ model ShopOrderMail {
 }
 
 /** Rebuildable read model; commercial JSON remains authoritative during transition. */
+model ShopActivityIndex {
+ shopId String @id
+ shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ sourceKind String
+ sourceId String
+ sourceVersion Int
+ orderCount Int
+ customerCount Int
+ updatedAt DateTime @updatedAt
+ orders ShopActivityOrder[]
+ customers ShopActivityCustomer[]
+}
+
+model ShopActivityOrder {
+ shopId String
+ activity ShopActivityIndex @relation(fields:[shopId],references:[shopId],onDelete:Cascade)
+ orderId String
+ ordinal Int
+ reference String
+ customerId String
+ status String
+ source String
+ total BigInt
+ collected BigInt
+ createdAt String
+ customerName String
+ customerPhone String
+ customerCity String
+ searchText String
+ extra Json @default("{}")
+ @@id([shopId,orderId])
+ @@index([shopId,ordinal])
+ @@index([shopId,status,ordinal])
+ @@index([shopId,customerId])
+}
+
+model ShopActivityCustomer {
+ shopId String
+ activity ShopActivityIndex @relation(fields:[shopId],references:[shopId],onDelete:Cascade)
+ customerId String
+ ordinal Int
+ name String
+ phone String
+ city String
+ address String
+ notes String
+ orderCount Int
+ deliveredCount Int
+ deliveredGross BigInt
+ searchText String
+ extra Json @default("{}")
+ @@id([shopId,customerId])
+ @@index([shopId,ordinal])
+}
+
 model ShopCatalogIndex {
  shopId String @id
  shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)

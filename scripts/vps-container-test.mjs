@@ -59,6 +59,7 @@ try{
  const cleanup=JSON.parse((await compose(['exec','-T','web','node','--import','tsx','scripts/media-cleanup.ts','--scheduled'])).trim().split('\n').at(-1));
  assert.equal(cleanup.enabled,true);assert.equal(cleanup.busy,false);assert.equal(cleanup.deleted,0);assert.equal(cleanup.unavailable,0);await probe('verify');pass('Bounded media maintenance runs with application privileges and preserves live files');
  await probe('domains');pass('Rolling-compatible domain snapshots initialize with application privileges and cannot be inherited');
+ await probe('activity');pass('Structured orders and customers rebuild, invalidate and verify with application privileges');
  await probe('worker-active');await compose(['stop','-t','100','worker']);await probe('worker-stopped');
  await compose(['up','-d','--wait','--wait-timeout','120','worker']);await probe('worker-active');pass('SIGTERM records a clean worker stop and restart');
  await compose(['up','-d','--no-deps','--force-recreate','--wait','--wait-timeout','120','db']);await waitHealth(origin);await probe('verify');pass('Database persistence after container replacement');
