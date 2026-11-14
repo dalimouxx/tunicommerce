@@ -9,7 +9,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --include=dev
 
 FROM dependencies AS builder
-COPY . .
+# VPS checkouts may use umask 077. The non-root migrator must own copied sources.
+COPY --chown=node:node . .
 RUN npm run build && node scripts/container-config.mjs
 
 FROM builder AS production-dependencies
