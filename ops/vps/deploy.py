@@ -82,10 +82,20 @@ class Deployment:
         self.active = STATE / "images.json"
         self.pending = STATE / "pending-images.json"
 
-    def mark(self, phase):
+    def mark(self, phase, details=None):
         self.phase = phase
         atomic_json(STATE / "progress.json", {"phase": phase, "at": int(time.time()),
-                    "sha": self.request["sha"], "run_id": self.request["run_id"]})
+                    "sha": self.request["sha"], "run_id": self.request["run_id"], **(details or {})})
+
+    def validate_migrator(self, tag):
+        # Readability only: no DB URL, database access or migration execution.
+        script = ("const fs=require('fs');for(const p of ['scripts/vps-migrate.mjs',"
+                  "'scripts/migrate.mjs','prisma/schema.prisma','package.json'])"
+                  "fs.accessSync(p,fs.constants.R_OK);"
+                  "if(process.getuid()!==1000)process.exit(1)")
+        execute(["docker", "run", "--rm", "--pull=never", "--network", "none",
+                 "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
+                 "--entrypoint", "node", "tunicom-migrator:" + tag, "-e", script], timeout=30)
 
     def compose(self, *args, pending=False, **kwargs):
         return execute(["docker", "compose", "--project-name", "tunicom-production",
@@ -196,6 +206,8 @@ class Deployment:
         execute([*git, "fetch", "--depth=1", REMOTE, "refs/heads/main"], timeout=180)
         if execute([*git, "rev-parse", "FETCH_HEAD"], capture=True) != self.request["sha"]:
             return {"status": "superseded"}
+        self.mark("image_check")
+        self.validate_migrator(tag)
         atomic_json(self.pending, image_override(tag))
         self.mark("maintenance")
         self.stopped = True
@@ -257,7 +269,8 @@ def main():
                     result["recovery"] = "manual_intervention_required"
                 if deployment.migration_started:
                     result["recovery"] = "manual_intervention_required"
-                deployment.mark("failed")
+                deployment.mark("failed", {"failed_phase": result["phase"], "code": result["code"],
+                                           "recovery": result.get("recovery", "previous_services_preserved")})
         print(json.dumps(result))
         return int(result["status"] == "failed")
 

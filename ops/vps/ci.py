@@ -14,6 +14,23 @@ REPO = "dalimouxx/tunicommerce"
 REQUIRED = ("ci.yml", "vps-containers.yml", "vps-operations.yml")
 
 
+def safe_failure(response):
+    allowed = {
+        "phase": {"preflight", "fetch", "build", "image_check", "maintenance", "backup", "migrate", "start", "health"},
+        "code": {"command_failed", "operation_failed", "invalid_request", "deployment_locked",
+                 "backup_failed", "filesystem_media_backup_required", "insufficient_backup_space",
+                 "insufficient_build_space", "insufficient_build_memory", "initial_installation_required",
+                 "initial_health_failed", "current_release_unhealthy", "release_health_failed",
+                 "release_directory_not_clean", "invalid_configuration", "unsafe_configuration_permissions",
+                 "unsafe_secret_permissions"},
+        "recovery": {"manual_intervention_required"},
+    }
+    if not isinstance(response, dict):
+        return {}
+    return {key: value for key, values in allowed.items()
+            if isinstance(value := response.get(key), str) and value in values}
+
+
 def api(path):
     request = urllib.request.Request("https://api.github.com/repos/" + REPO + "/" + path,
         headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
@@ -96,7 +113,11 @@ def main():
             if len(result.stdout) > 4096:
                 raise ValueError("invalid_deployment_response")
             response = json.loads(result.stdout)
+            if not isinstance(response, dict):
+                raise ValueError("invalid_deployment_response")
             if result.returncode != 0 or response.get("status") not in ("deployed", "already_current", "superseded"):
+                for key, value in safe_failure(response).items():
+                    print("Deployment " + key + ": " + value)
                 raise ValueError("deployment_failed")
             status = response["status"]
             print("Deployment result: " + status)
