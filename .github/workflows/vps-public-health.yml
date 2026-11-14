@@ -1,0 +1,38 @@
+name: VPS public HTTPS and Telegram incidents
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tunicom-vps-public-monitor
+  cancel-in-progress: false
+jobs:
+  health:
+    if: >-
+      github.repository == 'dalimouxx/tunicommerce' &&
+      github.ref == 'refs/heads/main' && vars.VPS_MONITOR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@v4
+        with:
+          path: .test-runtime/vps-public-health.json
+          key: vps-public-health-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: vps-public-health-v1-
+      - name: Check enabled public sites
+        run: python3 ops/vps/external.py
+        env:
+          MONITOR_TUNICOM: ${{ vars.VPS_MONITOR_TUNICOM }}
+          MONITOR_FIXI: ${{ vars.VPS_MONITOR_FIXI }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .test-runtime/vps-public-health.json
+          key: vps-public-health-v1-${{ github.run_id }}-${{ github.run_attempt }}

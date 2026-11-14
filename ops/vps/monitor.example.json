@@ -1,0 +1,9 @@
+{
+  "sites": [
+    {"name": "Fixi", "enabled": true, "url": "https://fixiphone.io/api/health"},
+    {"name": "Tunicom", "enabled": false, "url": "https://tunicom.shop/api/health", "expected": {"server": "ok", "database": "ok"}}
+  ],
+  "containers": ["fixi-app-1", "fixi-db-1", "fixi-caddy-1"],
+  "tunicom_deploy": false,
+  "tunicom_backup": false
+}

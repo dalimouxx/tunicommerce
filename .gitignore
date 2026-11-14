@@ -6,3 +6,5 @@ node_modules/
 *.tsbuildinfo
 coverage/
 *.log
+__pycache__/
+*.pyc

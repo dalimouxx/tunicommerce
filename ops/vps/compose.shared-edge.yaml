@@ -1,0 +1,11 @@
+services:
+  web:
+    networks:
+      backend: {}
+      front: {}
+      tunicom-proxy:
+        aliases: [tunicom-production-web]
+networks:
+  tunicom-proxy:
+    external: true
+    name: platforms-tunicom-edge

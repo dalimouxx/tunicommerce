@@ -1,0 +1,19 @@
+name: Tunicom VPS operations tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  operations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m unittest discover -s ops/vps/tests -v
+      - run: sh -n ops/vps/install.sh
+      - run: sh ops/vps/tests/ssh-boundary.sh

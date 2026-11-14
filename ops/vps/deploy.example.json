@@ -1,0 +1,5 @@
+{
+  "base_compose": "/srv/platforms/tunicom/releases/13889d3189648e45ff390291433b6f879252fccf/compose.yaml",
+  "network_compose": "/srv/platforms/tunicom/compose.shared-edge.yaml",
+  "health_url": "https://tunicom.shop/api/health"
+}
