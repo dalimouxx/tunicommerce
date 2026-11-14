@@ -74,7 +74,7 @@ Règles : `prefers-reduced-motion: reduce` et `data-motion=paused` désactivent 
 | `AURORA` / `aurora` | Aurora | Beauté, cosmétiques | Halos de couleur qui dérivent en fond, cartes en verre dépoli (backdrop-filter avec repli opaque), arrondis généreux |
 | `MAGAZINE` / `magazine` | Magazine | Mode, créateurs | Visuel plein écran, titres géants serif, grille produits asymétrique (une grande carte, puis petites), numérotation éditoriale |
 
-Souk Flash : **pas de compte à rebours** (aucune date de fin de promo n'existe dans les données ; un chrono inventé serait trompeur). Le bandeau affiche les promesses configurées par la boutique (eyebrow/tagline/annonce) et les badges de paiement à la livraison. Les badges de réduction n'apparaissent que si le produit a réellement un ancien prix supérieur ; sinon rien.
+Souk Flash : **pas de compte à rebours** (aucune date de fin de promo n'existe dans les données ; un chrono inventé serait trompeur). Le bandeau affiche les promesses configurées par la boutique (eyebrow/tagline/annonce) et les badges de paiement à la livraison. Il n'existe pas de champ « ancien prix » dans les produits : les badges promotionnels s'appuient uniquement sur les **offres de quantité réelles** (`modules/shops/quantity-offers.ts`, ex. « 2 pièces 89 DT ») quand le produit en a ; sinon aucun badge.
 
 ### 3. Mécanique des briques de mise en page
 
