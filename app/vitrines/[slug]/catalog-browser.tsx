@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {useState,type CSSProperties} from 'react';
+import {badgeQuantityOffer} from '../../../modules/shops/quantity-offers';
 import {catalogCategories,selectCatalogProducts,type CatalogProduct,type CatalogSort} from '../../../modules/shops/public-catalog-filters';
 import {formatStorefrontMoney,storefrontDictionary,storefrontLangHref,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 import styles from './storefront-premium.module.css';
@@ -70,7 +71,7 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
      {product.variant&&<p className={styles.variant}>{product.variant}</p>}
      {product.description&&<p className={styles.description} dir="auto">{product.description}</p>}
      <p className={styles.productPrice}>{formatStorefrontMoney(product.price,lang)}</p>
-     {product.offers&&product.offers.length>0&&<p data-part="offer-badge">{t.offerBadge(product.offers[0].quantity,formatStorefrontMoney(product.offers[0].price,lang))}</p>}
+     {(offer=>offer&&<p data-part="offer-badge">{t.offerBadge(offer.quantity,formatStorefrontMoney(offer.price,lang))}</p>)(badgeQuantityOffer(product.offers))}
      <div className={styles.productButtons}>
       {product.available&&<Link className={styles.productBuy} data-part="cta" href={
        storefrontLangHref(shopPath+'?produit='+encodeURIComponent(product.id)+'#panier',lang)

@@ -25,5 +25,8 @@
 .root :global(.product-tile){background:rgb(255 255 255 / .07);border:1px solid rgb(255 255 255 / .16);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:26px;color:var(--store-text)}
 .root :global(.product-tile small),.root :global(.product-tile label){color:var(--store-muted)}
 @supports not (backdrop-filter: blur(1px)){.root :global(.product-tile){background:var(--store-surface)}}
+.root :global(.checkout),.root :global(.notice),.root :global(.platform .notice),.root :global(.platform .notice) *{color:#1b1830}
+.root :global(.checkout small),.root :global(.checkout label){color:#4a4560}
+.root :global(.product-placeholder){background:rgb(255 255 255 / .06)}
 .root>[data-part="motif"]{position:absolute;inset:0 0 auto;height:640px}
 @media (prefers-reduced-motion: reduce){.root [data-part="motif"] [data-layer]{transform:none}}

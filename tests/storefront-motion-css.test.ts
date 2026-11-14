@@ -42,3 +42,7 @@ test('themeClass maps every new theme to its own module and nothing else',()=>{
  }
  assert.equal((index.match(/\.root/g)||[]).length,themeFiles.length);
 });
+test('aurora keeps light panels of independent shops readable with dark text',()=>{
+ assert.match(themeCss('aurora'),/:global\(\.checkout\)[^{]*\{[^}]*color:\s*#1b1830/);
+ assert.match(themeCss('aurora'),/:global\(\.notice\)[^{]*\{[^}]*color:\s*#1b1830/);
+});

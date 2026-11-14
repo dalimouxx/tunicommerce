@@ -44,3 +44,11 @@ test('offer badge copy exists in both languages',()=>{
  assert.equal(storefrontDictionary('fr').offerBadge(2,'89,000 DT'),'2 pièces · 89,000 DT');
  assert.ok(storefrontDictionary('ar').offerBadge(2,'89').includes('2'));
 });
+
+test('offer badge picks the first real multi-piece offer, never the unit price row',async()=>{
+ const {badgeQuantityOffer}=await import('../modules/shops/quantity-offers');
+ assert.deepEqual(badgeQuantityOffer([{quantity:1,price:89000,label:''},{quantity:2,price:169000,label:'Duo'}]),{quantity:2,price:169000});
+ assert.equal(badgeQuantityOffer([{quantity:1,price:89000,label:''}]),null);
+ assert.equal(badgeQuantityOffer(undefined),null);
+ assert.equal(badgeQuantityOffer([]),null);
+});

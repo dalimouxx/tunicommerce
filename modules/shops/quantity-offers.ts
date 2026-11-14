@@ -60,3 +60,9 @@ export function publicQuantityOffers(product:Priced){
  return [{quantity:1,price:product.price,label:'',saving:0},
   ...offers.map(item=>({quantity:item.quantity,price:item.price,label:item.label,saving:product.price*item.quantity-item.price}))];
 }
+
+/** Storefront badge: the first genuine multi-piece offer, ignoring the unit-price row of publicQuantityOffers. */
+export function badgeQuantityOffer(offers:readonly {quantity:number;price:number;label?:string}[]|undefined){
+ const offer=offers?.find(item=>item.quantity>1);
+ return offer?{quantity:offer.quantity,price:offer.price}:null;
+}
