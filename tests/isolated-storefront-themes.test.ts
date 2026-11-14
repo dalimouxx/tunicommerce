@@ -29,7 +29,7 @@ test('strict payload refuses arbitrary CSS and extra properties',()=>{
  assert.equal(storefrontThemeInput.safeParse({...request,payload:{...request.payload,css:'body{display:none}'}}).success,false);
 });
 
-test('fourteen themes preserve existing codes and expose safe fixed palettes',()=>{
+test('twenty themes preserve existing codes and expose safe fixed palettes',()=>{
  const codes=storefrontThemeCodes;
  for(const code of codes){
   const theme=storefrontPalette(code);
@@ -83,7 +83,7 @@ test('private temporary theme preview never changes persisted storefront selecti
 
 test('studio sector gallery provides safe curated choices without hiding saved themes',()=>{
  const all=storefrontThemesForSector('ALL');
- assert.equal(all.length,14);
+ assert.equal(all.length,20);
  assert.equal(storefrontSectors.length,7);
  for(const item of storefrontSectors){
   const suggestions=storefrontThemesForSector(item.id);
@@ -94,6 +94,16 @@ test('studio sector gallery provides safe curated choices without hiding saved t
  assert.ok(storefrontThemesForSector('FASHION').includes('URBAN'));
  assert.ok(storefrontThemesForSector('BEAUTY').includes('ECLAT'));
  assert.ok(storefrontThemesForSector('WELLNESS').includes('ZEN'));
- assert.equal(storefrontThemesForSector('url(javascript:alert(1))').length,14);
- assert.equal(storefrontThemesForSector({payload:'CUSTOM_CSS'}).length,14);
+ assert.equal(storefrontThemesForSector('url(javascript:alert(1))').length,20);
+ assert.equal(storefrontThemesForSector({payload:'CUSTOM_CSS'}).length,20);
+});
+
+test('six new layout themes are selectable and persist',()=>{
+ for(const code of ['MEDINA','SAHARA','BENTO','SOUK','AURORA','MAGAZINE'] as const){
+  assert.ok(storefrontThemeCodes.includes(code));
+  const request={action:'saveStorefrontTheme',requestId:crypto.randomUUID(),payload:{theme:code}};
+  assert.equal(storefrontThemeInput.safeParse(request).success,true);
+  const next=applyAction(initialState(false),'saveStorefrontTheme',{theme:code});
+  assert.equal(isolatedStorefrontPreview(next).theme.code,code);
+ }
 });
