@@ -18,6 +18,7 @@
 @supports not (backdrop-filter: blur(1px)){
  .root [data-part="hero-visual"],.root [data-part="product-card"],.root [data-part="featured-badge"]{background:var(--store-surface)}
 }
+.root [data-part="hero-visual"]::before{content:none}
 /* Boutiques indépendantes */
 .root :global(.platform-hero h1){color:var(--store-text)}
 .root :global(.platform-hero p),.root :global(.search-label),.root :global(.platform header a),.root :global(.platform header span){color:var(--store-muted)}

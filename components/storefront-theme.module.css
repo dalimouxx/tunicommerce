@@ -134,3 +134,7 @@
 .shell[data-theme="editorial"]{--store-bg:#f8f5ee}
 .shell[data-theme="prestige"]{--store-bg:#121820}
 .shell[data-theme="pop"]{--store-bg:#fff5ee}
+
+/* Decorative theme layer sits behind the shop content. */
+.shell{position:relative;isolation:isolate}
+.shell>[data-part="motif"]{z-index:-1;pointer-events:none}

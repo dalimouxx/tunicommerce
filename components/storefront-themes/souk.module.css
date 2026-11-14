@@ -28,6 +28,7 @@
 @media (hover:hover){.root [data-part="product-card"]:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--store-text)}}
 .root [data-part="offer-badge"]{display:inline-flex;align-self:flex-start;margin:0;padding:5px 10px;border-radius:6px;background:var(--store-accent);color:var(--store-accent-text);font-size:12px;font-weight:900;text-transform:uppercase;transform:rotate(-2deg)}
 .root [data-part="cta"]{border-radius:8px;text-transform:uppercase;font-weight:900}
+.root [data-part="hero-visual"]::before{content:none}
 /* Boutiques indépendantes */
 .root :global(.platform-hero h1){text-transform:uppercase;font-weight:900;color:var(--store-text)}
 .root :global(.product-tile){border:2px solid var(--store-text);border-radius:12px;box-shadow:6px 6px 0 var(--store-text);background:var(--store-surface)}

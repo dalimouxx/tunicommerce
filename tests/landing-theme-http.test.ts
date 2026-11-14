@@ -6,7 +6,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import {stopTestServer} from './server-process';
 import {storefrontThemeCodes,storefrontPalette} from '../modules/shops/storefront-themes';
 const base='http://127.0.0.1:3197';
-test('Public Tunicom landing and fourteen read-only theme previews work without a database connection',async()=>{
+test('Public Tunicom landing and twenty read-only theme previews work without a database connection',async()=>{
  let child:ChildProcess|undefined;
  try{
   child=spawn(process.execPath,['scripts/start.mjs'],{env:{...process.env,PORT:'3197',NODE_ENV:'production',APP_URL:'https://landing.example.test',DATABASE_URL:'postgresql://nobody@127.0.0.1:1/unreachable'},stdio:'ignore'});
@@ -15,13 +15,16 @@ test('Public Tunicom landing and fourteen read-only theme previews work without 
    const response=await fetch(base+path,{redirect:'manual'});assert.equal(response.status,200);
    const html=await response.text();assert.ok(html.includes('Ton business.'));assert.ok(html.includes('Tunicom'));
    assert.ok(html.includes('href="/inscription"'));assert.ok(html.includes('href="/connexion/boutique"'));
-   assert.ok(html.includes('href="/themes/PULSE"'));assert.ok(html.includes('Démonstration')||html.includes('démonstration'));
+   assert.ok(html.includes('href="/themes/PULSE"'));for(const name of ['Médina','Sahara','Bento','Souk Flash','Aurora','Magazine'])assert.ok(html.includes(name),name);assert.ok(html.includes('Démonstration')||html.includes('démonstration'));
    assert.equal(html.includes('TuniCommerce'),false);
   }
   for(const code of storefrontThemeCodes){
    const response=await fetch(base+'/themes/'+code);assert.equal(response.status,200,code);
    const html=await response.text();assert.ok(html.includes('data-theme="'+code+'"'));assert.ok(html.includes(storefrontPalette(code).name));
-   assert.ok(html.includes('Aucun achat sur cette page.'));assert.equal(html.includes('<form'),false);
+   assert.ok(html.includes('Aucun achat sur cette page.'));assert.equal(html.includes('<form'),false);assert.ok(html.includes('data-motion-root'),code);
+   if(code==='BENTO'){assert.ok(html.includes('data-hero="bento"'));assert.ok(html.includes('data-part="bento-tile"'));}
+   if(code==='SOUK'){assert.ok(html.includes('data-part="souk-strip"'));assert.ok(html.includes('data-part="offer-badge"'));}
+   if(code==='MEDINA')assert.ok(html.includes('data-motif="zellige"'));
   }
   assert.equal((await fetch(base+'/themes/INVALID',{redirect:'manual'})).status,404);
  }finally{if(child&&child.exitCode===null){const exited=once(child,'exit');stopTestServer(child);await exited;}}

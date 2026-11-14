@@ -2,9 +2,10 @@
 .root{--store-bg:#f7f1e6;--store-text:#1d2a44;--store-surface:#fffaf1;--store-muted:#5b6377;--medina-gold:#c9a24a;background:var(--store-bg);color:var(--store-text);position:relative}
 .root [data-part="hero"]{isolation:isolate}
 .root [data-part="hero"]>:not([data-part="motif"]){position:relative;z-index:1}
-.root [data-part="motif"]{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.55}
+.root [data-part="motif"]{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.5;-webkit-mask-image:linear-gradient(90deg,transparent 35%,#000 80%);mask-image:linear-gradient(90deg,transparent 35%,#000 80%)}
+.root[dir="rtl"] [data-part="motif"]{-webkit-mask-image:linear-gradient(270deg,transparent 35%,#000 80%);mask-image:linear-gradient(270deg,transparent 35%,#000 80%)}
 .root [data-part="motif"] svg{width:100%;height:100%}
-.root [data-part="motif"] path{fill:none;stroke:var(--medina-gold);stroke-width:1.1;stroke-dasharray:1;stroke-dashoffset:1;animation:medinaDraw 2.4s cubic-bezier(.6,0,.2,1) forwards;animation-delay:calc(var(--i,0) * .18s)}
+.root [data-part="motif"] path{fill:none;stroke:var(--medina-gold);stroke-width:1.1;stroke-dasharray:1;stroke-dashoffset:1;animation:medinaDraw 2.4s cubic-bezier(.6,0,.2,1) forwards;animation-delay:calc(var(--i,0) * 18ms)}
 @keyframes medinaDraw{to{stroke-dashoffset:0}}
 .root [data-part="hero-copy"] h1{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-.02em}
 .root [data-part="hero-copy"] h1::after{content:"";display:block;width:84px;height:3px;margin-top:22px;background:linear-gradient(90deg,var(--medina-gold),transparent)}
@@ -14,6 +15,7 @@
 .root [data-part="product-card"]::before{content:"";position:absolute;inset-inline:18px;top:0;height:3px;z-index:2;background:linear-gradient(90deg,transparent,var(--medina-gold),transparent)}
 .root [data-part="product-media"]{border-radius:120px 120px 0 0;margin:12px 12px 0}
 .root [data-part="pillars"]>*{border-inline-start:2px solid var(--medina-gold);padding-inline-start:14px}
+.root [data-part="hero-visual"]::before{content:none}
 /* Boutiques indépendantes */
 .root :global(.platform-hero){position:relative;padding-inline-start:24px;border-inline-start:3px solid var(--medina-gold)}
 .root :global(.platform-hero h1){font-family:Georgia,'Times New Roman',serif;font-weight:600;color:var(--store-text)}

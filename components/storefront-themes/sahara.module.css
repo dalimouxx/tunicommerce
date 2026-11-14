@@ -16,6 +16,7 @@
 .root [data-part="product-media"]{border-radius:3px}
 .root [data-part="product-card"] h3{font-weight:400;letter-spacing:.02em}
 .root [data-part="cta"]{border-radius:999px;letter-spacing:.08em}
+.root [data-part="hero-visual"]::before{content:none}
 /* Boutiques indépendantes */
 .root :global(.platform-hero h1){font-weight:300;letter-spacing:.01em;color:var(--store-text)}
 .root :global(.product-tile){border:0;background:transparent;box-shadow:none}

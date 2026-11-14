@@ -5,12 +5,17 @@ import {appearanceAccentText,appearanceThemeDetails} from '../modules/appearance
 import StorefrontMotionToggle from './storefront-motion-toggle';
 import StorefrontReveal from './storefront-reveal';
 import motion from './storefront-motion.module.css';
+import ThemeMotif from './theme-motif';
+import {themeClass} from './storefront-themes';
+import {appearanceLayout} from '../modules/shops/theme-layouts';
 
 export default function StorefrontTheme({
  appearance,children,announcement
 }:{appearance:Presentation,children:ReactNode;announcement?:string}){
- return <div className={styles.shell+' '+motion.root} data-theme={appearance.theme} data-motion-root
+ const layout=appearanceLayout(appearance.theme);
+ return <div className={[styles.shell,motion.root,themeClass(appearance.theme)].filter(Boolean).join(' ')} data-theme={appearance.theme} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} data-motion-root
   style={{'--store-accent':appearance.accent,'--store-accent-text':appearanceAccentText(appearance.accent)} as CSSProperties}>
+  <ThemeMotif motif={layout.motif}/>
   {appearanceThemeDetails[appearance.theme].animated&&<div className={styles.motionBar}><StorefrontMotionToggle className={styles.motionButton}/></div>}
   {(announcement||appearance.theme!=='classic'||appearance.eyebrow!=='BOUTIQUE INDÉPENDANTE · TUNISIE'||appearance.tagline!=='Livraison en Tunisie · Paiement à la livraison')&&
    <div className={styles.announcement} data-part="announcement">

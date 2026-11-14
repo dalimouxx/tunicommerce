@@ -2,7 +2,7 @@
 .root{--store-bg:#f5f5f7;--store-text:#111114;--store-surface:#ffffff;--store-muted:#5d5d66;background:var(--store-bg);color:var(--store-text)}
 .root [data-part="hero"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;gap:14px}
 .root [data-part="hero-copy"]{background:var(--store-surface);border-radius:28px;padding:clamp(24px,4vw,52px);display:flex;flex-direction:column;justify-content:center;box-shadow:0 1px 0 #0000000a,0 18px 40px -24px #0000002e}
-.root [data-part="hero-copy"] h1{letter-spacing:-.05em}
+.root [data-part="hero-copy"] h1{letter-spacing:-.05em;font-size:clamp(40px,5vw,74px);overflow-wrap:normal;word-break:normal}
 .root [data-part="hero-visual"]{background:none;border-radius:0;overflow:visible;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(132px,auto);gap:14px;place-items:stretch}
 .root [data-part="hero-visual"]>:first-child{grid-column:1/-1;position:relative;inset:auto;min-height:260px;height:100%;width:100%;border-radius:28px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--store-accent) 16%,var(--store-surface)),var(--store-surface))}
 .root [data-part="hero-visual"]>img:first-child{object-fit:cover}
@@ -23,9 +23,11 @@
 @media (min-width:900px){
  .root [data-part="product-grid"]{grid-auto-flow:dense}
  .root [data-part="product-grid"]>:first-child{grid-column:span 2;grid-row:span 2}
- .root [data-part="product-grid"]>:first-child [data-part="product-media"]{height:auto;flex:1;min-height:360px}
+ .root [data-part="product-grid"]>:first-child [data-part="product-media"]{height:auto;flex:1 1 auto;min-height:360px}
+ .root [data-part="product-grid"]>:first-child>:last-child{flex:0 0 auto}
 }
 @media (max-width:640px){.root [data-part="hero"]{grid-template-columns:1fr}}
+.root [data-part="hero-visual"]::before{content:none}
 /* Boutiques indépendantes */
 .root :global(.platform-hero){background:var(--store-surface);border-radius:28px;padding:clamp(24px,4vw,48px);max-width:none;margin-block:24px}
 .root :global(.product-tile){border:0;border-radius:24px;background:var(--store-surface);box-shadow:0 18px 40px -26px #0000002e}

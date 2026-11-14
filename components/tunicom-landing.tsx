@@ -9,7 +9,13 @@ import styles from './tunicom-landing.module.css';
 const newThemes=[{code:'PULSE',name:'Pulse',tag:'Pour les marques qui osent.',shop:'OFFBEAT',title:'MAKE SOME NOISE.',kind:'shoe'},
  {code:'SORBET',name:'Sorbet',tag:'Un peu de douceur. Beaucoup de style.',shop:'DAILY / CLUB',title:'GOOD SKIN. GOOD MOOD.',kind:'bottle'},
  {code:'CHROME',name:'Chrome',tag:'La tech, avec un temps d’avance.',shop:'FREQUENCY',title:'FEEL EVERY BEAT.',kind:'audio'},
- {code:'GROOVE',name:'Groove',tag:'Une autre idée du quotidien.',shop:'ODD STUDIO',title:'STAY A LITTLE DIFFERENT.',kind:'shoe'}] as const;
+ {code:'GROOVE',name:'Groove',tag:'Une autre idée du quotidien.',shop:'ODD STUDIO',title:'STAY A LITTLE DIFFERENT.',kind:'shoe'},
+ {code:'MEDINA',name:'Médina',tag:'Le savoir-faire, mis en lumière.',shop:'DAR ZELLIGE',title:'FAIT MAIN. FAIT ICI.',kind:'bottle'},
+ {code:'SAHARA',name:'Sahara',tag:'Chaud, doux, intemporel.',shop:'DUNE ATELIER',title:'LA LUMIÈRE DU SUD.',kind:'bottle'},
+ {code:'BENTO',name:'Bento',tag:'Net, rangé, efficace.',shop:'BLOCK.TN',title:'TOUT, AU BON ENDROIT.',kind:'audio'},
+ {code:'SOUK',name:'Souk Flash',tag:'Les bons plans, en grand.',shop:'SOUK DEALS',title:'PAYE À LA LIVRAISON.',kind:'shoe'},
+ {code:'AURORA',name:'Aurora',tag:'De la lumière pour ta marque.',shop:'GLOW LAB',title:'BRILLE À TA FAÇON.',kind:'bottle'},
+ {code:'MAGAZINE',name:'Magazine',tag:'Ta collection en couverture.',shop:'ÉDITION 01',title:'EN UNE.',kind:'shoe'}] as const;
 const questions=[
  ['Est-ce que je dois savoir coder ?','Tu peux créer ta boutique, choisir un thème et gérer tes produits depuis ton espace marchand. Les pages se composent avec des sections que tu ajoutes et réordonnes.'],
  ['Comment fonctionne le paiement à la livraison ?','Le client passe sa commande sur ta boutique. Tu retrouves la commande dans ton espace pour la confirmer, préparer l’expédition et suivre les montants COD enregistrés.'],
@@ -68,7 +74,7 @@ export default function TunicomLanding(){
    </div>
   </section>
   <section id="themes" className={styles.themes} data-reveal>
-   <div className={styles.themeIntro}><p className={styles.eyebrow}>TUNICOM STUDIO / 14 THÈMES</p><h2>Du style.<br/><span>Et du mouvement.</span></h2><p>Quatre nouveaux univers pour les marques qui ne veulent pas passer inaperçues. Essaie, explore, trouve ton énergie.</p>
+   <div className={styles.themeIntro}><p className={styles.eyebrow}>TUNICOM STUDIO / 20 THÈMES</p><h2>Du style.<br/><span>Et du mouvement.</span></h2><p>Dix univers animés pour les marques qui ne veulent pas passer inaperçues. Essaie, explore, trouve ton énergie.</p>
     <div className={styles.themeTabs} role="group" aria-label="Choisir un aperçu de thème">{newThemes.map((item,index)=><button key={item.code} type="button" aria-pressed={selected===index} onClick={()=>setSelected(index)}>{item.name}<ArrowUpRight size={14}/></button>)}</div>
     <p className={styles.themeTag} aria-live="polite">{theme.tag}</p><Link className={styles.textLink} href={'/themes/'+theme.code}>Explorer le thème {theme.name} <ArrowUpRight size={19}/></Link>
    </div>

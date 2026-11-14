@@ -3,12 +3,12 @@ import type {ThemeLayout} from '../modules/shops/theme-layouts';
 import {formatStorefrontMoney,storefrontDictionary,storefrontLangHref,type StorefrontLang} from '../modules/shops/storefront-i18n';
 
 type ExtraProduct={id:string;name:string;price:number;imageUrl?:string;available:boolean};
-type Props={layout:ThemeLayout;products:readonly ExtraProduct[];categories:readonly string[];lang:StorefrontLang;shopPath:string};
+type Props={layout:ThemeLayout;products:readonly ExtraProduct[];categories:readonly string[];lang:StorefrontLang;shopPath:string;hrefFor?:(id:string)=>string};
 
 /** Layout-specific hero content. A tile or strip is rendered only when real shop data backs it. */
-export default function ThemeHeroExtras({layout,products,categories,lang,shopPath}:Props){
+export default function ThemeHeroExtras({layout,products,categories,lang,shopPath,hrefFor}:Props){
  const t=storefrontDictionary(lang);
- const productHref=(id:string)=>storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(id),lang);
+ const productHref=hrefFor||((id:string)=>storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(id),lang));
  const available=products.filter(product=>product.available);
  if(layout.hero==='bento'){
   const featured=available[0];

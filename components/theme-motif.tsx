@@ -9,13 +9,13 @@ function star(cx:number,cy:number,r:number){
  });
  return 'M'+points.join('L')+'Z';
 }
-const zellige=[[60,60],[180,60],[300,60],[120,165],[240,165],[60,270],[180,270],[300,270]].map(([x,y])=>star(x,y,48));
+const zellige=Array.from({length:8*14},(_,index)=>{const row=Math.floor(index/14),column=index%14;return star(45+column*80+(row%2)*40,40+row*70,22);});
 
 /** Purely decorative theme layers: SVG/CSS only, no remote asset, hidden from assistive tech. */
 export default function ThemeMotif({motif}:{motif:ThemeLayout['motif']}){
  if(motif==='none')return null;
  return <div data-part="motif" data-motif={motif} aria-hidden="true">
-  {motif==='zellige'&&<svg viewBox="0 0 360 330" preserveAspectRatio="xMidYMid slice">
+  {motif==='zellige'&&<svg viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid slice">
    {zellige.map((path,index)=><path key={index} d={path} pathLength={1} style={{'--i':index} as CSSProperties}/>)}
   </svg>}
   {motif==='dunes'&&<svg viewBox="0 0 1200 320" preserveAspectRatio="none">
