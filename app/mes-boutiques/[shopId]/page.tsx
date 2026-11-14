@@ -15,6 +15,7 @@ import ShopPublication from './shop-publication';
 import MerchantShopWorkspace from './merchant-shop-workspace';
 import TeamCommerce from './team-commerce';
 import styles from '../shops.module.css';
+import {storefrontAddress} from '../../../modules/shops/storefront-address-service';
 
 export const dynamic='force-dynamic';
 
@@ -152,7 +153,7 @@ export default async function MerchantShopOverview({params}:{params:Promise<{sho
     <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/accueil'}>Composer et publier l’accueil de ma boutique</Link></p>
     <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/domaines'}>Sous-domaine et domaines personnels</Link></p>
     <p><Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/pages'}>Créer et publier les pages de ma boutique</Link></p>
-    <ShopPublication shopId={shopId} slug={shop.slug} initialPublished={shop.status==='PUBLISHED'} initialPubliclyAvailable={launch?.publiclyAvailable===true}/>
+     <ShopPublication shopId={shopId} slug={shop.slug} publicAddress={await storefrontAddress({id:shopId,slug:shop.slug,ownerId:shop.organization.ownerId},'/vitrines/'+encodeURIComponent(shop.slug))} initialPublished={shop.status==='PUBLISHED'} initialPubliclyAvailable={launch?.publiclyAvailable===true}/>
     <p>Prévisualisez votre catalogue ou publiez-le pour accepter des commandes COD. La publication nécessite un abonnement marchand valide.</p>
     <div className={styles.actions}><Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}>Prévisualiser la boutique</Link></div>
    </section>}

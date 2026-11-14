@@ -105,5 +105,29 @@ test('Legacy storefront domains preserve checkout, tracking and media isolation 
    await prisma.organization.update({where:{id:a.org.id},data:{ownerId:b.user.id}});for(const host of [a.host,a.shop.slug+'.'+root])assert.equal((await call('/',host)).status,404);
    await prisma.organization.update({where:{id:a.org.id},data:{ownerId:a.user.id}});const before=await prisma.workspace.findUniqueOrThrow({where:{id:a.user.workspace!.id}});await changeShopDomain(a.user.id,a.shop.id,{action:'remove',id:a.claim.id});assert.equal((await call('/',a.host)).status,404);assert.equal((await call('/',a.shop.slug+'.'+root)).status,200);assert.deepEqual(await prisma.workspace.findUniqueOrThrow({where:{id:before.id}}),before);
   });
+  await t.test('historical shops without an imported Shop receive automatic hosts with scoped media and no private access',async()=>{
+   const c=await account('unlinked');await prisma.shop.delete({where:{id:c.shop.id}});
+   const workspace=c.user.workspace!,state=workspace.data as unknown as ReturnType<typeof initialState>;
+   const content=Buffer.from('legacy-unlinked-image'),photo=await prisma.productMedia.create({data:{workspaceId:workspace.id,content,mimeType:'image/png',size:content.length,width:1,height:1}});
+   const unused=await prisma.productMedia.create({data:{workspaceId:workspace.id,content,mimeType:'image/png',size:content.length,width:1,height:1}});
+   state.products[0].imageUrl='/api/media/products/'+photo.id;await prisma.workspace.update({where:{id:workspace.id},data:{data:state as never}});
+   const automatic=workspace.slug+'.'+root;
+   assert.equal((await call('/',automatic)).status,200);assert.equal((await call('/api/v1/public/domains/allow?domain='+automatic)).status,200);
+   assert.equal((await call(state.products[0].imageUrl,automatic)).status,200);assert.equal((await call('/api/media/products/'+unused.id,automatic)).status,404);
+   assert.equal((await call('/admin',automatic,undefined,undefined,c.cookie)).status,404);
+   await prisma.workspace.update({where:{id:workspace.id},data:{published:false}});assert.equal((await call('/',automatic)).status,404);
+   await prisma.workspace.update({where:{id:workspace.id},data:{published:true}});
+   await prisma.shop.create({data:{organizationId:b.org.id,name:'Collision fixture',slug:workspace.slug!,status:'DRAFT'}});
+   assert.equal((await call('/',automatic)).status,404);
+  });
+  await t.test('turning routing off keeps platform access but cannot expose it through cached tenant certificates',async()=>{
+   await stopTestServer(child);child=spawn(process.execPath,['scripts/start.mjs'],{env:{...process.env,NODE_ENV:'production',PORT:'3215',STOREFRONT_DOMAIN_ROUTING:'disabled'},stdio:'ignore'});
+   let ready=false;for(let n=0;n<100;n++){try{if((await call('/api/health')).ok){ready=true;break;}}catch{}await pause(100);}assert.ok(ready);
+   assert.equal((await call('/api/health','127.0.0.1:3215')).status,200);
+   assert.equal((await call('/',platform)).status,200);
+   assert.equal((await call('/',a.host)).status,404);
+   assert.equal((await call('/admin',a.host,undefined,undefined,a.cookie)).status,404);
+   assert.equal((await call('/api/commerce',a.host,undefined,undefined,a.cookie)).status,404);
+  });
  }finally{await stopTestServer(child);await prisma.organization.deleteMany({where:{id:{in:orgs}}});await prisma.user.deleteMany({where:{id:{in:users}}});await prisma.$disconnect();}
 });
