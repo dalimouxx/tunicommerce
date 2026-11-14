@@ -12,8 +12,8 @@ const valid={
 };
 
 test('Existing and new supported themes keep curated accent colors and reject injected styles',()=>{
- assert.equal(themes.length,8);
- assert.equal(accents.length,10);
+ assert.equal(themes.length,14);
+ assert.equal(accents.length,16);
  assert.deepEqual(themes.slice(0,4),['classic','editorial','prestige','pop']);
  assert.deepEqual(appearanceSchema.parse(valid),valid);
  for(const invalid of [
@@ -49,4 +49,25 @@ test('Existing shops without presentation preserve the classic default',()=>{
   theme:'prestige',accent:'#244A77',
   eyebrow:'SÉLECTION EXCLUSIVE',tagline:'Livraison rapide partout en Tunisie'
  });
+});
+
+test('Six layout themes persist with their default accent and every accent keeps AA contrast',()=>{
+ const luminance=(color:string)=>{
+  const normalized=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255)
+   .map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);
+  return normalized[0]*.2126+normalized[1]*.7152+normalized[2]*.0722;
+ };
+ for(const theme of ['medina','sahara','bento','souk','aurora','magazine'] as const){
+  const preset=appearanceThemeDetails[theme];
+  assert.equal(preset.animated,true);
+  const input=appearanceSchema.parse({...valid,theme,accent:preset.accent});
+  const stored={theme,accent:input.accent,eyebrow:input.eyebrow,tagline:input.tagline};
+  assert.equal(readPresentation({appearance:stored}).theme,theme);
+  assert.equal(readPresentation({appearance:stored}).accent,preset.accent);
+ }
+ for(const accent of accents){
+  const a=luminance(accent),b=luminance(appearanceAccentText(accent));
+  assert.ok((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5,accent);
+ }
+ assert.equal(appearanceAccentText('#E8A6FF'),'#1B0F24');
 });

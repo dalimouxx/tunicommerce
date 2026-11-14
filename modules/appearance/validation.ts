@@ -1,10 +1,10 @@
 import {z} from 'zod';
 import {mediaPath} from '../media/validation';
 
-export const themes=['classic','editorial','prestige','pop','pulse','sorbet','chrome','groove'] as const;
+export const themes=['classic','editorial','prestige','pop','pulse','sorbet','chrome','groove','medina','sahara','bento','souk','aurora','magazine'] as const;
 export type StoreTheme=(typeof themes)[number];
 
-export const accents=['#21815F','#244A77','#893F49','#633D81','#A0511D','#293442','#C9FF4A','#B52E45','#1749C5','#5E35B6'] as const;
+export const accents=['#21815F','#244A77','#893F49','#633D81','#A0511D','#293442','#C9FF4A','#B52E45','#1749C5','#5E35B6','#1F4FA0','#9A4A1C','#0A66D9','#D7261E','#E8A6FF','#141414'] as const;
 export type StoreAccent=(typeof accents)[number];
 
 /** Only our exact UUID-based asset URLs are allowed as internal images. */
