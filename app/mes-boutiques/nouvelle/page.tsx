@@ -6,6 +6,7 @@ import {shopSlotsForOwner} from '../../../modules/shops/plan-limits';
 import {HttpError} from '../../../modules/auth/http';
 import CreateShopForm from './create-shop-form';
 import styles from '../shops.module.css';
+import {storefrontRoot} from '../../../modules/shops/domains-validation';
 export const dynamic='force-dynamic';
 export const metadata={title:'Créer une boutique · Tunicom',robots:{index:false,follow:false}};
 export default async function NewShopPage(){
@@ -20,7 +21,7 @@ export default async function NewShopPage(){
    <h2>Poser les bases</h2><p>La boutique sera créée en brouillon. Tu décideras de sa publication après avoir préparé ton catalogue.</p>
    {capacity&&<p className={styles.quotaNotice}>{capacity.used} boutique(s) utilisée(s){capacity.limit===null?' · Sans plafond':` sur ${capacity.limit}`}. Les brouillons sont compris dans ce total.</p>}
    {blocked?<div role="status"><h3>Création actuellement indisponible</h3><p>{error||'Le nombre de boutiques autorisé par ton offre est atteint.'}</p><Link href="/mon-abonnement" className={styles.secondary}>Voir mon abonnement</Link></div>:
-    <CreateShopForm organizations={organizations} defaultGroupName="Mes boutiques"/>}
+    <CreateShopForm organizations={organizations} defaultGroupName="Mes boutiques" automaticRoot={process.env.STOREFRONT_DOMAIN_ROUTING==='enabled'?storefrontRoot()||undefined:undefined}/>}
   </section><aside className={styles.creationAside}><span className={styles.kicker}>TON PARCOURS</span><h2>Une idée. Une boutique. Ton rythme.</h2><ol><li>Choisis son nom et son lien.</li><li>Ajoute les produits et le stock.</li><li>Choisis un thème et prépare ta vitrine.</li><li>Prévisualise, puis publie avec un abonnement valide.</li></ol><p>Chaque boutique conserve ses propres données. Aucun catalogue existant n'est copié ou remplacé.</p></aside></div>
  </div></main>;
 }

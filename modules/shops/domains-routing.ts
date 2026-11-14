@@ -4,22 +4,30 @@ import {automaticStoreSlug,normalizeDomain,platformHosts,storefrontRoot} from '.
 import {assertSameOrigin,HttpError} from '../auth/http';
 import {domainProofAllowsRouting} from './domain-health';
 import {isOpen} from '../platform/public';
+import {primaryStorefrontHostname} from './storefront-address-service';
 export async function resolveStorefrontHost(host:string){
  const hostname=normalizeDomain(host);if(!hostname||process.env.STOREFRONT_DOMAIN_ROUTING!=='enabled')return null;
  if(platformHosts().includes(hostname))return null;
  const automatic=automaticStoreSlug(hostname);const root=storefrontRoot();
  if(root&&(hostname===root||hostname.endsWith('.'+root)&&!automatic))return null;
- const select={slug:true,status:true,legacyWorkspaceId:true,legacyWorkspace:{select:{id:true,ownerId:true,slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}},commerce:{select:{shopId:true}},organization:{select:{ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}} as const;
+ const select={id:true,slug:true,status:true,legacyWorkspaceId:true,legacyWorkspace:{select:{id:true,ownerId:true,slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}},commerce:{select:{shopId:true}},organization:{select:{ownerId:true,owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}} as const;
  const binding=automatic?null:await prisma.shopDomainBinding.findUnique({where:{hostname},include:{claim:{select:{ownerId:true}},shop:{select}}});
  const shop=automatic?await prisma.shop.findUnique({where:{slug:automatic},select}):
   binding&&binding.claim.ownerId===binding.shop.organization.ownerId&&domainProofAllowsRouting(binding,binding.shop.organization.ownerId)?binding.shop:null;
  const subscription=shop?.organization.owner.workspace;
+ // Historical merchants can publish before opting into relational shop management.
+ // Never use this fallback when a Shop already occupies the requested slug.
+ if(!shop&&automatic){
+  const workspace=await prisma.workspace.findUnique({where:{slug:automatic},select:{id:true,slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true,shop:{select:{id:true}}}});
+  if(workspace?.slug&&!workspace.shop&&isOpen(workspace))return {slug:automatic,hostname,canonicalHostname:null,legacySlug:workspace.slug,legacyWorkspaceId:workspace.id};
+ }
+ const canonicalHostname=shop?await primaryStorefrontHostname(shop.id,shop.organization.ownerId):null;
  if(shop?.legacyWorkspaceId){
   const workspace=shop.legacyWorkspace;
-  return workspace?.slug&&workspace.ownerId===shop.organization.ownerId&&isOpen(workspace)?{slug:shop.slug,hostname,legacySlug:workspace.slug,legacyWorkspaceId:workspace.id}:null;
+  return workspace?.slug&&workspace.ownerId===shop.organization.ownerId&&isOpen(workspace)?{slug:shop.slug,hostname,canonicalHostname,legacySlug:workspace.slug,legacyWorkspaceId:workspace.id}:null;
  }
  if(!shop||!isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,initialized:!!shop.commerce,subscriptionStatus:subscription?.subscriptionStatus||'',subscriptionEndsAt:subscription?.subscriptionEndsAt||null}))return null;
- return {slug:shop.slug,hostname};
+ return {slug:shop.slug,hostname,canonicalHostname};
 }
 export function requestHostname(raw:string|null){
  if(!raw||raw.includes(',')||raw.includes('@')||raw.includes('/')||raw.includes('\\'))return null;

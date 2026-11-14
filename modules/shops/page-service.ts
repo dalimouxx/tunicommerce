@@ -9,6 +9,7 @@ import {readPageHistory,appendPageHistory,summarizePageRevision,type PageRevisio
 import {assertPagePhotoOwnership} from './page-image-service';
 import {homeOwner,homePublicPath} from './home-service';
 import {isOpen} from '../platform/public';
+import {storefrontAddress} from './storefront-address-service';
 
 export async function pageOwner(userId:string,shopId:string,tx:Prisma.TransactionClient=prisma){
  return homeOwner(userId,shopId,tx);
@@ -24,7 +25,8 @@ function record(row:{id:string;slug:string;draft:Prisma.JsonValue;version:number
 export async function listShopPages(userId:string,shopId:string){
  const shop=await pageOwner(userId,shopId);
  const rows=await prisma.shopPage.findMany({where:{shopId},select:{id:true,slug:true,draft:true,version:true,publishedAt:true},orderBy:[{createdAt:'asc'},{id:'asc'}]});
- return {shop:{name:shop.name,slug:shop.slug,publicBasePath:pageStorefrontPath(shop),legacy:!!shop.legacyWorkspaceId},pages:rows.map(record)};
+ const fallback=pageStorefrontPath(shop),publicBasePath=fallback?await storefrontAddress({id:shop.id,slug:shop.slug,ownerId:shop.organization.ownerId},fallback):null;
+ return {shop:{name:shop.name,slug:shop.slug,publicBasePath,legacy:!!shop.legacyWorkspaceId},pages:rows.map(record)};
 }
 export async function getShopPageHistory(userId:string,shopId:string,pageId:string,revisionId?:string){
  await pageOwner(userId,shopId);

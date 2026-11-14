@@ -1,7 +1,7 @@
 import {z} from 'zod';
 export const domainOverviewResponse=z.object({
- automaticHostname:z.string().nullable(),automaticUnavailableReason:z.string().nullable(),routingEnabled:z.boolean(),
- claims:z.array(z.object({id:z.uuid(),hostname:z.string(),recordName:z.string(),recordValue:z.string(),expiresAt:z.iso.datetime(),
+ automaticHostname:z.string().nullable(),primaryHostname:z.string().nullable(),dnsTarget:z.string(),dnsIpv4:z.array(z.ipv4()).max(10),automaticUnavailableReason:z.string().nullable(),routingEnabled:z.boolean(),
+ claims:z.array(z.object({id:z.uuid(),hostname:z.string(),primary:z.boolean(),recordName:z.string(),recordValue:z.string(),expiresAt:z.iso.datetime(),
   verifiedAt:z.iso.datetime().nullable(),requiresNewProof:z.boolean(),health:z.enum(['UNVERIFIED','VERIFIED','DNS_UNAVAILABLE','REVOKED','OWNER_CHANGED','STALE']),
   lastCheckedAt:z.iso.datetime().nullable(),nextCheckAt:z.iso.datetime().nullable()}).strict()).max(5)
 }).strict();

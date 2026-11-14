@@ -4,14 +4,14 @@ import {useRouter} from 'next/navigation';
 import ShopBranding from './shop-branding';
 import ShopMarketing from './shop-marketing';
 
-export default function ShopPublication({shopId,slug,initialPublished,initialPubliclyAvailable}:{shopId:string;slug:string;initialPublished:boolean;initialPubliclyAvailable:boolean}){
+export default function ShopPublication({shopId,slug,publicAddress,initialPublished,initialPubliclyAvailable}:{shopId:string;slug:string;publicAddress?:string;initialPublished:boolean;initialPubliclyAvailable:boolean}){
  const router=useRouter();
  const [available,setAvailable]=useState(initialPubliclyAvailable);
  useEffect(()=>{setPublished(initialPublished);setAvailable(initialPubliclyAvailable);},[initialPublished,initialPubliclyAvailable]);
  const [published,setPublished]=useState(initialPublished);
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
- const publicPath='/vitrines/'+encodeURIComponent(slug);
+ const publicPath=publicAddress||'/vitrines/'+encodeURIComponent(slug);
  async function toggle(){
   setBusy(true);setNotice('');
   try{

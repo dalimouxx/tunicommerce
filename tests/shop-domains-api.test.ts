@@ -61,8 +61,31 @@ test('Domain ownership, per-shop routing, checkout and revocation work through t
    const paid=await post(endpoint,body,'',custom,'https://'+custom);assert.equal(paid.status,201);const receipt=await paid.json();assert.equal(receipt.trackingToken,body.requestId);assert.equal((await get('/suivi/'+receipt.trackingToken,'',custom)).status,200);const requestPath='/api/v1/public/vitrines/'+a.shop.slug+'/suivi/'+receipt.trackingToken+'/requests';assert.equal((await post(requestPath,{id:randomUUID(),type:'CANCEL',reason:'Annulation de recette'},'',custom,'https://'+custom)).status,201);
   });
   await t.test('automatic subdomains, TLS permissions and publication gates use the same shop rules',async()=>{
+   assert.equal((await get('/api/health','','127.0.0.1:3203')).status,200);
+   assert.equal((await get('/admin',a.cookie,'127.0.0.1:3203')).status,404);
    const automatic=a.shop.slug+'.shops.tunicom-audit.tn';assert.equal((await get('/','',automatic)).status,200);assert.equal((await get('/api/v1/public/domains/allow?domain='+automatic,'','127.0.0.1:3203')).status,200);assert.equal((await get('/api/v1/public/domains/allow?domain=unknown.marque.tn','','127.0.0.1:3203')).status,403);
    await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'SUSPENDED'}});assert.equal((await get('/','',custom)).status,404);assert.equal((await get('/','',automatic)).status,404);assert.equal((await get('/api/v1/public/domains/allow?domain='+custom,'','127.0.0.1:3203')).status,403);await prisma.workspace.update({where:{ownerId:a.user.id},data:{subscriptionStatus:'ACTIVE'}});
+  });
+  await t.test('owner-selected primary domains redirect public pages only and safely fall back when stale',async()=>{
+   const automatic=a.shop.slug+'.shops.tunicom-audit.tn';
+   assert.equal((await post(api,{action:'primary',id:claimId},b.cookie)).status,404);
+   const extra='primary-'+mark+'.marque.tn';await changeShopDomain(a.user.id,a.shop.id,{action:'add',hostname:extra});
+   const pending=await prisma.shopDomainClaim.findUniqueOrThrow({where:{shopId_hostname:{shopId:a.shop.id,hostname:extra}}});
+   assert.equal((await post(api,{action:'primary',id:pending.id},a.cookie)).status,409);
+   assert.equal((await post(api,{action:'primary',id:claimId},a.cookie)).status,200);
+   const redirected=await get('/?lang=ar','',automatic);assert.equal(redirected.status,307);assert.equal(redirected.headers.get('location'),'https://'+custom+'/?lang=ar');assert.equal(redirected.headers.get('cache-control'),'no-store');
+   assert.equal((await get('/','',custom)).status,200);assert.equal((await get('/admin',a.cookie,automatic)).status,404);
+   await prisma.shopDomainBinding.update({where:{hostname:custom},data:{verifiedAt:new Date(Date.now()-73*3600000)}});
+   assert.equal((await get('/','',automatic)).status,200);assert.equal((await get('/','',custom)).status,404);
+   assert.equal((await (await get(api,a.cookie)).json()).primaryHostname,null);
+   await prisma.shopDomainBinding.update({where:{hostname:custom},data:{verifiedAt:new Date()}});
+   await changeShopDomain(a.user.id,a.shop.id,{action:'verify',id:pending.id},async()=>[['tunicom='+pending.token]]);
+   await Promise.all([changeShopDomain(a.user.id,a.shop.id,{action:'primary',id:claimId}),changeShopDomain(a.user.id,a.shop.id,{action:'primary',id:pending.id})]);
+   assert.equal(await prisma.shopDomainBinding.count({where:{shopId:a.shop.id,primary:true}}),1);
+   assert.equal((await post(api,{action:'automatic'},a.cookie)).status,200);
+   assert.equal(await prisma.shopDomainBinding.count({where:{shopId:a.shop.id,primary:true}}),0);
+   assert.equal((await get('/','',automatic)).status,200);
+   assert.equal((await get('/boutique/'+a.shop.slug)).status,307);
   });
   await t.test('revocation during DNS verification cannot persist a stale binding',async()=>{
    const extra='race-'+mark+'.marque.tn';await changeShopDomain(a.user.id,a.shop.id,{action:'add',hostname:extra});const claim=await prisma.shopDomainClaim.findUniqueOrThrow({where:{shopId_hostname:{shopId:a.shop.id,hostname:extra}}});
