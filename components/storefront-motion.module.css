@@ -1,0 +1,36 @@
+/* Shared storefront motion layer: transform/opacity only, content visible without JS. */
+.root{--motion-ease:cubic-bezier(.2,.7,.2,1)}
+
+/* Reveal on scroll: only elements the script marked "pending" are hidden; late additions stay visible. */
+.root[data-reveal-ready] [data-reveal="pending"]{opacity:0;transform:translateY(18px)}
+.root[data-reveal-ready] [data-reveal]{transition:opacity .52s var(--motion-ease),transform .52s var(--motion-ease);transition-delay:calc(min(var(--i,0),8) * 60ms)}
+
+/* Sticky header turns compact and frosted once the visitor scrolls. */
+.root [data-part="header"]{position:sticky;top:0;z-index:30;transition:min-height .3s var(--motion-ease),background-color .3s,box-shadow .3s,padding .3s}
+.root[data-scrolled] [data-part="header"]{--header-fill:color-mix(in srgb,var(--store-bg,var(--skin-bg,#fff)) 95%,transparent);min-height:66px;border-image:linear-gradient(var(--header-fill),var(--header-fill)) fill 0/0/0 100vmax;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px -18px #00000040}
+
+/* Card hover and press feedback (pointer devices only for hover). */
+@media (hover:hover){
+ .root [data-part="product-card"]{transition:transform .3s var(--motion-ease),box-shadow .3s var(--motion-ease)}
+ .root [data-part="product-card"]:hover{transform:translateY(-4px);box-shadow:0 19px 42px #00000016}
+ .root [data-part="product-media"] img,.root img[data-part="product-media"]{transition:transform .5s var(--motion-ease)}
+ .root [data-part="product-card"]:hover [data-part="product-media"] img,.root [data-part="product-card"]:hover img[data-part="product-media"]{transform:scale(1.04)}
+}
+.root [data-part="cta"]{transition:transform .15s var(--motion-ease)}
+.root [data-part="cta"]:active{transform:scale(.97)}
+
+/* Cart count bumps when its key changes. */
+.root [data-part="cart-count"]{display:inline-block;animation:motionBump .42s var(--motion-ease)}
+@keyframes motionBump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+/* Quantity-offer badges stay hidden unless a theme module shows them. */
+.root [data-part="offer-badge"]{display:none}
+
+/* Pause control and reduced motion: everything visible, nothing moving. */
+.root[data-motion="paused"] *,.root[data-motion="paused"] *::before,.root[data-motion="paused"] *::after{animation-play-state:paused!important}
+.root[data-motion="paused"] [data-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+@media (prefers-reduced-motion: reduce){
+ .root *,.root *::before,.root *::after{animation:none!important;transition:none!important}
+ .root [data-reveal]{opacity:1!important;transform:none!important}
+ .root [data-part="product-card"]:hover,.root [data-part="product-card"]:hover [data-part="product-media"] img,.root [data-part="product-card"]:hover img[data-part="product-media"],.root [data-part="cta"]:active{transform:none}
+}

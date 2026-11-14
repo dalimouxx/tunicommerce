@@ -110,7 +110,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
     onChange={e=>updateQuantity(p.id,Math.min(10,Math.max(0,Number.isFinite(Number(e.target.value))?Math.floor(Number(e.target.value)):0)))}
     style={{padding:8,width:72}}/>
   </label>)}
-  <p aria-live="polite">{t.cartCount(selected.length,selected.reduce((n,p)=>n+p.quantity,0))}</p>
+  <p aria-live="polite"><span data-part="cart-count" key={selected.reduce((n,p)=>n+p.quantity,0)}>{t.cartCount(selected.length,selected.reduce((n,p)=>n+p.quantity,0))}</span></p>
   <p>{t.subtotal} : <strong>{money(subtotal)}</strong> · {t.delivery} : {money(delivery)} · {t.estimatedTotal} : <strong>{money(estimatedTotal)}</strong></p>
   <p>{t.serverCheck}</p>
   {coupon.trim()&&<p>{t.couponNotice}</p>}

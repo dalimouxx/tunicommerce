@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {useState} from 'react';
+import {useState,type CSSProperties} from 'react';
 import {catalogCategories,selectCatalogProducts,type CatalogProduct,type CatalogSort} from '../../../modules/shops/public-catalog-filters';
 import {formatStorefrontMoney,storefrontDictionary,storefrontLangHref,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 import styles from './storefront-premium.module.css';
@@ -16,7 +16,7 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
  const shown=matching.slice(0,visibleCount);
  const shopPath='/vitrines/'+encodeURIComponent(slug);
  const updateCategory=(value:string)=>{setCategory(value);setVisibleCount(24);};
- return <section id="catalogue" aria-labelledby="catalogue-titre" className={styles.catalogue}>
+ return <section id="catalogue" aria-labelledby="catalogue-titre" className={styles.catalogue} data-part="catalog">
   <div className={styles.sectionHeading}>
    <div><p className={styles.kicker}>{t.catalogKicker}</p><h2 id="catalogue-titre">{t.catalogTitle}</h2></div>
    <p>{t.catalogIntro}</p>
@@ -55,9 +55,9 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
    </label>
   </div>
   <p className={styles.catalogCount} aria-live="polite">{t.count(matching.length,shown.length)}</p>
-  <div className={styles.productGrid}>
-   {shown.map(product=><article key={product.id} className={styles.productCard}>
-    <Link className={styles.productImageWrap} href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}
+  <div className={styles.productGrid} data-part="product-grid">
+   {shown.map((product,index)=><article key={product.id} className={styles.productCard} data-part="product-card" data-reveal style={{'--i':index} as CSSProperties}>
+    <Link className={styles.productImageWrap} data-part="product-media" href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}
      aria-label={t.view(product.name)}>
      {product.imageUrl?<img src={product.imageUrl} alt={t.photoOf(product.name)}
       loading="lazy" decoding="async" referrerPolicy="no-referrer"/>:
@@ -71,7 +71,7 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
      {product.description&&<p className={styles.description} dir="auto">{product.description}</p>}
      <p className={styles.productPrice}>{formatStorefrontMoney(product.price,lang)}</p>
      <div className={styles.productButtons}>
-      {product.available&&<Link className={styles.productBuy} href={
+      {product.available&&<Link className={styles.productBuy} data-part="cta" href={
        storefrontLangHref(shopPath+'?produit='+encodeURIComponent(product.id)+'#panier',lang)
       }>{t.addToCart}</Link>}
       <Link className={styles.productDetail} href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}>

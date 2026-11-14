@@ -22,6 +22,8 @@ import {publishedPageLinks} from '../../../modules/shops/page-service';
 import pageStyles from '../../../components/shop-pages.module.css';
 import {animatedStorefrontTheme} from '../../../modules/shops/storefront-themes';
 import StorefrontMotionToggle from '../../../components/storefront-motion-toggle';
+import StorefrontReveal from '../../../components/storefront-reveal';
+import motion from '../../../components/storefront-motion.module.css';
 
 export const dynamic='force-dynamic';
 
@@ -73,15 +75,16 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted
  } as CSSProperties;
- return <main className={styles.page+' '+arabicFont.variable} data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+ return <main className={styles.page+' '+motion.root+' '+arabicFont.variable} data-motion-root data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+  <StorefrontReveal/>
   <StorefrontPixels metaPixelId={catalog.marketing.metaPixelId} tiktokPixelId={catalog.marketing.tiktokPixelId}/>
-  <div className={styles.announcement}>
+  <div className={styles.announcement} data-part="announcement">
    <span dir="auto">{home[lang].announcement||t.announcementZones}</span>
    <span aria-hidden="true">✦</span>
    <span>{t.announcementCod}</span>
   </div>
   <div className={styles.container}>
-   <header className={styles.storeHeader}>
+   <header className={styles.storeHeader} data-part="header">
     <Link className={styles.identity} href={storefrontLangHref(publicBase,lang)} aria-label={t.home(shopName)}>
      {catalog.logoUrl?<img src={catalog.logoUrl} alt="" width={52} height={52}
       referrerPolicy="no-referrer" className={styles.logo}/>:
@@ -100,20 +103,20 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
    {pages.length>0&&<nav className={pageStyles.navLinks} aria-label={lang==='ar'?'صفحات المتجر':'Pages de la boutique'}>
     {pages.map(page=><Link key={page.slug} href={publicBase+'/pages/'+encodeURIComponent(page.slug)}>{page.title}</Link>)}
    </nav>}
-   <section className={styles.hero} aria-labelledby="storefront-title">
-    <div className={styles.heroCopy}>
+   <section className={styles.hero} data-part="hero" aria-labelledby="storefront-title">
+    <div className={styles.heroCopy} data-part="hero-copy">
      <span className={styles.kicker}>{t.heroKicker}</span>
      <h1 id="storefront-title" dir="auto">{home[lang].heroTitle||shopName}</h1>
      <p className={styles.heroDescription} dir="auto">{home[lang].heroDescription||catalog.description||t.heroFallback}</p>
      <div className={styles.heroActions}>
-      <a href="#catalogue" className={styles.primaryAction}>{t.discover} <span aria-hidden="true">↗</span></a>
+      <a href="#catalogue" className={styles.primaryAction} data-part="cta">{t.discover} <span aria-hidden="true">↗</span></a>
       {catalog.products.length>0&&<a href="#panier" className={styles.secondaryAction}>{t.orderOnline}</a>}
      </div>
      {names.length>0&&<div className={styles.heroCategories} aria-label={t.categoriesLabel}>
       {names.map(name=><span key={name}>{name}</span>)}
      </div>}
     </div>
-    <div className={styles.heroVisual}>
+    <div className={styles.heroVisual} data-part="hero-visual">
      {catalog.bannerUrl?<img src={catalog.bannerUrl}
       alt={t.bannerAlt(shopName)} loading="eager" decoding="async"
       referrerPolicy="no-referrer" className={styles.heroImage}/>:
@@ -128,7 +131,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
      </div>}
     </div>
    </section>
-   {home.showBenefits&&<section className={styles.pillars} aria-label={t.orderInfo}>
+   {home.showBenefits&&<section className={styles.pillars} data-part="pillars" data-reveal aria-label={t.orderInfo}>
     <div><span aria-hidden="true">✧</span><strong>{t.pillarChoice}</strong><small>{t.pillarChoiceText}</small></div>
     <div><span aria-hidden="true">◈</span><strong>{t.pillarCod}</strong><small>{t.pillarCodText}</small></div>
     <div><span aria-hidden="true">✦</span><strong>{t.pillarTracked}</strong><small>{t.pillarTrackedText}</small></div>
@@ -147,7 +150,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     <h2>{t.soon}</h2>
     <p>{t.soonText}</p>
    </div>}
-   <footer className={styles.footer}>
+   <footer className={styles.footer} data-part="footer" data-reveal>
     <div><strong>{shopName}</strong><p>{t.footerTagline}</p></div>
     <div>{catalog.phone&&<span>{t.merchantContact(catalog.phone)}</span>}
      <span>{t.footerConditions}</span></div>
