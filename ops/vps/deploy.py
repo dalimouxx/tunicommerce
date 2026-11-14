@@ -17,6 +17,7 @@ from common import OperationError, atomic_json, health, private_json
 
 ROOT = Path("/srv/platforms/tunicom")
 STATE = Path("/var/lib/tunicom-deploy")
+BACKUPS = Path("/var/backups/tunicom")
 CONFIG = Path("/etc/tunicom/deploy.json")
 REMOTE = "https://github.com/dalimouxx/tunicommerce.git"
 ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -116,7 +117,7 @@ class Deployment:
             raise OperationError("filesystem_media_backup_required")
         size = int(self.compose("exec", "-T", "db", "psql", "-U", "tunicom_admin", "-d", "tunicom",
                                "-Atc", "SELECT pg_database_size(current_database())", capture=True))
-        folder = Path("/var/backups/tunicom")
+        folder = BACKUPS
         folder.mkdir(mode=0o700, parents=True, exist_ok=True)
         if shutil.disk_usage(folder).free < size * 2 + 4 * 1024**3:
             raise OperationError("insufficient_backup_space")

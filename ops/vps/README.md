@@ -67,6 +67,9 @@ Dans le dépôt → Settings → Secrets and variables → Actions :
 | Secret | `TELEGRAM_BOT_TOKEN` | Jeton du bot existant |
 | Secret | `TELEGRAM_CHAT_ID` | Identifiant numérique de la conversation autorisée |
 | Variable | `VPS_AUTODEPLOY_ENABLED` | `true`, **en dernier**, une fois les contrôles suivants réussis |
+| Variable | `VPS_MONITOR_ENABLED` | `true` pour le contrôle extérieur depuis GitHub |
+| Variable | `VPS_MONITOR_TUNICOM` | `true` seulement après la mise en ligne HTTPS de Tunicom |
+| Variable | `VPS_MONITOR_FIXI` | `true` pour surveiller le Fixi existant depuis GitHub |
 
 Obtenir la clé publique SSH du **serveur** depuis la console Hostinger déjà
 authentifiée (pas une collecte réseau non vérifiée) :
@@ -118,9 +121,19 @@ d'échec Telegram, le journal GitHub affiche un avertissement.
 Le moniteur contrôle HTTPS, les conteneurs sélectionnés, le disque (moins de
 10 % libres ou de 8 Gio), le dernier déploiement et les sauvegardes Tunicom
 (échec ou plus de 30 h). Il tourne sur ce VPS : **si tout le VPS ou son réseau
-s'arrête, il ne peut plus envoyer d'alerte**. Prévoir un contrôle externe pour
-couvrir cette panne. Une mauvaise configuration du moniteur reste visible avec
+s'arrête, il ne peut plus envoyer d'alerte**. Le workflow `vps-public-health.yml`
+ajoute un contrôle extérieur depuis GitHub, à activer avec les variables du
+tableau ci-dessus. Une mauvaise configuration du moniteur reste visible avec
 `systemctl status platforms-monitor.service` et `journalctl -u platforms-monitor.service`.
+
+Le contrôle extérieur est demandé toutes les cinq minutes, après deux
+observations en échec, sans accès SSH au VPS. GitHub peut retarder ou omettre
+une exécution planifiée : ce n'est pas une garantie de délai d'alerte. Le cache
+GitHub conserve uniquement les compteurs et dates, sans secret. Son éviction
+peut réinitialiser la temporisation et la déduplication. Les alertes extérieures
+portent la mention `CONTROLE EXTERNE`. Les alertes locales, plus rapides,
+continuent à fonctionner indépendamment. Studyinworld n'est pas surveillé tant
+que son domaine n'est pas défini.
 
 La sauvegarde quotidienne (03:20, fuseau du serveur, décalage aléatoire jusqu'à
 15 minutes) est **locale**, sans rétention automatique ni copie hors site. Les

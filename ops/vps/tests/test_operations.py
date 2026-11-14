@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import ci
 import common
 import deploy
+import external
 import monitor
 
 SHA = "a" * 40
@@ -96,6 +97,21 @@ class TelegramTests(unittest.TestCase):
 
 
 class IncidentTests(unittest.TestCase):
+    def test_external_probe_detects_host_outage_and_recovery_without_ssh(self):
+        sites = [("Tunicom", "https://tunicom.shop/api/health", {"database": "ok"})]
+        send = Mock(return_value=True)
+        with patch.object(external, "health", return_value=False):
+            state = external.cycle({}, 100, sites, send)
+            state = external.cycle(state, 400, sites, send)
+            state = external.cycle(state, 700, sites, send)
+        self.assertEqual(send.call_count, 1)
+        self.assertIn("ALERTE", send.call_args.args[0])
+        with patch.object(external, "health", return_value=True):
+            state = external.cycle(state, 1000, sites, send)
+            external.cycle(state, 1300, sites, send)
+        self.assertEqual(send.call_count, 2)
+        self.assertIn("RETABLI", send.call_args.args[0])
+
     def test_two_failures_and_two_successes_with_hourly_reminders(self):
         state, event = monitor.transition({}, False, 100)
         self.assertIsNone(event)
@@ -251,6 +267,53 @@ class CoordinationTests(unittest.TestCase):
                 self.assertEqual(args[-1], "tunicom-deploy@187.126.31.110")
                 self.assertEqual(json.loads(ssh.call_args.kwargs["input"]), {"sha": SHA, "run_id": "123"})
                 notify.assert_called_once_with("deployed", SHA, "123")
+
+
+class BackupTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.addCleanup(patch.stopall)
+        self.folder = Path(self.temporary.name)
+        patch.object(deploy, "STATE", self.folder / "state").start()
+        patch.object(deploy, "BACKUPS", self.folder / "backups").start()
+        patch.object(deploy.shutil, "disk_usage", return_value=Mock(free=100 * 1024**3)).start()
+        resource = Mock(RLIMIT_FSIZE=1, RLIM_INFINITY=-1)
+        resource.getrlimit.return_value = (-1, -1)
+        patch.dict(sys.modules, {"resource": resource}).start()
+        self.deployment = deploy.Deployment({"base_compose": "/reviewed/base.yaml", "network_compose": "/reviewed/network.yaml"}, {"run_id": "123", "sha": SHA})
+        self.mode = "database"
+
+        def compose(*args, **kwargs):
+            if args[0] == "config":
+                return json.dumps({"services": {"web": {"environment": {"MEDIA_STORAGE_MODE": self.mode}}}})
+            if "psql" in args:
+                return "100000"
+            if "pg_dump" in args:
+                kwargs["output"].write(b"PGDMP-fixture")
+        self.compose = patch.object(self.deployment, "compose", side_effect=compose).start()
+
+    def test_only_validated_archive_is_promoted_and_marked_successful(self):
+        with patch.object(deploy.subprocess, "run", return_value=Mock(returncode=0)) as validate:
+            self.deployment.backup()
+        files = list((self.folder / "backups").glob("*.dump"))
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].read_bytes(), b"PGDMP-fixture")
+        self.assertEqual(validate.call_args.args[0][-2:], ["pg_restore", "--list"])
+        self.assertTrue(json.loads((self.folder / "state" / "backup.json").read_text())["ok"])
+
+    def test_validation_failure_keeps_no_misleading_archive_and_marks_failure(self):
+        with patch.object(deploy.subprocess, "run", side_effect=subprocess.CalledProcessError(1, ["pg_restore"])):
+            with self.assertRaisesRegex(common.OperationError, "backup_failed"):
+                self.deployment.backup()
+        self.assertEqual(list((self.folder / "backups").iterdir()), [])
+        self.assertFalse(json.loads((self.folder / "state" / "backup.json").read_text())["ok"])
+
+    def test_filesystem_media_never_produce_an_incomplete_database_only_backup(self):
+        self.mode = "filesystem"
+        with self.assertRaisesRegex(common.OperationError, "filesystem_media_backup_required"):
+            self.deployment.backup()
+        self.assertEqual(self.compose.call_count, 1)
 
 
 if __name__ == "__main__":
