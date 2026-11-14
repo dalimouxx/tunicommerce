@@ -5,9 +5,11 @@
 .root[data-reveal-ready] [data-reveal="pending"]{opacity:0;transform:translateY(18px)}
 .root[data-reveal-ready] [data-reveal]{transition:opacity .52s var(--motion-ease),transform .52s var(--motion-ease);transition-delay:calc(min(var(--i,0),8) * 60ms)}
 
-/* Sticky header turns compact and frosted once the visitor scrolls. */
+/* Sticky header turns compact and frosted once the visitor scrolls (wide screens only: on phones the header wraps tall). */
+@media (min-width: 760px){
 .root [data-part="header"]{position:sticky;top:0;z-index:30;transition:min-height .3s var(--motion-ease),background-color .3s,box-shadow .3s,padding .3s}
 .root[data-scrolled] [data-part="header"]{--header-fill:color-mix(in srgb,var(--store-bg,var(--skin-bg,#fff)) 95%,transparent);min-height:66px;border-image:linear-gradient(var(--header-fill),var(--header-fill)) fill 0/0/0 100vmax;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px -18px #00000040}
+}
 
 /* Card hover and press feedback (pointer devices only for hover). */
 @media (hover:hover){

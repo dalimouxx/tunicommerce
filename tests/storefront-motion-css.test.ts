@@ -46,3 +46,8 @@ test('aurora keeps light panels of independent shops readable with dark text',()
  assert.match(themeCss('aurora'),/:global\(\.checkout\)[^{]*\{[^}]*color:\s*#1b1830/);
  assert.match(themeCss('aurora'),/:global\(\.notice\)[^{]*\{[^}]*color:\s*#1b1830/);
 });
+test('sticky header is limited to wide screens so it never eats a phone viewport',()=>{
+ const outside=css.replace(/@media\s*\(min-width:\s*7\d\dpx\)\s*\{[\s\S]*?\n\}/g,'');
+ assert.ok(!/position:\s*sticky/.test(outside),'sticky header outside a min-width media query');
+ assert.match(css,/@media\s*\(min-width:\s*7\d\dpx\)\s*\{[\s\S]*?position:\s*sticky/);
+});
