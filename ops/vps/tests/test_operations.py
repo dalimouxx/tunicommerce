@@ -21,6 +21,18 @@ TOKEN = "12345:" + "secret" * 6
 
 
 class RequestTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "Linux file ownership boundary")
+    def test_configuration_rejects_non_root_owner_and_group_writes(self):
+        with patch.object(common, "Path") as path:
+            path.return_value.read_text.return_value = '{}'
+            for owner, mode, accepted in ((0, 0o100600, True), (1001, 0o100600, False), (0, 0o100620, False)):
+                path.return_value.stat.return_value = Mock(st_uid=owner, st_mode=mode)
+                if accepted:
+                    self.assertEqual(common.private_json("fixture"), {})
+                else:
+                    with self.assertRaisesRegex(common.OperationError, "unsafe_configuration_permissions"):
+                        common.private_json("fixture")
+
     def test_only_exact_revision_and_numeric_run_are_accepted(self):
         self.assertEqual(deploy.payload(json.dumps({"sha": SHA, "run_id": "123"})), {"sha": SHA, "run_id": "123"})
         invalid = [None, [], {}, {"sha": SHA, "run_id": "1", "command": "id"},
@@ -140,6 +152,9 @@ class DeploymentTests(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(deploy, "ROOT", self.root).start()
         patch.object(deploy, "STATE", self.state).start()
+        # Deployment fixtures belong to the unprivileged CI account. Permission
+        # enforcement is exercised separately above; never weaken the controller.
+        patch.object(deploy, "private_json", side_effect=lambda path: json.loads(Path(path).read_text())).start()
         patch.object(deploy.shutil, "disk_usage", return_value=Mock(free=100 * 1024**3)).start()
         self.commands = []
         self.refs = [SHA, SHA]
