@@ -1,0 +1,40 @@
+/* Souk Flash — ticker of real promises, stamped badges, scrolling product strip, bold flash cards. */
+.root{--store-bg:#fff8e1;--store-text:#1b1b1b;--store-surface:#ffffff;--store-muted:#5a5148;background:var(--store-bg);color:var(--store-text)}
+.root [data-part="announcement"]{justify-content:flex-start;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;font-weight:900;letter-spacing:.08em}
+.root [data-part="announcement"]>*{flex:none;animation:soukTicker 18s linear infinite}
+@keyframes soukTicker{from{transform:translateX(70vw)}to{transform:translateX(-70vw)}}
+.root[dir="rtl"] [data-part="announcement"]>*{animation-direction:reverse}
+.root [data-part="hero"]{isolation:isolate}
+.root [data-part="hero"]>:not([data-part="motif"]){position:relative;z-index:1}
+.root [data-part="motif"]{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.root [data-part="motif"] [data-layer="stripes"]{position:absolute;inset:-40px;background:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--store-accent) 9%,transparent) 0 14px,transparent 14px 28px);animation:soukStripes 3s linear infinite}
+@keyframes soukStripes{to{transform:translate(39.6px,0)}}
+.root [data-part="hero-copy"] h1{text-transform:uppercase;font-weight:900;letter-spacing:-.04em}
+.root [data-part="hero-visual"]{border:3px solid var(--store-text);border-radius:14px;box-shadow:8px 8px 0 var(--store-text)}
+.root [data-part="featured-badge"]{top:16px;bottom:auto;border:2px solid var(--store-text);border-radius:8px;box-shadow:4px 4px 0 var(--store-text)}
+.root [data-part="souk-strip"]{position:absolute;inset-inline:0;bottom:0;z-index:2;overflow:hidden;padding:10px 0;background:color-mix(in srgb,var(--store-surface) 94%,transparent);border-top:3px solid var(--store-text)}
+.root [data-part="souk-strip"] [data-track]{display:flex;width:max-content;animation:soukStrip 28s linear infinite}
+.root[dir="rtl"] [data-part="souk-strip"] [data-track]{animation-name:soukStripRtl}
+.root [data-part="souk-strip"]:hover [data-track],.root [data-part="souk-strip"]:focus-within [data-track]{animation-play-state:paused}
+@keyframes soukStrip{to{transform:translateX(-50%)}}
+@keyframes soukStripRtl{to{transform:translateX(50%)}}
+.root [data-part="souk-strip"] ul{display:flex;gap:10px;margin:0;padding:0 5px;list-style:none}
+.root [data-part="souk-strip"] a{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:2px solid var(--store-text);border-radius:10px;background:var(--store-surface);color:var(--store-text);text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+.root [data-part="souk-strip"] img{width:40px;height:40px;object-fit:cover;border-radius:6px}
+.root [data-part="souk-strip"] b{color:var(--store-accent)}
+.root [data-part="pillars"]>*{border:2px dashed var(--store-accent);border-radius:12px;padding:12px 14px;transform:rotate(-1.5deg);background:var(--store-surface)}
+.root [data-part="pillars"]>:nth-child(2){transform:rotate(1.2deg)}
+.root [data-part="product-card"]{border:2px solid var(--store-text);border-radius:12px;box-shadow:6px 6px 0 var(--store-text)}
+@media (hover:hover){.root [data-part="product-card"]:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--store-text)}}
+.root [data-part="offer-badge"]{display:inline-flex;align-self:flex-start;margin:0;padding:5px 10px;border-radius:6px;background:var(--store-accent);color:var(--store-accent-text);font-size:12px;font-weight:900;text-transform:uppercase;transform:rotate(-2deg)}
+.root [data-part="cta"]{border-radius:8px;text-transform:uppercase;font-weight:900}
+/* Boutiques indépendantes */
+.root :global(.platform-hero h1){text-transform:uppercase;font-weight:900;color:var(--store-text)}
+.root :global(.product-tile){border:2px solid var(--store-text);border-radius:12px;box-shadow:6px 6px 0 var(--store-text);background:var(--store-surface)}
+.root>[data-part="motif"]{position:absolute;inset:0 0 auto;height:420px;opacity:.7}
+@media (prefers-reduced-motion: reduce){
+ .root [data-part="announcement"]{justify-content:center;flex-wrap:wrap;white-space:normal}
+ .root [data-part="announcement"]>*{transform:none}
+ .root [data-part="souk-strip"]{position:static;overflow-x:auto}
+ .root [data-part="product-card"]:hover{transform:none}
+}

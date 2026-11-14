@@ -130,7 +130,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
        alt={t.featuredAlt(heroProduct.name)} loading="eager" decoding="async"
        referrerPolicy="no-referrer" className={styles.heroImage}/>:
        <div className={styles.heroAbstract} aria-hidden="true"><span>✦</span><span>TC</span></div>}
-     {heroProduct&&<div className={styles.featuredBadge}>
+     {heroProduct&&<div className={styles.featuredBadge} data-part="featured-badge">
       <span>{t.featured}</span>
       <strong dir="auto">{heroProduct.name}</strong>
       <small>{formatStorefrontMoney(heroProduct.price,lang)}</small>

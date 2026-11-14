@@ -17,3 +17,28 @@ test('content is only hidden once the reveal script has run',()=>{
 test('offer badges are hidden by default and only themes reveal them',()=>{
  assert.match(css,/\[data-part="offer-badge"\][^{]*\{[^}]*display:\s*none/);
 });
+
+const themeFiles=['medina','sahara','bento','souk','aurora','magazine'];
+const themeCss=(name:string)=>readFileSync(new URL('../components/storefront-themes/'+name+'.module.css',import.meta.url),'utf8');
+test('each new theme ships a self-contained module that respects reduced motion',()=>{
+ for(const name of themeFiles){
+  const source=themeCss(name);
+  assert.match(source,/^\.root\b|\n\.root\b/m,name);
+  assert.match(source,/@media\s*\(prefers-reduced-motion:\s*reduce\)/,name);
+  assert.ok(!/url\(\s*['"]?https?:/.test(source),name+' loads a remote asset');
+  assert.ok(!/display:\s*none/.test(source.split(':global(.checkout)').slice(1).join('')),name+' hides checkout content');
+ }
+});
+test('aurora keeps cards readable without backdrop-filter and souk mirrors its marquee in RTL',()=>{
+ assert.match(themeCss('aurora'),/@supports not \(backdrop-filter/);
+ assert.match(themeCss('souk'),/\[dir="rtl"\]/);
+ assert.match(themeCss('souk'),/\[data-part="offer-badge"\][^{]*\{[^}]*display:\s*(inline-)?(block|flex|inline-flex)/);
+});
+test('themeClass maps every new theme to its own module and nothing else',()=>{
+ const index=readFileSync(new URL('../components/storefront-themes/index.ts',import.meta.url),'utf8');
+ for(const name of themeFiles){
+  assert.match(index,new RegExp("import "+name+" from './"+name+".module.css'"),name);
+  assert.match(index,new RegExp(name.toUpperCase()+':'+name+'\\.root'),name);
+ }
+ assert.equal((index.match(/\.root/g)||[]).length,themeFiles.length);
+});
