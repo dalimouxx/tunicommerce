@@ -129,3 +129,12 @@
 @media(max-width:790px){.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero){padding:135px 22px 30px;margin-block:20px 28px}.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::before{width:96px;top:18px;inset-inline-end:24px}.shell:is([data-theme=pulse],[data-theme=sorbet],[data-theme=chrome],[data-theme=groove]) :global(.platform-hero)::after{width:80px;height:80px;font-size:70px;top:26px;inset-inline-end:32px}}
 @media(prefers-reduced-motion:reduce){.shell *,.shell *::before,.shell *::after{animation:none!important;transition:none!important}}
 
+
+/* Background reference for the shared sticky header. */
+.shell[data-theme="editorial"]{--store-bg:#f8f5ee}
+.shell[data-theme="prestige"]{--store-bg:#121820}
+.shell[data-theme="pop"]{--store-bg:#fff5ee}
+
+/* Decorative theme layer sits behind the shop content. */
+.shell{position:relative;isolation:isolate}
+.shell>[data-part="motif"]{z-index:-1;pointer-events:none}

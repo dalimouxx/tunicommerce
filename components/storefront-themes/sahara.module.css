@@ -1,0 +1,25 @@
+/* Sahara — drifting dunes, thin luxurious type, borderless editorial cards. */
+.root{--store-bg:#f4e9da;--store-text:#3a2617;--store-surface:#fbf4ea;--store-muted:#7a5d47;background:var(--store-bg);color:var(--store-text);position:relative}
+.root [data-part="hero"]{isolation:isolate;padding-bottom:clamp(90px,12vw,160px)}
+.root [data-part="hero"]>:not([data-part="motif"]){position:relative;z-index:1}
+.root [data-part="motif"]{position:absolute;inset:auto 0 0;height:min(55%,300px);z-index:0;pointer-events:none;overflow:hidden}
+.root [data-part="motif"] svg{width:130%;height:100%;margin-inline-start:-15%}
+.root [data-part="motif"] path{transform-box:fill-box}
+.root [data-part="motif"] [data-layer="far"]{fill:color-mix(in srgb,var(--store-accent) 14%,var(--store-bg));animation:saharaDrift 30s ease-in-out infinite alternate}
+.root [data-part="motif"] [data-layer="mid"]{fill:color-mix(in srgb,var(--store-accent) 24%,var(--store-bg));animation:saharaDrift 22s ease-in-out infinite alternate-reverse}
+.root [data-part="motif"] [data-layer="near"]{fill:color-mix(in srgb,var(--store-accent) 36%,var(--store-bg));animation:saharaDrift 18s ease-in-out infinite alternate}
+@keyframes saharaDrift{from{transform:translateX(-4%)}to{transform:translateX(4%)}}
+.root [data-part="hero-copy"] h1{font-weight:300;letter-spacing:.01em;line-height:1.05}
+.root [data-part="hero-copy"] .kicker,.root [data-part="hero-copy"]>span:first-child{letter-spacing:.4em}
+.root [data-part="hero-visual"]{border-radius:220px 220px 18px 18px;background:radial-gradient(circle at 50% 35%,#fff6e3,color-mix(in srgb,var(--store-accent) 22%,var(--store-surface)))}
+.root [data-part="product-card"]{border:0;background:transparent;box-shadow:none;border-radius:0}
+.root [data-part="product-media"]{border-radius:3px}
+.root [data-part="product-card"] h3{font-weight:400;letter-spacing:.02em}
+.root [data-part="cta"]{border-radius:999px;letter-spacing:.08em}
+.root [data-part="hero-visual"]::before{content:none}
+/* Boutiques indépendantes */
+.root :global(.platform-hero h1){font-weight:300;letter-spacing:.01em;color:var(--store-text)}
+.root :global(.product-tile){border:0;background:transparent;box-shadow:none}
+.root :global(.public-product-image){border-radius:3px}
+.root>[data-part="motif"]{position:absolute;inset:0 0 auto;height:420px;opacity:.6}
+@media (prefers-reduced-motion: reduce){.root [data-part="motif"] path{transform:none}}
