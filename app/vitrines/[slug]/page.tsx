@@ -24,6 +24,10 @@ import {animatedStorefrontTheme} from '../../../modules/shops/storefront-themes'
 import StorefrontMotionToggle from '../../../components/storefront-motion-toggle';
 import StorefrontReveal from '../../../components/storefront-reveal';
 import motion from '../../../components/storefront-motion.module.css';
+import ThemeMotif from '../../../components/theme-motif';
+import ThemeHeroExtras from '../../../components/theme-hero-extras';
+import {themeClass} from '../../../components/storefront-themes';
+import {storefrontLayout} from '../../../modules/shops/theme-layouts';
 
 export const dynamic='force-dynamic';
 
@@ -64,6 +68,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  const lang=resolveStorefrontLang(query.lang,(await cookies()).get(STOREFRONT_LANG_COOKIE)?.value,catalog.marketing.language);
  const t=storefrontDictionary(lang);
  const theme=catalog.theme;
+ const layout=storefrontLayout(theme.code);
  const heroProduct=catalog.products.find(p=>p.available&&p.imageUrl)||
   catalog.products.find(p=>p.available)||catalog.products[0];
  const names=[...new Set(catalog.products.map(product=>product.category).filter(Boolean))].slice(0,5);
@@ -75,7 +80,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted
  } as CSSProperties;
- return <main className={styles.page+' '+motion.root+' '+arabicFont.variable} data-motion-root data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+ return <main className={[styles.page,motion.root,themeClass(theme.code),arabicFont.variable].filter(Boolean).join(' ')} data-motion-root data-theme={theme.code} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} style={vars} lang={lang} dir={storefrontDir(lang)}>
   <StorefrontReveal/>
   <StorefrontPixels metaPixelId={catalog.marketing.metaPixelId} tiktokPixelId={catalog.marketing.tiktokPixelId}/>
   <div className={styles.announcement} data-part="announcement">
@@ -104,6 +109,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     {pages.map(page=><Link key={page.slug} href={publicBase+'/pages/'+encodeURIComponent(page.slug)}>{page.title}</Link>)}
    </nav>}
    <section className={styles.hero} data-part="hero" aria-labelledby="storefront-title">
+    <ThemeMotif motif={layout.motif}/>
     <div className={styles.heroCopy} data-part="hero-copy">
      <span className={styles.kicker}>{t.heroKicker}</span>
      <h1 id="storefront-title" dir="auto">{home[lang].heroTitle||shopName}</h1>
@@ -129,6 +135,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
       <strong dir="auto">{heroProduct.name}</strong>
       <small>{formatStorefrontMoney(heroProduct.price,lang)}</small>
      </div>}
+     <ThemeHeroExtras layout={layout} products={catalog.products} categories={names} lang={lang} shopPath={publicBase}/>
     </div>
    </section>
    {home.showBenefits&&<section className={styles.pillars} data-part="pillars" data-reveal aria-label={t.orderInfo}>
