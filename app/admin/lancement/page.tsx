@@ -22,7 +22,7 @@ export default async function AdminCommercialLaunch(){
   </div>
   <section className={styles.panel}>
    <h2>{status.allAttested?'Attestations renseignées · preuves à examiner':'NO-GO · lancement commercial non autorisé'}</h2>
-   <p>Une mise en ligne Render est possible en environnement pilote ; les sept points doivent être réellement testés et documentés avant la commercialisation. Aucun fournisseur, paiement bancaire ou sauvegarde externe n'est déclaré connecté par cette page.</p>
+   <p>La plateforme est accessible sur https://tunicom.shop ; les sept points doivent être réellement testés et documentés avant la commercialisation. Aucun fournisseur, paiement bancaire ou sauvegarde externe n'est déclaré connecté par cette page.</p>
    <div className={styles.tableWrap}><table className={styles.table}>
     <thead><tr><th>Condition</th><th>Déclaration serveur</th><th>Validation requise</th></tr></thead>
     <tbody>{status.rows.map(row=><tr key={row.key}>

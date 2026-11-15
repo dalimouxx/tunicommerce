@@ -49,7 +49,7 @@ export function AuthForm({setup=false,portal='MERCHANT'}:{setup?:boolean;portal?
      <label>Mot de passe<input name="password" type="password" autoComplete={setup?'new-password':'current-password'} required minLength={setup?12:1} maxLength={128}/></label>
      {requiresMfa&&!setup&&<label>Code de l’application ou code de secours<input name="otp" autoComplete="one-time-code" required maxLength={32}/></label>}
      {setup&&<><label>Clé d’initialisation<input name="token" type="password" autoComplete="off" required minLength={32} maxLength={256}/></label>
-      <small>Clé SETUP_TOKEN du serveur Render ; mot de passe de 12 caractères minimum.</small></>}
+      <small>Clé SETUP_TOKEN du serveur Tunicom ; mot de passe de 12 caractères minimum.</small></>}
      {error&&<p className="auth-error" role="alert">{error}</p>}
      <button className="primary" type="submit" disabled={busy}>{busy?'Connexion…':setup?'Créer le Super Admin':'Accéder à mon espace'}<ArrowRight size={16}/></button>
     </form>}

@@ -20,7 +20,7 @@ Catalogue, stock, commandes, clients, call center simple, zones et tarifs, trans
 - Cookies HttpOnly, Secure en production, SameSite=Lax ; expiration à 7 jours et révocation à la déconnexion.
 - Contrôle Origin pour toutes les mutations et limitation persistante des tentatives de connexion.
 - PostgreSQL avec migrations Prisma ; mises à jour atomiques conditionnées par propriétaire et version.
-- Workflow GitHub Actions et Blueprint Render.
+- Déploiement automatique GitHub Actions vers le VPS et surveillance Telegram.
 
 ## Démarrage local
 Node.js 22.13+ (22 ou 24) et PostgreSQL sont nécessaires.
@@ -36,10 +36,10 @@ npm run dev
 
 Ouvrir `/setup`, saisir la clé SETUP_TOKEN et choisir le compte propriétaire (mot de passe d’au moins 12 caractères). Cette clé ne doit jamais être partagée dans le chat ou ajoutée au dépôt. Une fois le propriétaire créé, l’initialisation est verrouillée en base ; elle ne crée pas de deuxième compte. La connexion se fait ensuite sur `/login`.
 
-Pour un lancement local du build de production, HTTPS est requis. Le mode `npm run dev` accepte `APP_URL=http://localhost:3000`. Render fournit automatiquement son URL HTTPS.
+Pour un lancement local du build de production, HTTPS est requis. Le mode `npm run dev` accepte `APP_URL=http://localhost:3000`. Le site de production est https://tunicom.shop ; HTTPS est géré par le proxy commun.
 
-## GitHub et Render
-Voir [DEPLOYMENT.md](DEPLOYMENT.md). Le Blueprint définit un service web de test et une base PostgreSQL, tous deux en formule Free. Leur disponibilité dépend du compte Render. Aucune ressource distante n’est créée par l’archive seule.
+## GitHub et VPS
+Voir [DEPLOYMENT.md](DEPLOYMENT.md) pour le site https://tunicom.shop, son déploiement sur VPS, les sauvegardes et la surveillance.
 
 Le dépôt GitHub doit contenir tous les fichiers de ce dossier à sa racine. Ne pas y ajouter `node_modules`, `.next`, des fichiers `.env`, des sauvegardes de données ou des secrets. `package-lock.json`, `prisma/migrations`, `render.yaml` et `.github/workflows/ci.yml` doivent être suivis.
 
@@ -84,7 +84,7 @@ Les téléversements de médias historiques sont disponibles. Les comptes client
 
 ## Domaines des boutiques
 
-La gestion des sous-domaines et preuves TXT est accessible au propriétaire dans Mes boutiques → boutique → Ma vitrine → Sous-domaine et domaines personnels. Le routage reste désactivé par défaut pour Render. La configuration DNS et HTTPS du futur VPS est décrite dans [le guide dédié](docs/VPS-STOREFRONT-DOMAINS.md).
+La gestion des sous-domaines et preuves TXT est accessible au propriétaire dans Mes boutiques → boutique → Ma vitrine → Sous-domaine et domaines personnels. Le routage est actif en production sur nom-boutique.tunicom.shop. La configuration DNS et HTTPS du VPS est décrite dans [le guide dédié](docs/VPS-STOREFRONT-DOMAINS.md).
 
 
 ## Accueil personnalisable

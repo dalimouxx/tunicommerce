@@ -10,7 +10,7 @@ function slugify(value:string){
   .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60).replace(/-$/,'');
 }
 
-export default function SignupForm(){
+export default function SignupForm({platformOrigin,automaticRoot}:{platformOrigin:string;automaticRoot:string|null}){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [name,setName]=useState('');
@@ -61,7 +61,7 @@ export default function SignupForm(){
      <label>Mot de passe<input required type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} minLength={12} maxLength={128} placeholder="12 caractères minimum"/></label>
      <label>Nom de votre boutique<input required value={shopName} onChange={e=>{setShopName(e.target.value);if(!customSlug)setSlug(slugify(e.target.value));}} minLength={2} maxLength={100} placeholder="Ex. Ma Boutique Mode"/></label>
      <label>Lien de votre boutique<input required value={slug} onChange={e=>{setCustomSlug(true);setSlug(e.target.value);}} pattern="[a-z0-9]+(-[a-z0-9]+)*" minLength={3} maxLength={60} placeholder="ma-boutique-mode"/>
-      <small>tunicommerce-test.onrender.com/boutiques/{slug||'ma-boutique'}</small></label>
+      <small>{automaticRoot?'https://'+(slug||'ma-boutique')+'.'+automaticRoot:platformOrigin+'/boutiques/'+(slug||'ma-boutique')}</small></label>
      {error&&<p className={styles.error} role="alert">{error}</p>}
      <button className={styles.submit} type="submit" disabled={busy||slug.length<3}>{busy?'Création…':'Créer ma boutique'} <ArrowRight size={18}/></button>
      <p className={styles.security}><ShieldCheck size={14}/> Espace privé par marchand · Essai initial de 30 jours · Configuration avant publication</p>

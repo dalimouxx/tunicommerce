@@ -1,6 +1,6 @@
 import {pathToFileURL} from 'node:url';
 
-export const HEALTH_URL='https://tunicommerce-test.onrender.com/api/health';
+export const HEALTH_URL='https://tunicom.shop/api/health';
 
 /**
  * No credentials or customer data. The public health endpoint already exists

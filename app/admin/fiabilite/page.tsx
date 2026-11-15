@@ -30,7 +30,7 @@ export default async function PlatformIntegrityPage({searchParams}:{searchParams
  const totalPages=integrityTotalPages(totalShops);
  if(currentPage>totalPages)notFound();
  // Stable shop order ensures all shops can be inspected across successive pages
- // without materializing a full multi-tenant JSON dataset in the Render process.
+ // without materializing a full multi-tenant JSON dataset in the application process.
  const rows=await prisma.shopCommerce.findMany({
   orderBy:{shopId:'asc'},skip:(currentPage-1)*INTEGRITY_PAGE_SIZE,
   take:INTEGRITY_PAGE_SIZE,select:{data:true}

@@ -19,7 +19,7 @@ export const domainMutation=z.discriminatedUnion('action',[
  ...(['verify','renew','remove','primary'] as const).map(action=>z.object({action:z.literal(action),id:z.string().uuid()}).strict())
 ]);
 export function platformHosts(env:Record<string,string|undefined>=process.env){
- return [env.APP_URL,env.RENDER_EXTERNAL_URL].filter(Boolean).map(value=>{try{return new URL(value!).hostname.toLowerCase();}catch{return '';}}).filter(Boolean);
+ return [env.APP_URL].filter(Boolean).map(value=>{try{return new URL(value!).hostname.toLowerCase();}catch{return '';}}).filter(Boolean);
 }
 export function storefrontRoot(env:Record<string,string|undefined>=process.env){return env.STOREFRONT_ROOT_DOMAIN?normalizeDomain(env.STOREFRONT_ROOT_DOMAIN):null;}
 export function reservedDomain(host:string,env:Record<string,string|undefined>=process.env){
