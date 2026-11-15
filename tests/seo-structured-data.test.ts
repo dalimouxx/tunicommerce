@@ -37,3 +37,9 @@ test('store data and absolute URLs',()=>{
 test('alternates expose canonical and both languages',()=>{
  assert.deepEqual(storefrontAlternates(origin,'/vitrines/demo'),{canonical:origin+'/vitrines/demo',languages:{fr:origin+'/vitrines/demo',ar:origin+'/vitrines/demo?lang=ar'}});
 });
+test('canonical path follows the custom domain when one is active',async()=>{
+ const {canonicalPath}=await import('../modules/seo/urls');
+ assert.equal(canonicalPath('https://marque.tn','https://tunicom.example','/vitrines/demo/produit/p1','/produit/p1'),'/produit/p1');
+ assert.equal(canonicalPath('https://tunicom.example','https://tunicom.example','/vitrines/demo/produit/p1','/produit/p1'),'/vitrines/demo/produit/p1');
+ assert.equal(canonicalPath('https://tunicom.example/','https://tunicom.example','/vitrines/demo','/'),'/vitrines/demo');
+});

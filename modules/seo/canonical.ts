@@ -4,6 +4,8 @@ import {domainProofAllowsRouting} from '../shops/domain-health';
 import {isPublicIsolatedShop} from '../shops/publication';
 import {isOpen} from '../platform/public';
 import type {SitemapShop} from './sitemap';
+import {canonicalPath,storefrontAlternates} from './urls';
+import {isDemoCatalog} from './sitemap';
 import {isolatedStorefrontPreview} from '../shops/storefront-preview';
 import {normalizeState} from '../commerce/normalize';
 import type {State} from '../commerce/types';
@@ -25,7 +27,7 @@ export async function canonicalOrigin(shopId:string|null|undefined){
  }
  return applicationOrigin().replace(/\/$/,'');
 }
-const isDemo=(data:unknown)=>!!(data&&typeof data==='object'&&(data as {demo?:unknown}).demo);
+const isDemo=isDemoCatalog;
 function products(data:unknown){
  if(!data||typeof data!=='object')return [];
  try{return isolatedStorefrontPreview(normalizeState(data as State)).products.map(product=>({id:product.id,available:product.available}));}
@@ -68,4 +70,12 @@ export async function loadSitemapShops(where:{shopSlug?:string}={}):Promise<Site
    result.push({kind:'boutique',slug:workspace.slug,public:isOpen(workspace),demo:isDemo(workspace.data),customHost:null,products:[],pages:[],updatedAt:workspace.updatedAt});
  }
  return result;
+}
+
+/** Canonical URL and language alternates of a storefront page, on its custom domain when active. */
+export async function storefrontSeo(shopId:string|null|undefined,platformPath:string,domainPath:string){
+ const origin=await canonicalOrigin(shopId);
+ const path=canonicalPath(origin,applicationOrigin(),platformPath,domainPath);
+ const alternates=storefrontAlternates(origin,path);
+ return {origin,url:alternates.canonical,alternates};
 }

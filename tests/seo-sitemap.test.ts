@@ -33,3 +33,10 @@ test('robots allow storefronts, block private areas and point to the sitemap',()
  const body=robotsBody('https://marque.tn');
  assert.match(body,/User-agent: \*/);assert.match(body,/Disallow: \/api/);assert.match(body,/Sitemap: https:\/\/marque\.tn\/sitemap\.xml/);
 });
+test('demo catalogs are recognised so their pages are never indexed',async()=>{
+ const {isDemoCatalog}=await import('../modules/seo/sitemap');
+ assert.equal(isDemoCatalog({demo:true}),true);
+ assert.equal(isDemoCatalog({demo:false}),false);
+ assert.equal(isDemoCatalog(null),false);
+ assert.equal(isDemoCatalog('demo'),false);
+});

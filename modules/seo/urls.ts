@@ -8,3 +8,7 @@ export function storefrontAlternates(origin:string,path:string){
  const canonical=absoluteUrl(origin,path);
  return {canonical,languages:{fr:canonical,ar:canonical+'?lang=ar'}};
 }
+/** On a shop's own domain its pages live at the root; on Tunicom they keep their platform path. */
+export function canonicalPath(origin:string,platformOrigin:string,platformPath:string,domainPath:string){
+ return origin.replace(/\/$/,'')===platformOrigin.replace(/\/$/,'')?platformPath:domainPath;
+}
