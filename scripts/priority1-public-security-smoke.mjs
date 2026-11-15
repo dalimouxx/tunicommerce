@@ -1,6 +1,6 @@
 import {pathToFileURL} from 'node:url';
 
-export const PUBLIC_ORIGIN='https://tunicommerce-test.onrender.com';
+export const PUBLIC_ORIGIN='https://tunicom.shop';
 const paths=[
  {path:'/api/commerce',kind:'api'},
  {path:'/api/admin/subscriptions/export',kind:'api'},

@@ -1,4 +1,4 @@
-name: TuniCommerce P1 Render and Neon smoke monitoring
+name: Tunicom production smoke monitoring
 on:
   pull_request:
     paths:
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check Render web service and underlying Neon database response
+      - name: Check tunicom.shop and PostgreSQL health
         run: node scripts/priority1-live-health.mjs
       - name: Verify production anonymous access boundaries (read-only)
         run: node scripts/priority1-public-security-smoke.mjs

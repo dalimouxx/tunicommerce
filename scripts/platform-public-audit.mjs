@@ -1,5 +1,5 @@
 import {applicationRoutes} from './application-route-inventory.mjs';
-const origin='https://tunicommerce-test.onrender.com';
+const origin='https://tunicom.shop';
 const unknown='00000000-0000-4000-8000-000000000000';
 const failures=[];let checks=0;
 for(const route of applicationRoutes().filter(route=>route.access!=='public'&&(!route.api||route.methods.includes('GET')))){
