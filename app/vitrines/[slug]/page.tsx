@@ -26,6 +26,7 @@ import {storefrontSeo} from '../../../modules/seo/canonical';
 import {absoluteUrl} from '../../../modules/seo/urls';
 import {jsonLdScript,storeJsonLd} from '../../../modules/seo/structured-data';
 import {isDemoCatalog} from '../../../modules/seo/sitemap';
+import {shopRatings} from '../../../modules/reviews/service';
 import StorefrontReveal from '../../../components/storefront-reveal';
 import motion from '../../../components/storefront-motion.module.css';
 import ThemeMotif from '../../../components/theme-motif';
@@ -84,6 +85,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  const shopName=catalog.name||shop.name;
  const whatsappHref=whatsappLink(catalog.marketing.whatsapp,catalog.marketing.whatsappMessage||t.whatsappShopMessage);
  const seo=await storefrontSeo(shop.id,publicBase,'/');
+ const ratings=await shopRatings(shop.id).catch(()=>({} as Awaited<ReturnType<typeof shopRatings>>));
  const vars={
   '--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
@@ -154,7 +156,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
     <div><span aria-hidden="true">✦</span><strong>{t.pillarTracked}</strong><small>{t.pillarTrackedText}</small></div>
    </section>}
    {home.sectionsPosition==='beforeCatalog'&&<ShopHomeSections content={home} lang={lang} shopSlug={slug}/>} 
-   <CatalogBrowser slug={slug} products={catalog.products} lang={lang}/>
+   <CatalogBrowser slug={slug} products={catalog.products.map(product=>({...product,rating:ratings[product.id]}))} lang={lang}/>
    {home.sectionsPosition==='afterCatalog'&&<ShopHomeSections content={home} lang={lang} shopSlug={slug}/>} 
    {catalog.products.length>0&&<PublicCart slug={slug} initialProductId={productToAdd}
     shipping={catalog.shipping} zones={catalog.zones} lang={lang}

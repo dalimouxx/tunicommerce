@@ -17,6 +17,10 @@ import {arabicFont} from '../../arabic-font';
 import {STOREFRONT_LANG_COOKIE,formatStorefrontMoney,resolveStorefrontLang,storefrontDictionary,storefrontDir,storefrontLangHref} from '../../../../../modules/shops/storefront-i18n';
 import styles from '../../storefront-premium.module.css';
 import PromoPrice from '../../../../../components/promo-price';
+import ProductReviews from '../../../../../components/product-reviews';
+import RatingStars from '../../../../../components/rating-stars';
+import {productReviews} from '../../../../../modules/reviews/service';
+import {reviewJsonLd} from '../../../../../modules/reviews/policy';
 import motion from '../../../../../components/storefront-motion.module.css';
 import StorefrontReveal from '../../../../../components/storefront-reveal';
 import StorefrontMotionToggle from '../../../../../components/storefront-motion-toggle';
@@ -77,8 +81,9 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
  const seo=await storefrontSeo(detail.shopId,productPath,'/produit/'+encodeURIComponent(product.id));
  const layout=storefrontLayout(theme.code);
+ const reviews=await productReviews(detail.shopId,product.id).catch(()=>({summary:{count:0,average:0},items:[]}));
  return <main className={[styles.page,motion.root,themeClass(theme.code),arabicFont.variable].filter(Boolean).join(' ')} data-motion-root data-theme={theme.code} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} data-page="product" style={vars} lang={lang} dir={storefrontDir(lang)}>
-  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}))}}/>
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript({...productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}),...reviewJsonLd(reviews.summary,reviews.items)})}}/>
   <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
   <StorefrontReveal/>
   <div className={styles.announcement} data-part="announcement">{t.announcementProduct}</div>
@@ -106,6 +111,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      <p className={styles.kicker} dir="auto">{product.category||t.ourSelection}</p>
      <h1 dir="auto">{product.name}</h1>
      {product.variant&&<p className={styles.variant}>{t.variant(product.variant)}</p>}
+     {reviews.summary.count>0&&<a href="#reviews-title" style={{color:'inherit',textDecoration:'none'}}><RatingStars average={reviews.summary.average} count={reviews.summary.count} lang={lang}/></a>}
      <p className={styles.detailPrice} data-countdown><PromoPrice price={product.price} promotion={product.promotion} lang={lang}/></p>
      <p className={styles.detailAvailability} aria-live="polite">{product.available?t.inStock:'● '+t.outOfStock}</p>
      {product.available?<ProductCodForm slug={slug} productId={product.id} productName={product.name}
@@ -125,6 +131,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      <Link href={collectionHref} className={styles.codLink}>{t.continueShopping}</Link>
     </div>
    </article>
+   <ProductReviews summary={reviews.summary} items={reviews.items} lang={lang}/>
    {similar.length>0&&<section className={styles.similar} data-part="similar" data-reveal aria-labelledby="similar-title">
     <div className={styles.sectionHeading}><div><p className={styles.kicker}>{t.similarKicker}</p>
      <h2 id="similar-title">{t.similarTitle}</h2></div></div>

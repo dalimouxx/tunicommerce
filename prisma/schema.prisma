@@ -125,6 +125,7 @@ model Shop {
   webhookEvents  ShopWebhookEvent[]
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
+  reviews        ShopReview[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -579,4 +580,26 @@ model ShopHome {
   publishedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ShopReview {
+ id            String @id @default(uuid())
+ shopId        String
+ shop          Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ productId     String
+ orderId       String
+ rating        Int
+ comment       String @default("")
+ authorName    String
+ status        String @default("PUBLISHED")
+ reportReason  String?
+ reportedAt    DateTime?
+ merchantReply String?
+ repliedAt     DateTime?
+ moderatedAt   DateTime?
+ moderatedBy   String?
+ createdAt     DateTime @default(now())
+ @@unique([shopId,orderId,productId])
+ @@index([shopId,productId,status])
+ @@index([status,reportedAt])
 }
