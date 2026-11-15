@@ -26,3 +26,8 @@
  .root [data-part="motif"] path{stroke-dashoffset:0}
  .root [data-part="hero-visual"]{clip-path:none}
 }
+/* Fiche produit */
+.root [data-part="product-detail-media"]{border-radius:999px 999px 26px 26px;border:2px solid var(--medina-gold);box-shadow:inset 0 0 0 10px var(--store-surface),0 24px 60px #1d2a4418}
+.root [data-part="product-detail-copy"] h1{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-.02em}
+.root [data-part="product-detail-copy"] h1::after{content:"";display:block;width:70px;height:3px;margin-top:16px;background:linear-gradient(90deg,var(--medina-gold),transparent)}
+.root [data-part="product-detail"]>[data-part="motif"]{opacity:.28}

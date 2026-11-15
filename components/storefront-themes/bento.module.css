@@ -34,3 +34,8 @@
 .root :global(.public-product-image){border-radius:18px}
 @media (min-width:900px){.root :global(.public-grid){grid-auto-flow:dense}.root :global(.public-grid>.product-tile:first-child){grid-column:span 2;grid-row:span 2}}
 @media (prefers-reduced-motion: reduce){.root [data-part="bento-tile"]{animation:none}.root [data-part="bento-tile"]:hover{transform:none}}
+/* Fiche produit */
+.root [data-part="product-detail"]{gap:14px}
+.root [data-part="product-detail-media"]{border-radius:28px;background:var(--store-surface);box-shadow:0 1px 0 #0000000a,0 18px 40px -24px #0000002e}
+.root [data-part="product-detail-copy"]{background:var(--store-surface);border-radius:28px;padding:clamp(22px,3vw,40px);box-shadow:0 1px 0 #0000000a,0 18px 40px -24px #0000002e}
+.root [data-part="product-detail-copy"] h1{letter-spacing:-.05em}
