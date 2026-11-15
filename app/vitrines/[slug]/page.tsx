@@ -22,6 +22,10 @@ import {publishedPageLinks} from '../../../modules/shops/page-service';
 import pageStyles from '../../../components/shop-pages.module.css';
 import {animatedStorefrontTheme} from '../../../modules/shops/storefront-themes';
 import StorefrontMotionToggle from '../../../components/storefront-motion-toggle';
+import {storefrontSeo} from '../../../modules/seo/canonical';
+import {absoluteUrl} from '../../../modules/seo/urls';
+import {jsonLdScript,storeJsonLd} from '../../../modules/seo/structured-data';
+import {isDemoCatalog} from '../../../modules/seo/sitemap';
 import StorefrontReveal from '../../../components/storefront-reveal';
 import motion from '../../../components/storefront-motion.module.css';
 import ThemeMotif from '../../../components/theme-motif';
@@ -33,7 +37,7 @@ export const dynamic='force-dynamic';
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params;
- const shop=await prisma.shop.findUnique({where:{slug},select:{name:true,status:true,legacyWorkspaceId:true,
+ const shop=await prisma.shop.findUnique({where:{slug},select:{id:true,name:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},organization:{select:{owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}}});
  const subscription=shop?.organization.owner.workspace;
  if(!shop||!isPublicIsolatedShop({status:shop.status,legacyWorkspaceId:shop.legacyWorkspaceId,
@@ -42,7 +46,11 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
  const preview=isolatedStorefrontPreview(normalizeState(shop.commerce!.data as unknown as State));
  const title=(preview.name||shop.name).slice(0,120);
  const description=(preview.description||'Boutique tunisienne · paiement à la livraison').slice(0,160);
- return {title,description,robots:{index:true,follow:true},openGraph:{title,description,type:'website'}};
+ const seo=await storefrontSeo(shop.id,'/vitrines/'+encodeURIComponent(slug),'/');
+ const image=absoluteUrl(seo.origin,preview.bannerUrl||preview.logoUrl||preview.products.find(product=>product.imageUrl)?.imageUrl||'');
+ return {title,description,robots:{index:!isDemoCatalog(shop.commerce!.data),follow:true},alternates:seo.alternates,
+  openGraph:{title,description,type:'website',url:seo.url,siteName:title,locale:'fr_TN',...(image?{images:[{url:image,alt:title}]}:{})},
+  twitter:{card:image?'summary_large_image':'summary',title,description,...(image?{images:[image]}:{})}};
 }
 
 
@@ -75,6 +83,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  const publicBase='/vitrines/'+encodeURIComponent(slug);
  const shopName=catalog.name||shop.name;
  const whatsappHref=whatsappLink(catalog.marketing.whatsapp,catalog.marketing.whatsappMessage||t.whatsappShopMessage);
+ const seo=await storefrontSeo(shop.id,publicBase,'/');
  const vars={
   '--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
@@ -82,6 +91,7 @@ export default async function IsolatedPublicStorefront({params,searchParams}:{pa
  } as CSSProperties;
  return <main className={[styles.page,motion.root,themeClass(theme.code),arabicFont.variable].filter(Boolean).join(' ')} data-motion-root data-theme={theme.code} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} style={vars} lang={lang} dir={storefrontDir(lang)}>
   <StorefrontReveal/>
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(storeJsonLd({name:shopName,description:catalog.description,url:seo.url,logoUrl:catalog.logoUrl,origin:seo.origin}))}}/>
   <StorefrontPixels metaPixelId={catalog.marketing.metaPixelId} tiktokPixelId={catalog.marketing.tiktokPixelId}/>
   <div className={styles.announcement} data-part="announcement">
    <span dir="auto">{home[lang].announcement||t.announcementZones}</span>

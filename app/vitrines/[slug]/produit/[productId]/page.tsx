@@ -16,13 +16,17 @@ import LanguageSwitch from '../../language-switch';
 import {arabicFont} from '../../arabic-font';
 import {STOREFRONT_LANG_COOKIE,formatStorefrontMoney,resolveStorefrontLang,storefrontDictionary,storefrontDir,storefrontLangHref} from '../../../../../modules/shops/storefront-i18n';
 import styles from '../../storefront-premium.module.css';
+import {storefrontSeo} from '../../../../../modules/seo/canonical';
+import {absoluteUrl} from '../../../../../modules/seo/urls';
+import {jsonLdScript,productJsonLd} from '../../../../../modules/seo/structured-data';
+import {isDemoCatalog} from '../../../../../modules/seo/sitemap';
 
 export const dynamic='force-dynamic';
 type Context={params:Promise<{slug:string;productId:string}>};
 async function productForPublishedStore(slug:string,productId:string){
  if(!slug||slug.length>180||!productId||productId.length>160)return null;
  const shop=await prisma.shop.findUnique({where:{slug},select:{
-  status:true,legacyWorkspaceId:true,
+  id:true,status:true,legacyWorkspaceId:true,
   commerce:{select:{data:true}},
   organization:{select:{owner:{select:{workspace:{select:{subscriptionStatus:true,subscriptionEndsAt:true}}}}}}
  }});
@@ -32,7 +36,8 @@ async function productForPublishedStore(slug:string,productId:string){
   initialized:!!shop.commerce,subscriptionStatus:subscription?.subscriptionStatus||'',
   subscriptionEndsAt:subscription?.subscriptionEndsAt||null
  }))return null;
- return publicProductDetail(normalizeState(shop.commerce!.data as unknown as State),productId);
+ const detail=publicProductDetail(normalizeState(shop.commerce!.data as unknown as State),productId);
+ return detail?{...detail,shopId:shop.id,demo:isDemoCatalog(shop.commerce!.data)}:null;
 }
 export async function generateMetadata({params}:Context):Promise<Metadata>{
  const {slug,productId}=await params;
@@ -40,8 +45,11 @@ export async function generateMetadata({params}:Context):Promise<Metadata>{
  if(!detail)return {title:'Produit indisponible',robots:{index:false,follow:false}};
  const title=(detail.product.name+' | '+detail.store.name).slice(0,150);
  const description=(detail.product.description||detail.product.name+' · commande COD en Tunisie').slice(0,160);
- return {title,description,robots:{index:detail.product.available,follow:true},
-  openGraph:{title,description,type:'website'}};
+ const seo=await storefrontSeo(detail.shopId,'/vitrines/'+encodeURIComponent(slug)+'/produit/'+encodeURIComponent(productId),'/produit/'+encodeURIComponent(productId));
+ const image=absoluteUrl(seo.origin,detail.product.imageUrl||detail.store.logoUrl);
+ return {title,description,robots:{index:detail.product.available&&!detail.demo,follow:true},alternates:seo.alternates,
+  openGraph:{title,description,type:'website',url:seo.url,siteName:detail.store.name,locale:'fr_TN',...(image?{images:[{url:image,alt:detail.product.name}]}:{})},
+  twitter:{card:image?'summary_large_image':'summary',title,description,...(image?{images:[image]}:{})}};
 }
 export default async function PublicProductPage({params,searchParams}:Context&{searchParams:Promise<{lang?:string}>}){
  const {slug,productId}=await params;
@@ -60,7 +68,9 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
  const vars={'--store-bg':theme.background,'--store-text':theme.foreground,
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
+ const seo=await storefrontSeo(detail.shopId,productPath,'/produit/'+encodeURIComponent(product.id));
  return <main className={styles.page+' '+arabicFont.variable} data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin}))}}/>
   <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
   <div className={styles.announcement}>{t.announcementProduct}</div>
   <div className={styles.container}>
