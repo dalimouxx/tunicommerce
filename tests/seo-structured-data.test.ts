@@ -43,3 +43,8 @@ test('canonical path follows the custom domain when one is active',async()=>{
  assert.equal(canonicalPath('https://tunicom.example','https://tunicom.example','/vitrines/demo/produit/p1','/produit/p1'),'/vitrines/demo/produit/p1');
  assert.equal(canonicalPath('https://tunicom.example/','https://tunicom.example','/vitrines/demo','/'),'/vitrines/demo');
 });
+test('a promotional offer carries its real end date for Google',()=>{
+ const data=productJsonLd({...product,price:69000,priceValidUntil:'2026-11-20T22:59:00.000Z'}) as any;
+ assert.equal(data.offers.price,'69.000');assert.equal(data.offers.priceValidUntil,'2026-11-20');
+ assert.equal((productJsonLd(product) as any).offers.priceValidUntil,undefined);
+});

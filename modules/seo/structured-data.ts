@@ -6,7 +6,7 @@ export function jsonLdScript(data:unknown){
   .replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026')
   .replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 }
-type ProductInput={name:string;description:string;imageUrl:string;url:string;price:number;available:boolean;storeName:string;origin:string};
+type ProductInput={name:string;description:string;imageUrl:string;url:string;price:number;available:boolean;storeName:string;origin:string;priceValidUntil?:string};
 /** Product schema with a real offer only; ratings appear once verified reviews exist. */
 export function productJsonLd(input:ProductInput){
  const image=absoluteUrl(input.origin,input.imageUrl);
@@ -17,6 +17,7 @@ export function productJsonLd(input:ProductInput){
   brand:{'@type':'Brand',name:input.storeName},
   offers:{'@type':'Offer',url:input.url,priceCurrency:'TND',price:(input.price/1000).toFixed(3),
    availability:input.available?'https://schema.org/InStock':'https://schema.org/OutOfStock',
+   ...(input.priceValidUntil?{priceValidUntil:input.priceValidUntil.slice(0,10)}:{}),
    seller:{'@type':'Organization',name:input.storeName}}
  };
 }

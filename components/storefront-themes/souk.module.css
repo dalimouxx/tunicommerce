@@ -39,3 +39,5 @@
  .root [data-part="souk-strip"]{position:static;overflow-x:auto}
  .root [data-part="product-card"]:hover{transform:none}
 }
+/* Souk Flash shows the real countdown of a dated promotion directly on product cards. */
+.root [data-part="product-card"] [data-part="promo-countdown"]{display:block;flex-basis:100%;font-size:.55em;font-weight:900;text-transform:uppercase;color:var(--store-accent);font-variant-numeric:tabular-nums}
