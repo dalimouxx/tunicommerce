@@ -64,3 +64,27 @@
 @media(max-width:640px){.sectorFilters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.sectorFilters button{flex:none;scroll-snap-align:start}}
 
 .gallery{background:#fffef9;border-color:var(--ui-line);color:var(--ui-ink);box-shadow:0 7px 25px #20251d05}.header h2{letter-spacing:-1px}.header p,.themeFooter p,.footnote,.matchCount{color:var(--ui-muted)}.eyebrow{color:#6b804b;font-size:9px}.previewLink{border-color:#b9c7a3;color:#4e6735;border-radius:8px}.themeCard{border-color:var(--ui-line);background:#fffef9;box-shadow:0 4px 16px #20251d05}.themeCard[data-active="true"]{border-color:#6d883e;box-shadow:0 0 0 2px #c9fa4f66}.themeFooter button{background:var(--ui-lime);color:#20251d;border:1px solid #20251d;border-radius:8px}.themeFooter button:disabled{background:#e7edda;color:#69795a;border-color:#cdd8bc}.activeTag{color:#526c32;background:#eef6dc}.sectorFilters button{background:#f1f4e6;border-color:#d1dac2;color:#5e704c}.sectorFilters button[data-active="true"]{background:#20251d;color:#f7f7ee;border-color:#20251d}
+
+/* Mini layouts: each new theme shows its own structure in the gallery, not only its colours. */
+.miniSite[data-hero="arch"] .miniHeroVisual{border-radius:60px 60px 10px 10px;border:1.5px solid #c9a24a;background-image:radial-gradient(circle,#c9a24a33 1.5px,transparent 2px);background-size:9px 9px}
+.miniSite[data-hero="dunes"]{background-image:linear-gradient(transparent 62%,color-mix(in srgb,var(--preview-accent) 18%,transparent) 62% 74%,color-mix(in srgb,var(--preview-accent) 32%,transparent) 74%)!important}
+.miniSite[data-hero="dunes"] .miniHero strong{font-weight:300}
+.miniSite[data-hero="dunes"] .miniHeroVisual{border-radius:60px 60px 10px 10px}
+.miniSite[data-hero="bento"] .miniHero{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:6px}
+.miniSite[data-hero="bento"] .miniHero>div:first-child{grid-row:span 2;background:var(--preview-surface);border-radius:12px;padding:9px;box-shadow:0 4px 14px #0000000d}
+.miniSite[data-hero="bento"] .miniHeroVisual{height:40px;border-radius:12px}
+.miniSite[data-hero="bento"] .miniHero::after{content:"Paiement à la livraison";background:var(--preview-accent);color:var(--preview-accent-text);border-radius:12px;padding:8px;font-weight:800;font-size:7px}
+.miniSite[data-hero="bento"] .miniProducts>div{border:0;border-radius:12px}
+.miniSite[data-hero="bento"] .miniProducts>div:first-child{grid-row:span 2}
+.miniSite[data-hero="marquee"]{background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--preview-accent) 8%,transparent) 0 6px,transparent 6px 12px)!important}
+.miniSite[data-hero="marquee"] .miniHero strong{text-transform:uppercase;font-weight:900}
+.miniSite[data-hero="marquee"] .miniHeroVisual,.miniSite[data-hero="marquee"] .miniProducts>div{border:1.5px solid currentColor;border-radius:6px;box-shadow:3px 3px 0 currentColor}
+.miniSite[data-hero="fullbleed"] .miniHero{grid-template-columns:1fr;position:relative;margin-inline:-13px;padding:16px 13px;background:linear-gradient(180deg,#0000000d,#000000a8),var(--preview-surface);color:#fff;min-height:90px;align-items:end}
+.miniSite[data-hero="fullbleed"] .miniHero strong{font-family:Georgia,serif;font-style:italic;font-weight:400;font-size:19px}
+.miniSite[data-hero="fullbleed"] .miniHeroVisual{display:none}
+.miniSite[data-hero="fullbleed"] .miniProducts>div{border:0;border-radius:0;background:transparent}
+.miniSite[data-cards="glass"]{background-image:radial-gradient(circle at 15% 20%,#e8a6ff55,transparent 45%),radial-gradient(circle at 85% 30%,#6ae3ff44,transparent 45%)!important}
+.miniSite[data-cards="glass"] .miniHeroVisual,.miniSite[data-cards="glass"] .miniProducts>div{background:rgb(255 255 255 / .08);border:1px solid rgb(255 255 255 / .2)}
+.highlights{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px}
+.highlights li{font-size:11px;font-weight:650;padding:4px 8px;border-radius:999px;background:#f1f4f2;color:#33433b}
+.demoLink{font-size:12px;font-weight:750;text-decoration:underline;text-underline-offset:3px}

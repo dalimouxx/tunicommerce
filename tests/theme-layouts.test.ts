@@ -24,3 +24,9 @@ test('all themes are animated',()=>{
  for(const code of storefrontThemeCodes)assert.equal(animatedStorefrontTheme(code),true,code);
  assert.equal(animatedStorefrontTheme('NOPE'),false);
 });
+test('theme highlights describe what changes, in plain French',async()=>{
+ const {themeHighlights}=await import('../modules/shops/theme-layouts');
+ assert.deepEqual(themeHighlights(storefrontLayout('BENTO')),['Accueil en mosaïque de cases','Cartes arrondies, 1er produit en grand']);
+ assert.deepEqual(themeHighlights(storefrontLayout('MEDINA')),['Visuel en arche','Cartes à liseré doré','Motif zellige animé']);
+ assert.deepEqual(themeHighlights(storefrontLayout('OASIS')),['Mise en page classique','Couleurs et typographie propres']);
+});
