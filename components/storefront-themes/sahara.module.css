@@ -23,3 +23,8 @@
 .root :global(.public-product-image){border-radius:3px}
 .root>[data-part="motif"]{position:absolute;inset:0 0 auto;height:420px;opacity:.6}
 @media (prefers-reduced-motion: reduce){.root [data-part="motif"] path{transform:none}}
+/* Fiche produit */
+.root [data-part="product-detail"]{padding-bottom:clamp(80px,10vw,140px)}
+.root [data-part="product-detail"]>[data-part="motif"]{height:min(40%,240px);opacity:.7}
+.root [data-part="product-detail-media"]{border-radius:220px 220px 18px 18px;background:radial-gradient(circle at 50% 35%,#fff6e3,color-mix(in srgb,var(--store-accent) 22%,var(--store-surface)))}
+.root [data-part="product-detail-copy"] h1{font-weight:300;letter-spacing:.01em}

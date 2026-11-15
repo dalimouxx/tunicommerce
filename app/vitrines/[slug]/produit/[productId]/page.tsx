@@ -18,6 +18,11 @@ import {STOREFRONT_LANG_COOKIE,formatStorefrontMoney,resolveStorefrontLang,store
 import styles from '../../storefront-premium.module.css';
 import PromoPrice from '../../../../../components/promo-price';
 import motion from '../../../../../components/storefront-motion.module.css';
+import StorefrontReveal from '../../../../../components/storefront-reveal';
+import StorefrontMotionToggle from '../../../../../components/storefront-motion-toggle';
+import ThemeMotif from '../../../../../components/theme-motif';
+import {themeClass} from '../../../../../components/storefront-themes';
+import {storefrontLayout} from '../../../../../modules/shops/theme-layouts';
 import {storefrontSeo} from '../../../../../modules/seo/canonical';
 import {absoluteUrl} from '../../../../../modules/seo/urls';
 import {jsonLdScript,productJsonLd} from '../../../../../modules/seo/structured-data';
@@ -71,15 +76,17 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
  const seo=await storefrontSeo(detail.shopId,productPath,'/produit/'+encodeURIComponent(product.id));
- return <main className={styles.page+' '+motion.root+' '+arabicFont.variable} data-motion-root data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+ const layout=storefrontLayout(theme.code);
+ return <main className={[styles.page,motion.root,themeClass(theme.code),arabicFont.variable].filter(Boolean).join(' ')} data-motion-root data-theme={theme.code} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} data-page="product" style={vars} lang={lang} dir={storefrontDir(lang)}>
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}))}}/>
   <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
-  <div className={styles.announcement}>{t.announcementProduct}</div>
+  <StorefrontReveal/>
+  <div className={styles.announcement} data-part="announcement">{t.announcementProduct}</div>
   <div className={styles.container}>
-   <header className={styles.storeHeader}>
+   <header className={styles.storeHeader} data-part="header">
     <Link className={styles.identity} href={catalogHref}><span className={styles.fallbackLogo}>{store.name.slice(0,1)}</span>
      <span className={styles.brandText}><strong>{store.name}</strong><small>{t.backToCatalog}</small></span></Link>
-    <nav className={styles.nav} aria-label={t.productNav}><Link href={catalogHref}>{t.navAllProducts}</Link>
+    <nav className={styles.nav} aria-label={t.productNav}><StorefrontMotionToggle className={styles.motionControl} lang={lang}/><Link href={catalogHref}>{t.navAllProducts}</Link>
      <LanguageSwitch lang={lang} label={t.switchTo} ariaLabel={t.switchLabel}
       href={storefrontLangHref(productPath,lang==='ar'?'fr':'ar')}/></nav>
    </header>
@@ -88,13 +95,14 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
     <Link href={collectionHref}>{product.category||t.collection}</Link><span aria-hidden="true">/</span>
     <bdi aria-current="page">{product.name}</bdi>
    </nav>
-   <article className={styles.detailLayout}>
-    <div className={styles.detailMedia}>
+   <article className={styles.detailLayout} data-part="product-detail">
+    <ThemeMotif motif={layout.motif}/>
+    <div className={styles.detailMedia} data-part="product-detail-media">
      {product.imageUrl?<img src={product.imageUrl} alt={t.photoOf(product.name)}
       loading="eager" decoding="async" referrerPolicy="no-referrer"/>:
       <div className={styles.productPlaceholder} aria-hidden="true">✧</div>}
     </div>
-    <div className={styles.detailCopy}>
+    <div className={styles.detailCopy} data-part="product-detail-copy">
      <p className={styles.kicker} dir="auto">{product.category||t.ourSelection}</p>
      <h1 dir="auto">{product.name}</h1>
      {product.variant&&<p className={styles.variant}>{t.variant(product.variant)}</p>}
@@ -117,7 +125,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      <Link href={collectionHref} className={styles.codLink}>{t.continueShopping}</Link>
     </div>
    </article>
-   {similar.length>0&&<section className={styles.similar} aria-labelledby="similar-title">
+   {similar.length>0&&<section className={styles.similar} data-part="similar" data-reveal aria-labelledby="similar-title">
     <div className={styles.sectionHeading}><div><p className={styles.kicker}>{t.similarKicker}</p>
      <h2 id="similar-title">{t.similarTitle}</h2></div></div>
     <div className={styles.similarList}>{similar.map(item=><Link key={item.id}
@@ -127,7 +135,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
    </section>}
    {whatsappHref&&<a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.whatsappFloat+' '+styles.whatsappFloatRaised} aria-label={t.whatsappLabel}>
     <span aria-hidden="true">💬</span><b>WhatsApp</b></a>}
-   <footer className={styles.footer}><strong>{store.name}</strong>
+   <footer className={styles.footer} data-part="footer" data-reveal><strong>{store.name}</strong>
     <p>{t.footerProduct}</p></footer>
   </div>
  </main>;

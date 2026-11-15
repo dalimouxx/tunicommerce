@@ -21,3 +21,10 @@ test('the theme gallery shows each layout and links to its live demo',()=>{
  const gallery=source('app/mes-boutiques/[shopId]/shop-storefront-themes.tsx');
  for(const marker of ['storefrontLayout(','data-hero=','/themes/','themeHighlights('])assert.ok(gallery.includes(marker),marker);
 });
+test('the product page applies the theme layout and every new theme styles the product detail',()=>{
+ const page=source('app/vitrines/[slug]/produit/[productId]/page.tsx');
+ for(const marker of ['storefrontLayout(','themeClass(','<ThemeMotif','<StorefrontReveal','data-hero=','data-part="header"','data-part="announcement"','data-part="product-detail"','data-part="product-detail-media"','data-part="product-detail-copy"','data-part="footer"','<StorefrontMotionToggle'])
+  assert.ok(page.includes(marker),'product page is missing '+marker);
+ for(const name of ['medina','sahara','bento','souk','aurora','magazine'])
+  assert.match(source('components/storefront-themes/'+name+'.module.css'),/\[data-part="product-detail-media"\]/,name);
+});

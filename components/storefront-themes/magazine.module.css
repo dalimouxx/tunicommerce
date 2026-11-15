@@ -31,3 +31,7 @@
 .root :global(.public-product-image){border-radius:0}
 .root>[data-part="motif"]{position:absolute;inset:0;opacity:.06}
 @media (prefers-reduced-motion: reduce){.root [data-part="hero-visual"]{transform:none}}
+/* Fiche produit */
+.root [data-part="product-detail-media"]{border-radius:0;height:min(760px,82vh)}
+.root [data-part="product-detail-copy"] h1{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:clamp(2.6rem,6vw,5rem);line-height:.95;letter-spacing:-.03em}
+.root [data-part="product-detail"]>[data-part="motif"]{opacity:.06}

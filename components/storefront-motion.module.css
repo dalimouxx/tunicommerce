@@ -44,3 +44,10 @@
 .root [data-part="promo-ends"]{flex-basis:100%;font-size:.6em;font-weight:600;opacity:.75}
 .root [data-part="promo-countdown"]{display:none}
 .root [data-countdown] [data-part="promo-countdown"]{display:block;flex-basis:100%;font-size:.5em;font-weight:800;color:var(--store-accent);font-variant-numeric:tabular-nums}
+
+/* Product page: decorative layer behind content; sticky media clears the sticky header on wide screens. */
+.root [data-part="product-detail"]{position:relative;isolation:isolate}
+.root [data-part="product-detail"]>[data-part="motif"]{pointer-events:none}
+.root [data-part="product-detail-copy"],.root [data-part="product-detail-media"]{z-index:1}
+.root [data-part="product-detail-copy"]{position:relative}
+@media (min-width: 760px){.root[data-page="product"] [data-part="product-detail-media"]{top:90px}}

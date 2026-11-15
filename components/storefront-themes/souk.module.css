@@ -41,3 +41,8 @@
 }
 /* Souk Flash shows the real countdown of a dated promotion directly on product cards. */
 .root [data-part="product-card"] [data-part="promo-countdown"]{display:block;flex-basis:100%;font-size:.55em;font-weight:900;text-transform:uppercase;color:var(--store-accent);font-variant-numeric:tabular-nums}
+/* Fiche produit */
+.root [data-part="product-detail-media"]{border:3px solid var(--store-text);border-radius:14px;box-shadow:8px 8px 0 var(--store-text)}
+.root [data-part="product-detail-copy"] h1{text-transform:uppercase;font-weight:900;letter-spacing:-.03em}
+.root [data-part="product-detail-copy"] [data-part="promo-countdown"]{font-size:.6em;text-transform:uppercase;letter-spacing:.04em}
+.root [data-part="product-detail"]>[data-part="motif"]{opacity:.45}

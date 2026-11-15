@@ -30,3 +30,8 @@
 .root :global(.product-placeholder){background:rgb(255 255 255 / .06)}
 .root>[data-part="motif"]{position:absolute;inset:0 0 auto;height:640px}
 @media (prefers-reduced-motion: reduce){.root [data-part="motif"] [data-layer]{transform:none}}
+/* Fiche produit */
+.root [data-part="product-detail-media"],.root [data-part="product-detail-copy"]{background:rgb(255 255 255 / .07);border:1px solid rgb(255 255 255 / .16);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:32px}
+.root [data-part="product-detail-copy"]{padding:clamp(22px,3vw,40px)}
+.root [data-part="product-detail-copy"] h1{background:linear-gradient(100deg,#fff 20%,#e8a6ff 60%,#9fe8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+@supports not (backdrop-filter: blur(1px)){.root [data-part="product-detail-media"],.root [data-part="product-detail-copy"]{background:var(--store-surface)}}
