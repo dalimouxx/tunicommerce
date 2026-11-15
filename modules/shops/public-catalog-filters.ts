@@ -2,7 +2,8 @@
 export type CatalogProduct={
  id:string;name:string;category:string;variant:string;description:string;
  price:number;imageUrl:string;available:boolean;
- offers?:readonly {quantity:number;price:number;label:string}[]
+ offers?:readonly {quantity:number;price:number;label:string}[];
+ promotion?:{regularPrice:number;endsAt:string;percent:number}|null
 };
 export type CatalogSort='featured'|'price-asc'|'price-desc'|'name';
 export type CatalogFilter={search:string;category:string;availableOnly:boolean;sort:CatalogSort};

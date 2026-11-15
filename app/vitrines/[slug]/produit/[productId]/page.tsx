@@ -16,6 +16,8 @@ import LanguageSwitch from '../../language-switch';
 import {arabicFont} from '../../arabic-font';
 import {STOREFRONT_LANG_COOKIE,formatStorefrontMoney,resolveStorefrontLang,storefrontDictionary,storefrontDir,storefrontLangHref} from '../../../../../modules/shops/storefront-i18n';
 import styles from '../../storefront-premium.module.css';
+import PromoPrice from '../../../../../components/promo-price';
+import motion from '../../../../../components/storefront-motion.module.css';
 import {storefrontSeo} from '../../../../../modules/seo/canonical';
 import {absoluteUrl} from '../../../../../modules/seo/urls';
 import {jsonLdScript,productJsonLd} from '../../../../../modules/seo/structured-data';
@@ -69,8 +71,8 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
   '--store-accent':theme.accent,'--store-accent-text':theme.accentText,
   '--store-surface':theme.surface,'--store-muted':theme.muted} as CSSProperties;
  const seo=await storefrontSeo(detail.shopId,productPath,'/produit/'+encodeURIComponent(product.id));
- return <main className={styles.page+' '+arabicFont.variable} data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
-  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin}))}}/>
+ return <main className={styles.page+' '+motion.root+' '+arabicFont.variable} data-motion-root data-theme={theme.code} style={vars} lang={lang} dir={storefrontDir(lang)}>
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}))}}/>
   <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
   <div className={styles.announcement}>{t.announcementProduct}</div>
   <div className={styles.container}>
@@ -96,7 +98,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
      <p className={styles.kicker} dir="auto">{product.category||t.ourSelection}</p>
      <h1 dir="auto">{product.name}</h1>
      {product.variant&&<p className={styles.variant}>{t.variant(product.variant)}</p>}
-     <p className={styles.detailPrice}>{formatStorefrontMoney(product.price,lang)}</p>
+     <p className={styles.detailPrice} data-countdown><PromoPrice price={product.price} promotion={product.promotion} lang={lang}/></p>
      <p className={styles.detailAvailability} aria-live="polite">{product.available?t.inStock:'● '+t.outOfStock}</p>
      {product.available?<ProductCodForm slug={slug} productId={product.id} productName={product.name}
       unitPrice={product.price} zones={store.zones} defaultShipping={store.shipping}

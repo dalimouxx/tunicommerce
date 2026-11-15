@@ -15,7 +15,11 @@ test('Public catalogue uses an explicit allowlist and excludes private commerce 
  const {initialState}=await import('../modules/commerce/seed');
  const state=initialState();const publicData=publicCatalog(state);
  assert.deepEqual(Object.keys(publicData).sort(),['bannerUrl','demo','description','logoUrl','name','phone','products','shipping','zones']);
- assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','description','id','imageUrl','name','offers','price','variant']);
+ assert.deepEqual(Object.keys(publicData.products[0]).sort(),['available','category','description','id','imageUrl','name','offers','price','promotion','variant']);
+ // An active promotion exposes only the regular price, its end and the percentage (never cost or stock).
+ state.products[0].promotion={price:state.products[0].price-1000,startsAt:new Date(Date.now()-60000).toISOString(),endsAt:new Date(Date.now()+3600000).toISOString()};
+ assert.deepEqual(Object.keys(publicCatalog(state).products[0].promotion!).sort(),['endsAt','percent','regularPrice']);
+ delete state.products[0].promotion;
  // Quantity offers expose only quantity, total price, label and saving (never cost or stock).
  state.products[0].quantityOffers=[{quantity:2,price:state.products[0].price*2-1000,label:'Promo'}];
  assert.deepEqual(Object.keys(publicCatalog(state).products[0].offers[1]).sort(),['label','price','quantity','saving']);

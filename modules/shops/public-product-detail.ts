@@ -11,7 +11,7 @@ export function publicProductDetail(state:State,productId:string){
   shipping:catalog.shipping,zones:catalog.zones,marketing:catalog.marketing},
   product:{id:product.id,name:product.name,category:product.category,variant:product.variant,
    price:product.price,description:product.description,available:product.available,imageUrl:product.imageUrl,
-   offers:product.offers},
+   offers:product.offers,promotion:product.promotion},
   similar
  };
 }

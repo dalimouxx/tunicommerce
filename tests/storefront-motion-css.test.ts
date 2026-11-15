@@ -51,3 +51,9 @@ test('sticky header is limited to wide screens so it never eats a phone viewport
  assert.ok(!/position:\s*sticky/.test(outside),'sticky header outside a min-width media query');
  assert.match(css,/@media\s*\(min-width:\s*7\d\dpx\)\s*\{[\s\S]*?position:\s*sticky/);
 });
+test('promotion styles: countdown hidden on cards, shown on the product page and in Souk Flash cards',()=>{
+ assert.match(css,/\[data-part="promo-countdown"\]\{[^}]*display:\s*none/);
+ assert.match(css,/\[data-countdown\] \[data-part="promo-countdown"\]\{[^}]*display:\s*block/);
+ assert.match(css,/\[data-part="promo-regular"\]/);
+ assert.match(themeCss('souk'),/\[data-part="promo-countdown"\]\{[^}]*display:\s*block/);
+});

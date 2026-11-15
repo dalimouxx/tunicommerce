@@ -11,6 +11,7 @@ import {animatedStorefrontTheme} from '../../../../modules/shops/storefront-them
 import StorefrontMotionToggle from '../../../../components/storefront-motion-toggle';
 import {money} from '../../../../modules/commerce/types';
 import {badgeQuantityOffer} from '../../../../modules/shops/quantity-offers';
+import PromoPrice from '../../../../components/promo-price';
 import styles from '../../../vitrines/[slug]/storefront-premium.module.css';
 import motion from '../../../../components/storefront-motion.module.css';
 import StorefrontReveal from '../../../../components/storefront-reveal';
@@ -88,7 +89,7 @@ export default async function ShopStorefrontPreview({params,searchParams}:{param
        <span className={styles.productPlaceholder} aria-hidden="true">✧</span>}
       </div>
       <div className={styles.productBody}><span className={styles.productCategory}>{product.category}</span>
-       <h3>{product.name}</h3><p className={styles.productPrice}>{money(product.price)} TND</p>
+       <h3>{product.name}</h3><p className={styles.productPrice}><PromoPrice price={product.price} promotion={product.promotion} lang={lang}/></p>
        {(offer=>offer&&<p data-part="offer-badge">{offer.quantity} pièces · {money(offer.price)} TND</p>)(badgeQuantityOffer(product.offers))}
        <button type="button" disabled className={styles.previewDisabled}>Commander · aperçu uniquement</button>
       </div>
