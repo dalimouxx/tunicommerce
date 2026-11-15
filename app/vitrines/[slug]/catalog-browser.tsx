@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useState,type CSSProperties} from 'react';
 import {badgeQuantityOffer} from '../../../modules/shops/quantity-offers';
 import PromoPrice from '../../../components/promo-price';
+import RatingStars from '../../../components/rating-stars';
 import {catalogCategories,selectCatalogProducts,type CatalogProduct,type CatalogSort} from '../../../modules/shops/public-catalog-filters';
 import {formatStorefrontMoney,storefrontDictionary,storefrontLangHref,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 import styles from './storefront-premium.module.css';
@@ -69,6 +70,7 @@ export default function CatalogBrowser({slug,products,lang='fr'}:{slug:string;pr
     <div className={styles.productBody}>
      <span className={styles.productCategory}>{product.category||t.collection}</span>
      <h3 dir="auto"><Link href={storefrontLangHref(shopPath+'/produit/'+encodeURIComponent(product.id),lang)}>{product.name}</Link></h3>
+     {product.rating&&<RatingStars average={product.rating.average} count={product.rating.count} lang={lang}/>}
      {product.variant&&<p className={styles.variant}>{product.variant}</p>}
      {product.description&&<p className={styles.description} dir="auto">{product.description}</p>}
      <p className={styles.productPrice}><PromoPrice price={product.price} promotion={product.promotion} lang={lang}/></p>

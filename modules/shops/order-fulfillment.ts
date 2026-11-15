@@ -24,7 +24,7 @@ export function publicTrackingView(state:State,token:string){
   createdAt:order.createdAt,
   updatedAt:order.updatedAt,
   totalMillimes:order.total,
-  items:order.items.map(item=>({name:item.name,variant:item.variant,quantity:item.quantity})),
+  items:order.items.map(item=>({productId:item.productId,name:item.name,variant:item.variant,quantity:item.quantity})),
   carrier:order.status==='SHIPPED'||order.status==='DELIVERED'?order.carrier:'',
   tracking:order.status==='SHIPPED'||order.status==='DELIVERED'?order.tracking:'',
   requests:(order.customerRequests||[]).map(({id,type,status,at,reply})=>({id,type,status,at,reply:reply||''})),

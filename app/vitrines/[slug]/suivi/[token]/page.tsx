@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import CustomerRequestForm from './customer-request-form';
+import ReviewForm from './review-form';
+import {reviewedProducts} from '../../../../../modules/reviews/service';
 import {notFound} from 'next/navigation';
 import {prisma} from '../../../../../modules/storage/client';
 import {normalizeState} from '../../../../../modules/commerce/normalize';
@@ -14,12 +16,14 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
  const {slug,token}=await params;
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token))notFound();
  const shop=await prisma.shop.findUnique({where:{slug},select:{
-  name:true,legacyWorkspaceId:true,commerce:{select:{data:true}}
+  id:true,name:true,legacyWorkspaceId:true,commerce:{select:{data:true}}
  }});
  // A valid bearer link remains readable after the merchant unpublishes the catalog.
  if(!shop||shop.legacyWorkspaceId!==null||!shop.commerce)notFound();
  const order=publicTrackingView(normalizeState(shop.commerce.data as unknown as State),token);
  if(!order)notFound();
+ const reviewed=order.status==='DELIVERED'?await reviewedProducts(shop.id,token):new Set<string>();
+ const toReview=order.status==='DELIVERED'?[...new Map(order.items.map(item=>[item.productId,item])).values()]:[];
  return <main className={styles.shell}><div className={styles.content}>
   <header className={styles.header}>
    <div><span className={styles.eyebrow}>SUIVI PRIVÉ DE COMMANDE</span>
@@ -60,6 +64,13 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
     </li>)}</ul>}
    <p>Le traitement d’une demande reste manuel : les statuts de livraison, stocks et encaissements ne changent pas automatiquement.</p>
   </section>
+  {toReview.length>0&&<section className={styles.card} aria-labelledby="review-title">
+   <h2 id="review-title">Donner mon avis</h2>
+   <p>Votre commande a été livrée : votre avis aide les autres clients. Il sera publié avec le badge « Achat vérifié ».</p>
+   <div style={{display:'grid',gap:12}}>{toReview.map(item=>reviewed.has(item.productId)?
+    <p key={item.productId}>✓ Avis publié pour {item.name}. Merci !</p>:
+    <ReviewForm key={item.productId} slug={slug} token={token} productId={item.productId} productName={item.name+(item.variant?' · '+item.variant:'')}/>)}</div>
+  </section>}
   <CustomerRequestForm slug={slug} token={token} canCancel={order.canCancel} canReturn={order.canReturn}/>
  </div></main>;
 }
