@@ -68,3 +68,16 @@ test('a merchant can stop a promotion and unknown products are refused',()=>{
  assert.equal(stopped.products.find(p=>p.id==='p1')!.promotion,undefined);
  assert.throws(()=>applyAction(initialState(true),'productPromotion',{productId:'nope',promotion:null}),/introuvable/);
 });
+test('merchant view lists active products with their promotion status in Tunis time',async()=>{
+ const {merchantPromotionsView}=await import('../modules/shops/promotions');
+ const state=withPromotion(69000,'2026-11-01T09:00:00.000Z',new Date(Date.now()+24*hour).toISOString());
+ const view=merchantPromotionsView(state.products,new Date());
+ const p1=view.find(item=>item.id==='p1')!;
+ assert.equal(p1.status,'ACTIVE');assert.equal(p1.promotion?.price,69000);assert.equal(p1.promotion?.startsLocal,'2026-11-01T10:00');
+ assert.equal(view.find(item=>item.id!=='p1')!.status,'NONE');
+ const scheduled=merchantPromotionsView([{id:'x',name:'X',variant:'',price:1000,active:true,promotion:{price:500,startsAt:iso(hour),endsAt:iso(2*hour)}}],new Date());
+ assert.equal(scheduled[0].status,'SCHEDULED');
+ const ended=merchantPromotionsView([{id:'x',name:'X',variant:'',price:1000,active:true,promotion:{price:500,startsAt:iso(-2*hour),endsAt:iso(-hour)}}],new Date());
+ assert.equal(ended[0].status,'ENDED');
+ assert.equal(merchantPromotionsView([{id:'x',name:'X',variant:'',price:1000,active:false}],new Date()).length,0);
+});

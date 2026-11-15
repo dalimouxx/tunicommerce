@@ -48,3 +48,15 @@ export function promotionView(product:Promoted,now:Date){
  const promotion=activePromotion(product,now);
  return promotion?{regularPrice:product.price,endsAt:promotion.endsAt,percent:Math.round((1-promotion.price/product.price)*100)}:null;
 }
+
+type MerchantProduct={id:string;name:string;variant:string;price:number;active:boolean;promotion?:Promotion};
+/** Merchant-side list: status plus Tunis-local values ready for datetime-local inputs. */
+export function merchantPromotionsView(products:readonly MerchantProduct[],now:Date){
+ return products.filter(product=>product.active).map(product=>{
+  const promotion=product.promotion;
+  const status=!promotion?'NONE':activePromotion(product,now)?'ACTIVE':Date.parse(promotion.endsAt)<=now.getTime()?'ENDED':Date.parse(promotion.startsAt)>now.getTime()?'SCHEDULED':'INVALID';
+  return {id:product.id,name:product.name,variant:product.variant,price:product.price,status,
+   promotion:promotion?{price:promotion.price,startsAt:promotion.startsAt,endsAt:promotion.endsAt,
+    startsLocal:isoToTunisLocal(promotion.startsAt),endsLocal:isoToTunisLocal(promotion.endsAt)}:null};
+ });
+}
