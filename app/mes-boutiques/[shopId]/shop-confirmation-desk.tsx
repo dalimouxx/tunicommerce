@@ -2,9 +2,10 @@
 import {useEffect,useRef,useState} from 'react';
 import {confirmationQueue,pageOperationalQueue} from '../../../modules/shops/operational-queues';
 import ShopManualMessages from './shop-manual-messages';
+import {confirmationBadge} from '../../../modules/shops/order-confirmation';
 import {contactChannels,contactOutcomes,contactHistory,contactLogNote,contactHistoryStats,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
-type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[]};
+type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[];confirmation?:{expiresAt:string;answer?:'CONFIRMED'|'CHANGE'|'CANCELLED';note?:string}};
 
 export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const url='/api/v1/shops/'+encodeURIComponent(shopId)+'/orders';
@@ -51,6 +52,20 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   }catch(error){setNotice(error instanceof Error?error.message:'Erreur réseau');}
   finally{setBusy('');}
  }
+ /** Opens WhatsApp on the merchant's phone with the customer's personal confirmation link. */
+ async function requestConfirmation(order:Order){
+  const tab=window.open('about:blank','_blank');
+  setBusy(order.id);setNotice('');
+  try{
+   const response=await fetch('/api/v1/shops/'+encodeURIComponent(shopId)+'/confirmation-links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.id})});
+   const result=await response.json() as {link?:string;whatsappUrl?:string|null;error?:string};
+   if(!response.ok||!result.link)throw new Error(result.error||'Lien indisponible');
+   if(result.whatsappUrl&&tab){tab.location.href=result.whatsappUrl;}else{tab?.close();await navigator.clipboard?.writeText(result.link).catch(()=>{});}
+   setNotice(result.whatsappUrl?'WhatsApp s’ouvre avec le lien de confirmation de '+order.reference+'. Envoyez le message : le statut changera dès que le client répondra.':'Numéro non compatible WhatsApp : lien copié, à transmettre au client ('+result.link+').');
+   const refreshed=await fetch(url,{cache:'no-store'}).then(r=>r.json() as Promise<{orders?:Order[]}>);if(refreshed.orders)setOrders(refreshed.orders);
+  }catch(error){tab?.close();setNotice(error instanceof Error?error.message:'Erreur réseau');}
+  finally{setBusy('');}
+ }
  async function recordContact(order:Order){
   const channel=channels[order.id]||'Téléphone';
   const outcome=outcomes[order.id]||'Sans réponse';
@@ -76,7 +91,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const scheduledCount=toProcess.filter(order=>order.priority==='SCHEDULED').length;
  return <section style={{background:'white',padding:24,borderRadius:18,border:'1px solid #e0e6ee',marginTop:16}}>
   <h2>Centre de confirmation · Boutique indépendante</h2>
-  <p style={{color:'#566477'}}>Confirmer, noter sans réponse, programmer un rappel ou annuler. Aucune communication téléphonique ou WhatsApp n'est envoyée automatiquement.</p>
+  <p style={{color:'#566477'}}>Confirmer, noter sans réponse, programmer un rappel ou annuler. « Demander la confirmation » ouvre WhatsApp avec un lien personnel : le client confirme, demande une modification ou annule lui-même, et le statut se met à jour seul. Aucun message n'est envoyé automatiquement par Tunicom.</p>
   {notice&&<p role="status" aria-live="polite">{notice}</p>}
   {loading?<p>Chargement…</p>:<>
    <p>{toProcess.length} commande(s) dans la file · {overdueCount} rappel(s) à effectuer · {scheduledCount} rappel(s) à venir · {contactStats.attempts} tentative(s) manuelle(s) enregistrée(s).</p>
@@ -92,9 +107,10 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
      <td style={{padding:10}}>{order.reference}</td>
      <td style={{padding:10}}>{order.customerSnapshot?order.customerSnapshot.name+' · '+order.customerSnapshot.phone:'Client non renseigné'}</td>
      <td style={{padding:10}}>{order.items.map(i=>i.name+' × '+i.quantity).join(', ')}</td>
-     <td style={{padding:10}}>{order.status}{order.priority==='OVERDUE'?' · Rappel dû':order.priority==='SCHEDULED'?' · Rappel prévu':''}{order.callbackAt&&order.status==='CALLBACK'&&Number.isFinite(Date.parse(order.callbackAt))?' · '+new Date(order.callbackAt).toLocaleString('fr-TN'):''}</td>
+     <td style={{padding:10}}>{confirmationBadge(order,new Date())&&<strong style={{display:'block',color:'#1b5e8a'}}>{confirmationBadge(order,new Date())}</strong>}{order.status}{order.priority==='OVERDUE'?' · Rappel dû':order.priority==='SCHEDULED'?' · Rappel prévu':''}{order.callbackAt&&order.status==='CALLBACK'&&Number.isFinite(Date.parse(order.callbackAt))?' · '+new Date(order.callbackAt).toLocaleString('fr-TN'):''}</td>
      <td style={{padding:10}}>
       <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+       <button className="primary" disabled={!!busy} onClick={()=>void requestConfirmation(order)}>Demander la confirmation (WhatsApp)</button>
        <button disabled={!!busy} onClick={()=>void change(order.id,'CONFIRMED')}>Confirmer</button>
        {order.status!=='NO_ANSWER'&&<button disabled={!!busy} onClick={()=>void change(order.id,'NO_ANSWER')}>Sans réponse</button>}
        <label>Rappel<input type="datetime-local" aria-label={'Date du rappel '+order.reference} value={callbackDates[order.id]||''} onChange={e=>setCallbackDates(values=>({...values,[order.id]:e.target.value}))}/></label>

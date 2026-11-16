@@ -18,3 +18,11 @@ test('custom domains accept a review posted from the private tracking page only'
  assert.equal(domainRoute(api+'/avis','ma-boutique','GET').kind,'deny');
  assert.equal(domainRoute('/api/v1/public/vitrines/autre/suivi/'+token+'/avis','ma-boutique','POST').kind,'deny');
 });
+test('custom domains serve the private confirmation page and accept its answer',()=>{
+ const token='0b0c6a6e-1111-4222-8333-944445555666';
+ assert.deepEqual(domainRoute('/confirmer/'+token,'ma-boutique','GET'),{kind:'rewrite',path:'/vitrines/ma-boutique/confirmer/'+token});
+ assert.deepEqual(domainRoute('/vitrines/ma-boutique/confirmer/'+token,'ma-boutique','GET'),{kind:'redirect',path:'/confirmer/'+token});
+ assert.equal(domainRoute('/api/v1/public/vitrines/ma-boutique/confirmer/'+token,'ma-boutique','POST').kind,'pass');
+ assert.equal(domainRoute('/api/v1/public/vitrines/autre/confirmer/'+token,'ma-boutique','POST').kind,'deny');
+ assert.equal(domainRoute('/confirmer/pas-un-jeton','ma-boutique','GET').kind,'deny');
+});

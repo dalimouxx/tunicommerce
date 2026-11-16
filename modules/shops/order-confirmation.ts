@@ -46,3 +46,12 @@ export function confirmationMessage(order:Pick<Order,'reference'|'items'|'total'
   'Merci de confirmer votre commande en un clic (ou de demander une modification) :',link,'',
   'تأكيد طلبك بنقرة واحدة عبر الرابط أعلاه.'].join('\n');
 }
+/** Call-center label: what the customer did with the link (never a claim that a message was delivered). */
+export function confirmationBadge(order:{confirmation?:{expiresAt:string;answer?:ConfirmationAnswer;note?:string}},now:Date){
+ const c=order.confirmation;
+ if(!c)return null;
+ if(c.answer==='CONFIRMED')return 'Confirmée par le client';
+ if(c.answer==='CANCELLED')return 'Annulée par le client';
+ if(c.answer==='CHANGE')return 'Modification demandée : '+(c.note||'');
+ return Date.parse(c.expiresAt)<=now.getTime()?'Lien expiré · à relancer':'Lien envoyé · en attente du client';
+}

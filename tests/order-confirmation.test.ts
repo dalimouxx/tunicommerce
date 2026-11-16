@@ -70,3 +70,13 @@ test('public view and WhatsApp message expose only what the customer needs',()=>
  assert.ok(text.includes(next.orders[0].reference)&&text.includes('/confirmer/'+token)&&text.includes('Ma boutique'));
  assert.ok(text.includes('TND'));
 });
+test('the call-center badge reflects the customer link without inventing a contact',async()=>{
+ const {confirmationBadge}=await import('../modules/shops/order-confirmation');
+ const now=new Date('2026-11-16T10:00:00Z'),base={token:'t',issuedAt:'2026-11-16T09:00:00Z',expiresAt:'2026-11-23T09:00:00Z'};
+ assert.equal(confirmationBadge({},now),null);
+ assert.equal(confirmationBadge({confirmation:base},now),'Lien envoyé · en attente du client');
+ assert.equal(confirmationBadge({confirmation:{...base,expiresAt:'2026-11-16T09:30:00Z'}},now),'Lien expiré · à relancer');
+ assert.equal(confirmationBadge({confirmation:{...base,answer:'CONFIRMED'}},now),'Confirmée par le client');
+ assert.equal(confirmationBadge({confirmation:{...base,answer:'CANCELLED'}},now),'Annulée par le client');
+ assert.equal(confirmationBadge({confirmation:{...base,answer:'CHANGE',note:'Autre adresse'}},now),'Modification demandée : Autre adresse');
+});
