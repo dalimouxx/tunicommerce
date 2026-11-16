@@ -1,3 +1,4 @@
+import {syncReliabilityOnWrite} from '../reliability/service';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../storage/client';
@@ -114,6 +115,7 @@ export async function writeIsolatedCommerce(
   await enqueueOrderMail(tx,{shopId},before,next,row.version+1);
   await syncCatalog(tx,{shopId},before,next,row.catalogVersion);
   await syncActivity(tx,{shopId},before,next,row.activityVersion);
+  await syncReliabilityOnWrite(tx,{shopId},before,next);
   await enqueueBusinessWebhooks(tx,{shopId},before,next,row.version+1);
   return {state:next,version:row.version+1,alreadyApplied:false};
  },{timeout:15000});

@@ -126,6 +126,7 @@ model Shop {
   domainClaims   ShopDomainClaim[]
   domainBindings ShopDomainBinding[]
   reviews        ShopReview[]
+  deliveryOutcomes CustomerDeliveryOutcome[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   @@index([organizationId])
@@ -603,4 +604,24 @@ model ShopReview {
  @@unique([shopId,orderId,productId])
  @@index([shopId,productId,status])
  @@index([status,reportedAt])
+}
+
+model CustomerDeliveryOutcome {
+ id            String @id @default(uuid())
+ phoneKey      String
+ shopId        String
+ shop          Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)
+ orderId       String
+ outcome       String
+ occurredAt    DateTime
+ contestStatus String?
+ contestReason String?
+ contestedAt   DateTime?
+ decidedAt     DateTime?
+ decidedBy     String?
+ createdAt     DateTime @default(now())
+ updatedAt     DateTime @updatedAt
+ @@unique([shopId,orderId])
+ @@index([phoneKey])
+ @@index([contestStatus,contestedAt])
 }
