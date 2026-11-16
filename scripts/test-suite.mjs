@@ -17,7 +17,7 @@ const integration=new Set([
  'shop-home-api.test.ts',
  'shop-domains-api.test.ts',
  'merchant-shop-journey-api.test.ts',
- 'platform-route-audit.test.ts','reviews-api.test.ts',
+ 'platform-route-audit.test.ts','reviews-api.test.ts','order-confirmation-api.test.ts',
  'landing-theme-http.test.ts',
  'shop-pages-api.test.ts',
  'account-security-api.test.ts',
