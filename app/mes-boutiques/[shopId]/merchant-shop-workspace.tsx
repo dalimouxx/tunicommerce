@@ -1,4 +1,5 @@
 'use client';
+import PortalLogout from '../../../components/portal-logout';
 import {useEffect,useState} from 'react';
 import {merchantWorkspaceTabs,merchantWorkspaceHash,parseMerchantWorkspaceHash,type MerchantWorkspaceTab} from '../../../modules/shops/workspace-tabs';
 import ShopOrders from './shop-orders';
@@ -45,6 +46,7 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
   <header className={styles.workspaceHeader}>
    <h2>Gestion de ma boutique</h2>
    <p>Choisissez un espace de travail. Les autres boutiques et l'administration globale restent indépendantes.</p>
+   <PortalLogout portal="MERCHANT"/>
   </header>
   <ShopCallCenterAlerts shopId={shopId}/>
   <nav role="tablist" aria-label="Modules de gestion" className={styles.workspaceNavigation}>
