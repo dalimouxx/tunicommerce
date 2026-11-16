@@ -1,4 +1,5 @@
 import {syncReliabilityOnWrite} from '../reliability/service';
+import {offloadHistory} from '../commerce/history';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../storage/client';
@@ -109,7 +110,7 @@ export async function writeIsolatedCommerce(
   next.requests=[...before.requests.slice(-999),input.requestId];
   const updated=await tx.shopCommerce.updateMany({
    where:{shopId,version:row.version},
-   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:(await offloadHistory(tx,{kind:'SHOP',id:shopId},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(updated.count!==1)throw new HttpError(409,'Modification concurrente. Actualisez puis réessayez.');
   await enqueueOrderMail(tx,{shopId},before,next,row.version+1);

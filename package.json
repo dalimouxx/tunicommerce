@@ -15,6 +15,7 @@
     "catalog:verify": "node --import tsx scripts/catalog-index.ts",
     "activity:verify": "node --import tsx scripts/activity-index.ts",
     "reliability:rebuild": "node --import tsx scripts/reliability-rebuild.ts",
+    "history:offload": "node --import tsx scripts/history-offload.ts",
     "media:storage": "node --import tsx scripts/media-storage.ts",
     "media:cleanup": "node --import tsx scripts/media-cleanup.ts",
     "db:migrate": "node scripts/migrate.mjs",

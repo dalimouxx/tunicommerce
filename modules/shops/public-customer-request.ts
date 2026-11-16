@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {offloadHistory} from '../commerce/history';
 import {Prisma} from '@prisma/client';
 import {createHash} from 'node:crypto';
 import {prisma} from '../storage/client';
@@ -69,7 +70,7 @@ export async function submitIsolatedCustomerRequest(
   const change=appendCustomerRequest(normalizeState(row.data as unknown as State),token,input);
   if(change.alreadyApplied)return {accepted:true,alreadyApplied:true};
   const saved=await tx.shopCommerce.updateMany({where:{shopId:shop.id,version:row.version},
-   data:{data:change.state as unknown as Prisma.InputJsonValue,version:{increment:1}}});
+   data:{data:(await offloadHistory(tx,{kind:'SHOP',id:shop.id},change.state)) as unknown as Prisma.InputJsonValue,version:{increment:1}}});
   if(saved.count!==1)throw new HttpError(409,'Modification concurrente, réessayez');
   return {accepted:true,alreadyApplied:false};
  },{timeout:15000});

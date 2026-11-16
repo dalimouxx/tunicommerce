@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {offloadHistory} from '../../../../modules/commerce/history';
 import {Prisma} from '@prisma/client';
 import {prisma} from '../../../../modules/storage/client';
 import {canRequest} from '../../../../modules/platform/tracking';
@@ -23,7 +24,7 @@ export async function POST(req:Request,{params}:{params:Promise<{token:string}>}
    if(order.customerRequests.some(r=>r.status==='PENDING'))throw new HttpError(409,'Une demande est déjà en cours.');
    if(order.customerRequests.length>=5)throw new HttpError(409,'Contactez directement le marchand.');
    const at=new Date().toISOString();order.customerRequests.push({...input,at,status:'PENDING'});order.events.push({at,label:'Demande client : '+(input.type==='CANCEL'?'annulation':'retour')});state.audit.unshift({id:crypto.randomUUID(),at,label:'Demande client · '+order.reference});
-   await tx.workspace.update({where:{id:row.id},data:{data:state as unknown as Prisma.InputJsonValue,version:{increment:1}}});
+   await tx.workspace.update({where:{id:row.id},data:{data:(await offloadHistory(tx,{kind:'WORKSPACE',id:row.id},state)) as unknown as Prisma.InputJsonValue,version:{increment:1}}});
    await syncActivity(tx,{workspaceId:row.id,ownerId:row.ownerId},before,state,row.activityVersion);
   });return respond({ok:true});
  }catch(e){if(e instanceof HttpError)return respond({error:e.message},e.status);if(e instanceof z.ZodError)return respond({error:'Indiquez un motif de 5 à 500 caractères.'},400);return respond({error:'Service indisponible'},503);}
