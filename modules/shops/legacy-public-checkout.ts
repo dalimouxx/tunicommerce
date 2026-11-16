@@ -67,9 +67,10 @@ export async function createLegacyPublicOrder(slug:string,input:LegacyPublicChec
   );
   const receiptId=randomBytes(32).toString('hex');
   next.orders[0].publicReceiptId=receiptId;
+  next=await offloadHistory(tx,{kind:'WORKSPACE',id:row.id},next);
   await tx.workspace.update({
    where:{id:row.id},
-   data:{data:(await offloadHistory(tx,{kind:'WORKSPACE',id:row.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   await enqueueOrderMail(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.version+1);
   await syncCatalog(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.catalogVersion);

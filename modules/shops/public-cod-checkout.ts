@@ -120,8 +120,9 @@ export async function createPublicCodOrder(slug:string,input:z.infer<typeof publ
    ...otherShops.map(record=>normalizeState(record.data as unknown as State))
   ],before,next,quotas);
   next.requests=[...before.requests.slice(-999),input.requestId];
+  next=await offloadHistory(tx,{kind:'SHOP',id:candidate.id},next);
   const updated=await tx.shopCommerce.updateMany({where:{shopId:candidate.id,version:row.version},
-   data:{data:(await offloadHistory(tx,{kind:'SHOP',id:candidate.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}});
+   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}});
   if(updated.count!==1)throw new HttpError(409,'Commande concurrente. Veuillez réessayer.');
   await enqueueOrderMail(tx,{shopId:candidate.id},before,next,row.version+1);
   await syncCatalog(tx,{shopId:candidate.id},before,next,row.catalogVersion);

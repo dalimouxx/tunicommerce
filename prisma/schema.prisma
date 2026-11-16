@@ -652,3 +652,15 @@ model CommerceStockMovement {
  @@unique([sourceKind,sourceId,entryId])
  @@index([sourceKind,sourceId,at(sort: Desc)])
 }
+
+model CommerceOrderArchive {
+ id          String @id @default(uuid())
+ sourceKind  String
+ sourceId    String
+ orderId     String
+ events      Json @default("[]")
+ details     Json @default("{}")
+ compactedAt DateTime @default(now())
+ updatedAt   DateTime @updatedAt
+ @@unique([sourceKind,sourceId,orderId])
+}

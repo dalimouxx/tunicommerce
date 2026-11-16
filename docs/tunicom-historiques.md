@@ -27,3 +27,16 @@ Ce rattrapage, idempotent, copie les historiques existants et allège les blocs,
 
 ## Étape suivante
 Archivage des commandes terminées : 57 % du bloc et 70 fichiers lecteurs. Chantier séparé, avec sa propre conception.
+
+# Étape 2 : compactage des commandes terminées
+
+Conception : [specs/2026-11-16-compactage-commandes-design.md](superpowers/specs/2026-11-16-compactage-commandes-design.md).
+
+- Une commande livrée, annulée ou retournée depuis plus de **90 jours**, sans demande client en attente, sans facture en brouillon et sans retour à rembourser, est compactée. Elle garde dans le bloc tout ce que les calculs utilisent : montants, articles et coûts, copie du client, transporteur, encaissement, dates, notes, demandes, lien de suivi, ainsi que le dernier événement et celui de son statut final.
+- Partent dans `CommerceOrderArchive`, sans perte : l'historique complet des événements, les signaux de risque et la confirmation client. Les événements arrivés plus tard sont fusionnés sans doublon.
+- Au plus 50 commandes par écriture ; `npm run history:offload` traite tout l'existant. Les chemins d'écriture transmettent l'état réellement enregistré aux synchronisations : la copie de recherche reste en parité, ce que vérifie `verifyActivity`.
+- La fiche d'une commande compactée l'indique. Le propriétaire exporte les événements archivés avec `GET /api/v1/shops/{shopId}/history?kind=events`.
+
+**Garantie testée** : vue commerciale, rentabilité par produit, annuaire et fiabilité des clients, soldes et historique du paiement à la livraison, relevés et rapport transporteurs, anomalies, audit du paiement à la livraison, indicateurs, comparaison des transporteurs, historique de livraison et copie de recherche donnent **exactement les mêmes résultats** avant et après compactage (`tests/order-compaction.test.ts`).
+
+**Gain cumulé des étapes 1 et 2** (simulation de 1 000 commandes de plus de 90 jours) : **2,07 Mo → 0,93 Mo (−55 %)** réécrits à chaque action.
