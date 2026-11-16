@@ -12,6 +12,7 @@ import {initialState} from './seed';
 import {catalogImportPayload} from './catalog-import';
 import {marketingSettings} from '../shops/storefront-marketing';
 import {assertValidOffers,linePrice,quantityOffersPayload} from '../shops/quantity-offers';
+import {CONFIRMATION_TTL_MS,confirmationTokenPattern,customerConfirmationPayload,isPendingConfirmation,issueConfirmationPayload} from '../shops/order-confirmation';
 import {assertValidPromotion,effectivePrice,productPromotionPayload} from '../shops/promotions';
 import {applyWarehouseMovement,applyWarehouseOperation,releaseOrderWarehousePicks} from '../warehouse/ledger';
 import {transitions,labels,governors,type State,type Status} from './types';
@@ -20,6 +21,8 @@ const schemas={
  marketing:marketingSettings,
  quantityOffers:quantityOffersPayload,
  productPromotion:productPromotionPayload,
+ issueConfirmationLink:issueConfirmationPayload,
+ customerConfirmation:customerConfirmationPayload,
  createOrder:z.object({name:str,phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/, 'Numéro tunisien invalide'),city:z.enum(governors as [string,...string[]]),address:str,source:z.enum(['Boutique','Facebook','Instagram','WhatsApp','TikTok','Manuel']),items:z.array(z.object({productId:str,quantity:qty})).min(1).max(100),coupon:z.string().trim().max(50).optional(),notes:z.string().max(2000).optional()}),
  transition:z.object({id:str,status:z.string(),carrier:z.string().max(160).optional(),carrierId:z.string().optional(),tracking:z.string().max(160).optional(),callbackAt:z.string().optional(),restock:z.boolean().optional()}),
  product:z.object({description:z.string().max(4000).optional(),imageUrl:productImageUrl,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
@@ -213,6 +216,26 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='settlement'){const o=s.orders.find(o=>o.id===p.id);if(!o||o.status!=='DELIVERED')throw Error('Commande non livrée');if(p.amount>o.total-o.collected)throw Error('Le montant dépasse le COD restant');o.collected+=p.amount;s.settlements.unshift({id:id(),orderId:o.id,amount:p.amount,reference:p.reference,at:now});o.events.push({at:now,label:'Encaissement COD : '+(p.amount/1000).toFixed(3)+' TND'});log('Encaissement '+o.reference);}
  if(action==='coupon'){if(s.coupons.some(c=>c.code===p.code.toUpperCase()))throw Error('Code déjà utilisé');s.coupons.push({...p,id:id(),code:p.code.toUpperCase(),used:0,active:true});log('Coupon : '+p.code);}
  if(action==='settings'){s.shop={...s.shop,...p};log('Paramètres boutique modifiés');}
+ if(action==='issueConfirmationLink'){
+  const o=s.orders.find(x=>x.id===p.orderId);if(!o)throw Error('Commande introuvable');
+  if(!isPendingConfirmation(o.status))throw Error('Cette commande n’est plus en attente de confirmation');
+  const valid=o.confirmation&&!o.confirmation.answer&&Date.parse(o.confirmation.expiresAt)>Date.parse(now);
+  if(!valid){o.confirmation={token:crypto.randomUUID(),issuedAt:now,expiresAt:new Date(Date.parse(now)+CONFIRMATION_TTL_MS).toISOString()};o.events.push({at:now,label:'Lien de confirmation préparé pour le client (WhatsApp)'});o.updatedAt=now;log(o.reference+' · lien de confirmation');}
+  return s;
+ }
+ if(action==='customerConfirmation'){
+  const o=confirmationTokenPattern.test(p.token)?s.orders.find(x=>x.confirmation?.token===p.token):undefined;
+  if(!o||!o.confirmation)throw Error('Lien de confirmation introuvable');
+  if(o.confirmation.answer)throw Error('Vous avez déjà répondu à cette demande de confirmation');
+  if(Date.parse(o.confirmation.expiresAt)<=Date.parse(now))throw Error('Ce lien de confirmation a expiré : contactez la boutique');
+  if(!isPendingConfirmation(o.status))throw Error('Cette commande a déjà été traitée par la boutique');
+  const id=o.id,note=(p.note||'').replace(/[\x00-\x1f\x7f]/g,' ').trim();
+  const next=p.answer==='CHANGE'?applyAction(s,'transition',{id,status:'CALLBACK',callbackAt:new Date(Date.parse(now)+30*60_000).toISOString()}):applyAction(s,'transition',{id,status:p.answer});
+  const target=next.orders.find(x=>x.id===id)!;
+  target.confirmation={...target.confirmation!,answer:p.answer,answeredAt:now,...(note?{note}:{})};
+  target.events.push({at:now,label:(p.answer==='CONFIRMED'?'Confirmée par le client':p.answer==='CANCELLED'?'Annulée par le client':'Modification demandée par le client : '+note)+' via le lien client'});
+  return next;
+ }
  if(action==='productPromotion'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');if(p.promotion){product.promotion=assertValidPromotion(product.price,p.promotion,new Date(now));log('Promotion '+product.name+' · '+(product.promotion.price/1000).toFixed(3)+' TND jusqu’au '+product.promotion.endsAt.slice(0,10));}else{delete product.promotion;log('Promotion arrêtée · '+product.name);}return s;}
  if(action==='quantityOffers'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');product.quantityOffers=assertValidOffers(product.price,p.offers);log('Offres de quantité modifiées · '+product.name);}
  if(action==='marketing'){s.shop={...s.shop,marketing:p};log('Pixels publicitaires et WhatsApp modifiés');}
