@@ -108,9 +108,10 @@ export async function writeIsolatedCommerce(
   ];
   assertMerchantAggregateQuotas(others,before,next,quotas);
   next.requests=[...before.requests.slice(-999),input.requestId];
+  next=await offloadHistory(tx,{kind:'SHOP',id:shopId},next);
   const updated=await tx.shopCommerce.updateMany({
    where:{shopId,version:row.version},
-   data:{data:(await offloadHistory(tx,{kind:'SHOP',id:shopId},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(updated.count!==1)throw new HttpError(409,'Modification concurrente. Actualisez puis réessayez.');
   await enqueueOrderMail(tx,{shopId},before,next,row.version+1);

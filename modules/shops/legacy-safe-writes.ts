@@ -49,9 +49,10 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
    before,next,quotas
   );
   next.requests=[...before.requests.slice(-999),input.requestId];
+  next=await offloadHistory(tx,{kind:'WORKSPACE',id:workspace.id},next);
   const update=await tx.workspace.updateMany({
    where:{ownerId,version:workspace.version},
-   data:{data:(await offloadHistory(tx,{kind:'WORKSPACE',id:workspace.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(update.count!==1)throw new HttpError(409,'Modification concurrente : réessayez');
   await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
