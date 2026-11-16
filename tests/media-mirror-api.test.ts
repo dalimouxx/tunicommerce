@@ -39,7 +39,7 @@ test('Media transition: private files, original URLs, authorization and canonica
   await t.test('Uploads preserve canonical bytes and original private access boundaries',async()=>{
    assert.equal((await upload('/api/v1/product-media','')).status,401);
    const response=await upload('/api/v1/product-media');assert.equal(response.status,201);const photo=await response.json();photoId=photo.id;photoUrl=photo.url;
-   const row=await prisma.productMedia.findUniqueOrThrow({where:{id:photoId}});assert.ok(row.storageKey);assert.equal(row.contentSha256,mediaDigest(png));assert.deepEqual(new Uint8Array(row.content),new Uint8Array(png));
+   const row=await prisma.productMedia.findUniqueOrThrow({where:{id:photoId}});assert.ok(row.storageKey);assert.equal(row.contentSha256,mediaDigest(png));assert.deepEqual(new Uint8Array(row.content!),new Uint8Array(png));
    assert.deepEqual(await readFile(join(root,row.storageKey!)),png);
    assert.equal((await get(photoUrl)).status,404);assert.equal((await get(photoUrl,otherCookie)).status,404);await assertPhoto();
    assert.equal('storageKey' in photo,false);assert.equal('contentSha256' in photo,false);
@@ -102,7 +102,7 @@ test('Media transition: private files, original URLs, authorization and canonica
    await rename(root,offline);
    try{
     const response=await upload('/api/v1/product-media');assert.equal(response.status,201);const photo=await response.json();
-    const row=await prisma.productMedia.findUniqueOrThrow({where:{id:photo.id}});assert.equal(row.storageKey,null);assert.deepEqual(new Uint8Array(row.content),new Uint8Array(png));
+    const row=await prisma.productMedia.findUniqueOrThrow({where:{id:photo.id}});assert.equal(row.storageKey,null);assert.deepEqual(new Uint8Array(row.content!),new Uint8Array(png));
     await assertPhoto(photo.url);await assertPhoto();
    }finally{await rename(offline,root);}
   });

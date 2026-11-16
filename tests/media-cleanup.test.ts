@@ -73,11 +73,11 @@ test('Private media cleanup: preview, retention, live references, bounded passes
    assert.equal(progress.cursor,null);assert.deepEqual(progress.lastCompletedAt,now);assert.ok(progress.version>=2);
    delete process.env.MEDIA_GC_ENABLED;
   });
-  await t.test('Canonical byte retention is checked before any cleanup',async()=>{
-   const target=await account(),copy=await object(target,Buffer.from('must-remain-without-canonical-guarantee'));
-   await prisma.$executeRaw`ALTER TABLE "ProductMedia" ALTER COLUMN "content" DROP NOT NULL`;
-   try{await assert.rejects(cleanupMediaCopies({workspaceId:target,apply:true},now),/Canonical media storage/);assert.ok(await exists(join(root,copy.storageKey)));}
-   finally{await prisma.$executeRaw`ALTER TABLE "ProductMedia" ALTER COLUMN "content" SET NOT NULL`;}
+  await t.test('The released-row pointer guarantee is checked before any cleanup',async()=>{
+   const target=await account(),copy=await object(target,Buffer.from('must-remain-without-pointer-guarantee'));
+   await prisma.$executeRaw`ALTER TABLE "ProductMedia" DROP CONSTRAINT "ProductMedia_content_or_copy"`;
+   try{await assert.rejects(cleanupMediaCopies({workspaceId:target,apply:true},now),/file pointer/);assert.ok(await exists(join(root,copy.storageKey)));}
+   finally{await prisma.$executeRaw`ALTER TABLE "ProductMedia" ADD CONSTRAINT "ProductMedia_content_or_copy" CHECK ("content" IS NOT NULL OR ("storageKey" IS NOT NULL AND "contentSha256" IS NOT NULL AND "contentReleasedAt" IS NOT NULL))`;}
   });
   await t.test('A failed storage pass cannot be reported as a successful complete cycle',async()=>{
    const original=await prisma.maintenanceProgress.findUniqueOrThrow({where:{id:'media-gc'}}),later=new Date(now.getTime()+86400000);

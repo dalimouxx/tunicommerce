@@ -13,11 +13,12 @@ export const mediaCleanupInput=z.object({workspaceId:z.uuid().optional(),after:z
 const empty=()=>({workspaces:0,scanned:0,eligible:0,deleted:0,kept:0,unrecognized:0,changed:0,unavailable:0,blocked:0});
 type Totals=ReturnType<typeof empty>;
 function combine(total:Totals,row:Totals){for(const key of Object.keys(total) as (keyof Totals)[])total[key]+=row[key];}
+/** Every row without database bytes must keep its file pointer, so the reference scan below protects released photos. */
 async function canonicalBytesRequired(tx:Prisma.TransactionClient){
- const rows=await tx.$queryRaw<{count:bigint}[]>`SELECT count(*) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid
-  JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('ProductMedia','ShopMedia')
-  AND a.attname='content' AND a.attnotnull AND NOT a.attisdropped`;
- if(rows[0]?.count!==BigInt(2))throw Error('Canonical media storage must remain mandatory before cleanup');
+ const rows=await tx.$queryRaw<{count:bigint}[]>`SELECT count(*) FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+  JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public' AND c.contype='c' AND c.convalidated
+  AND c.conname IN ('ProductMedia_content_or_copy','ShopMedia_content_or_copy')`;
+ if(rows[0]?.count!==BigInt(2))throw Error('Released media must keep a file pointer before cleanup');
 }
 /** Caller holds the workspace lock shared by uploads, replacements and copy migration. */
 async function cleanupWorkspace(tx:Prisma.TransactionClient,workspaceId:string,apply:boolean,now:Date){

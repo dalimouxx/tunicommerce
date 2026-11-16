@@ -308,7 +308,31 @@ class BackupTests(unittest.TestCase):
                 return "100000"
             if "pg_dump" in args:
                 kwargs["output"].write(b"PGDMP-fixture")
+            if "du" in args:
+                return "4096\t/srv/tunicom-media"
+            if "tar" in args:
+                kwargs["output"].write(self.media_archive())
+            if "node" in args:
+                self.markers.append(args[-2])
+        self.markers = []
+        self.photo = b"photo-bytes"
+        self.photo_name = None
         self.compose = patch.object(self.deployment, "compose", side_effect=compose).start()
+
+    def media_archive(self):
+        import hashlib
+        import tarfile
+        buffer = io.BytesIO()
+        name = self.photo_name or hashlib.sha256(self.photo).hexdigest()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            for folder in (".", "./v1", "./v1/" + "a" * 8):
+                info = tarfile.TarInfo(folder)
+                info.type = tarfile.DIRTYPE
+                archive.addfile(info)
+            info = tarfile.TarInfo("./v1/" + "a" * 8 + "/" + name)
+            info.size = len(self.photo)
+            archive.addfile(info, io.BytesIO(self.photo))
+        return buffer.getvalue()
 
     def test_only_validated_archive_is_promoted_and_marked_successful(self):
         with patch.object(deploy.subprocess, "run", return_value=Mock(returncode=0)) as validate:
@@ -326,11 +350,49 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(list((self.folder / "backups").iterdir()), [])
         self.assertFalse(json.loads((self.folder / "state" / "backup.json").read_text())["ok"])
 
-    def test_filesystem_media_never_produce_an_incomplete_database_only_backup(self):
+    def test_unknown_media_mode_never_produce_an_incomplete_database_only_backup(self):
         self.mode = "filesystem"
         with self.assertRaisesRegex(common.OperationError, "filesystem_media_backup_required"):
             self.deployment.backup()
         self.assertEqual(self.compose.call_count, 1)
+
+    def test_filesystem_media_are_archived_verified_then_marked_for_release(self):
+        self.mode = "filesystem-primary"
+        with patch.object(deploy.subprocess, "run", return_value=Mock(returncode=0)):
+            self.deployment.backup()
+        media = list((self.folder / "backups").glob("*.media.tar"))
+        self.assertEqual(len(media), 1)
+        self.assertEqual(len(list((self.folder / "backups").glob("*.dump"))), 1)
+        self.assertEqual(self.markers, ["0", "1"])
+        order = [call.args for call in self.compose.call_args_list]
+        tar = next(i for i, args in enumerate(order) if "tar" in args)
+        dump = next(i for i, args in enumerate(order) if "pg_dump" in args)
+        self.assertLess(tar, dump)
+        self.assertTrue(all(args[:4] == ("run", "--rm", "--no-deps", "-T") for args in order if "tar" in args or "node" in args))
+        self.assertTrue(json.loads((self.folder / "state" / "backup.json").read_text())["media"])
+
+    def test_corrupted_media_archive_keeps_release_blocked(self):
+        self.mode = "filesystem-mirror"
+        self.photo_name = "b" * 64
+        with patch.object(deploy.subprocess, "run", return_value=Mock(returncode=0)):
+            with self.assertRaisesRegex(common.OperationError, "backup_failed"):
+                self.deployment.backup()
+        self.assertEqual(list((self.folder / "backups").iterdir()), [])
+        self.assertEqual(self.markers, ["0"])
+        self.assertFalse(json.loads((self.folder / "state" / "backup.json").read_text())["ok"])
+
+    def test_media_archive_rejects_links_and_escaping_paths(self):
+        import tarfile
+        for kind, name in ((tarfile.SYMTYPE, "./v1/link"), (tarfile.REGTYPE, "../outside"), (tarfile.REGTYPE, "/etc/passwd")):
+            path = self.folder / "bad.tar"
+            with tarfile.open(path, "w") as archive:
+                info = tarfile.TarInfo(name)
+                info.type = kind
+                if kind == tarfile.SYMTYPE:
+                    info.linkname = "/etc/passwd"
+                archive.addfile(info, io.BytesIO(b""))
+            with self.assertRaisesRegex(common.OperationError, "media_archive_invalid"):
+                deploy.Deployment.validate_media_archive(path)
 
 
 if __name__ == "__main__":

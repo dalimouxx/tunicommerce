@@ -2,7 +2,7 @@
 
 ## Périmètre de cette étape
 
-Les photos de produits, logos et bannières peuvent posséder une copie sur un système de fichiers privé et persistant. Les accueils, pages publiées et domaines de boutique réutilisent les mêmes contrôles d’accès et les mêmes URL. **PostgreSQL conserve tous les originaux** : aucune suppression des octets n’est effectuée par cette version. Elle permet de déplacer les lectures d’images vers le disque et de tester la migration avant de réduire le stockage en base.
+Les photos de produits, logos et bannières peuvent posséder une copie sur un système de fichiers privé et persistant. Les accueils, pages publiées et domaines de boutique réutilisent les mêmes contrôles d’accès et les mêmes URL. **PostgreSQL conserve tous les originaux** tant que l’exploitant ne lance pas la libération décrite plus bas (mode `filesystem-primary`, sur demande uniquement). Les lectures d’images peuvent ainsi passer par le disque et la migration être testée avant de réduire le stockage en base.
 
 Les écritures du catalogue, des commandes et des clients ne sont pas migrées par ce lot. Aucun prestataire de stockage objet n’est choisi. Cette option est destinée à une instance VPS avec un disque local fiable, pas à plusieurs instances dotées chacune de leur propre disque.
 
@@ -45,7 +45,7 @@ Codes de sortie : 0 si le passage ne rencontre aucune anomalie, 1 pour copies ma
 
 Les anciens fichiers ne sont pas effacés au moment d’un remplacement ou d’une suppression de photo. Un nettoyage contrôlé peut retirer les copies sans référence après sept jours, en tenant compte de la date de modification et du dernier changement de métadonnées du fichier. Les fichiers encore référencés par une photo ou un logo sont conservés, de même que les fichiers récents, les liens symboliques et les noms inconnus. Un répertoire dépassant 512 entrées est laissé à l’inspection de l’exploitant. Aucun répertoire n’est supprimé.
 
-Le nettoyage prend le même verrou de compte que les dépôts, remplacements et copies. Avant d’effacer un candidat, il vérifie à nouveau son identité, sa taille et ses dates ; un changement entraîne son report. Il vérifie aussi que les colonnes d’octets PostgreSQL restent obligatoires : une future migration qui retire cette garantie bloque ce nettoyage jusqu’à adaptation de sa politique.
+Le nettoyage prend le même verrou de compte que les dépôts, remplacements et copies. Avant d’effacer un candidat, il vérifie à nouveau son identité, sa taille et ses dates ; un changement entraîne son report. Il vérifie aussi que les contraintes `ProductMedia_content_or_copy` et `ShopMedia_content_or_copy` sont en place : une ligne sans octets en base garde obligatoirement sa référence de fichier. Le fichier d’une photo libérée est donc toujours « référencé » et n’est jamais effacé. Si ces contraintes disparaissent, le nettoyage est bloqué.
 
 L’aperçu ne supprime rien :
 
@@ -61,7 +61,40 @@ La planification est désactivée par défaut. Sur le VPS, après aperçu et con
 
 Les suppressions concernent des copies sans référence, pas les lignes PostgreSQL ou les images conservées par les historiques. Les fichiers orphelins d’anciens médias remplacés peuvent disparaître après le délai : ce répertoire ne remplace pas une sauvegarde historique. Les originaux des médias courants restent en base et permettent leur récupération. Les opérations sur disque et PostgreSQL ne constituent pas une transaction atomique ; vérifier le résultat de chaque passage et superviser les erreurs.
 
-La sauvegarde PostgreSQL existante contient toujours les octets des médias et permet le retour au mode `database`. Tester une restauration de cette sauvegarde sur une base isolée et vérifier les images. Une future suppression des octets PostgreSQL exigera auparavant la sauvegarde coordonnée du disque, son exercice de restauration, un traitement sûr des fichiers sans référence et une migration réversible supplémentaire. Ces travaux ne sont pas déclarés terminés ici.
+Dès que le mode n’est plus `database`, la sauvegarde du VPS archive aussi le volume des médias (voir plus bas). Tant qu’aucune photo n’est libérée, la sauvegarde PostgreSQL contient encore tous les octets et permet à elle seule le retour au mode `database`. Tester une restauration sur une base isolée et vérifier les images.
+
+## Libérer la base des photos (option, sur demande)
+
+Objectif : alléger PostgreSQL en ne gardant la photo que sur le disque privé. **Rien ne se fait automatiquement** : il faut le mode `filesystem-primary` et lancer la commande soi-même.
+
+Garde-fous :
+
+- `release` refuse tout si `MEDIA_STORAGE_MODE` n’est pas `filesystem-primary`.
+- `release` refuse tout si la dernière sauvegarde des photos n’est pas réussie ou date de plus de 30 heures. La sauvegarde du VPS écrit ce témoin dans `/srv/tunicom-media/.backup-status.json`. Elle le remet à « en cours » dès son démarrage, ce qui bloque toute libération pendant qu’elle tourne.
+- Une ligne n’est libérée que si son fichier est relu et identique **octet pour octet** à l’original en base, sous le verrou du compte. Sinon elle est ignorée (`skipped`) et garde ses octets.
+- PostgreSQL refuse d’effacer des octets dont la référence ne correspond pas à leur SHA-256. Il refuse aussi de changer la référence ou la taille d’une photo libérée, ou d’insérer une photo sans octets.
+- Une photo libérée est lue **uniquement** sur le disque. Si le fichier manque ou est altéré, l’image est indisponible et une erreur serveur est journalisée. Aucune autre image n’est servie à la place.
+
+```sh
+npm run media:storage -- --action=copy --kind=product --limit=25
+npm run media:storage -- --action=verify --kind=product --limit=25
+npm run media:storage -- --action=release --kind=product --limit=25 [--workspace-id=UUID]
+npm run media:storage -- --action=status
+```
+
+Commencer par un seul compte (`--workspace-id`), contrôler les images de la vitrine, puis continuer avec `--after=UUID`. Faire de même avec `--kind=brand`. `status` indique le nombre de photos libérées, `canonicalBytesRetained` (`false` dès qu’une photo est libérée) et `mediaBackupFresh`. Code de sortie 1 si des lignes ont été ignorées.
+
+**Retour arrière** : `--action=restore` remet en base les octets relus et vérifiés sur le disque, par lots de 25. C’est obligatoire avant de revenir au mode `database` si des photos sont libérées. Une photo dont le fichier manque reste libérée et est comptée `unavailable` : la récupérer depuis l’archive des médias.
+
+**Restaurer une sauvegarde** : avec des photos libérées, la base seule ne suffit plus. Il faut restaurer **ensemble** le `.dump` et le `.media.tar` portant le même horodatage. L’archive des fichiers est prise *avant* la base. Toute photo libérée avant la sauvegarde a donc son fichier dans l’archive :
+
+```sh
+docker compose run --rm --no-deps -T --entrypoint tar web -C /srv/tunicom-media -xf - < /var/backups/tunicom/<horodatage>-<run>.media.tar
+```
+
+Ensuite, lancer `verify` pour les deux types. Après le délai de nettoyage (7 jours), une ancienne archive de base ne retrouve ses fichiers que dans **sa propre** archive de médias.
+
+Limites : les sauvegardes restent locales au VPS, sans copie hors site ni rétention automatique (voir `ops/vps/README.md`). Avant de libérer une quantité importante de photos, mettre en place une copie hors site et faire un exercice de restauration complet (base et médias).
 
 Références techniques : [fichiers Node.js](https://nodejs.org/download/release/v24.18.0/docs/api/fs.html), [SHA-256 PostgreSQL 18](https://www.postgresql.org/docs/18/functions-binarystring.html).
 

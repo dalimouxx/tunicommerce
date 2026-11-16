@@ -120,26 +120,84 @@ class Deployment:
                 return False
         return health(self.config["health_url"], {"server": "ok", "database": "ok"})
 
+    MEDIA_ROOT = "/srv/tunicom-media"
+    # Fixed script; only two integers are passed. The app refuses to release DB bytes unless this says ok < 30 h.
+    MARKER_SCRIPT = ("const f=require('fs'),p='/srv/tunicom-media/.backup-status.json',t=p+'.tmp';"
+                     "f.writeFileSync(t,JSON.stringify({ok:process.argv[1]==='1',at:Number(process.argv[2])}),{mode:0o600});"
+                     "f.renameSync(t,p)")
+
+    def media_tool(self, entrypoint, *args, **kwargs):
+        """One-off container from the active web image with the media volume; works while web is stopped."""
+        return self.compose("run", "--rm", "--no-deps", "-T", "--entrypoint", entrypoint, "web", *args, **kwargs)
+
+    def media_marker(self, ok):
+        self.media_tool("node", "-e", self.MARKER_SCRIPT, "1" if ok else "0", str(int(time.time())), timeout=120)
+
+    @staticmethod
+    def validate_media_archive(path):
+        """Regular files and directories only, inside the media root; every stored photo matches its SHA-256 name."""
+        import hashlib
+        import tarfile
+        names = 0
+        with tarfile.open(path, "r:") as archive:
+            for member in archive:
+                name = member.name[2:] if member.name.startswith("./") else member.name
+                parts = name.split("/") if name not in ("", ".") else []
+                if name.startswith("/") or ".." in parts or not (member.isfile() or member.isdir()):
+                    raise OperationError("media_archive_invalid")
+                if member.isfile() and len(parts) == 3 and parts[0] == "v1" and re.fullmatch(r"[0-9a-f]{64}", parts[2]):
+                    digest = hashlib.sha256()
+                    with archive.extractfile(member) as stream:
+                        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                            digest.update(chunk)
+                    if digest.hexdigest() != parts[2]:
+                        raise OperationError("media_archive_invalid")
+                    names += 1
+        return names
+
     def backup(self):
-        """DB-backed media only; no silent partial backup for filesystem media."""
+        """PostgreSQL dump, plus a verified archive of the media volume whenever photos may live on disk."""
         configuration = json.loads(self.compose("config", "--format", "json", capture=True))
-        if configuration["services"]["web"]["environment"].get("MEDIA_STORAGE_MODE") != "database":
+        mode = configuration["services"]["web"]["environment"].get("MEDIA_STORAGE_MODE")
+        if mode not in ("database", "filesystem-mirror", "filesystem-primary"):
             raise OperationError("filesystem_media_backup_required")
+        media = mode != "database"
         size = int(self.compose("exec", "-T", "db", "psql", "-U", "tunicom_admin", "-d", "tunicom",
                                "-Atc", "SELECT pg_database_size(current_database())", capture=True))
         folder = BACKUPS
         folder.mkdir(mode=0o700, parents=True, exist_ok=True)
-        if shutil.disk_usage(folder).free < size * 2 + 4 * 1024**3:
+        media_size = 0
+        if media:
+            # Marks the backup in progress first: no photo may be released from PostgreSQL meanwhile.
+            try:
+                self.media_marker(False)
+                media_size = int(self.media_tool("du", "-sb", self.MEDIA_ROOT, capture=True).split()[0])
+            except (OperationError, ValueError, IndexError):
+                atomic_json(STATE / "backup.json", {"ok": False, "at": int(time.time()), "media": True})
+                raise OperationError("backup_failed") from None
+        if shutil.disk_usage(folder).free < (size + media_size) * 2 + 4 * 1024**3:
             raise OperationError("insufficient_backup_space")
         name = str(int(time.time())) + "-" + self.request["run_id"] + ".dump"
         temporary = folder / (name + ".partial")
+        media_name = name[:-5] + ".media.tar"
+        media_temporary = folder / (media_name + ".partial")
         # pg_dump --file on host is impossible; stream directly into a private file.
         # RLIMIT_FSIZE bounds an unexpectedly expanding database during the dump.
         import resource
         previous_limit = resource.getrlimit(resource.RLIMIT_FSIZE)
-        limit = min(previous_limit[1], size * 2 + 1024**3) if previous_limit[1] != resource.RLIM_INFINITY else size * 2 + 1024**3
+        wanted = max(size, media_size) * 2 + 1024**3
+        limit = min(previous_limit[1], wanted) if previous_limit[1] != resource.RLIM_INFINITY else wanted
         try:
             resource.setrlimit(resource.RLIMIT_FSIZE, (limit, previous_limit[1]))
+            if media:
+                # Files first, database second: every row released before this backup still has its file in the archive.
+                with media_temporary.open("xb") as stream:
+                    os.chmod(media_temporary, 0o600)
+                    self.media_tool("tar", "-C", self.MEDIA_ROOT, "--exclude=./.backup-status.json",
+                                    "--exclude=./.backup-status.json.tmp", "-cf", "-", ".", output=stream, timeout=900)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                self.validate_media_archive(media_temporary)
             with temporary.open("xb") as stream:
                 os.chmod(temporary, 0o600)
                 self.compose("exec", "-T", "db", "pg_dump", "-U", "tunicom_admin", "-d", "tunicom",
@@ -154,14 +212,19 @@ class Deployment:
                         "exec", "-T", "db", "pg_restore", "--list"]
                 subprocess.run(args, env=ENV, stdin=stream, stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL, timeout=120, check=True)
+            if media:
+                media_temporary.replace(folder / media_name)
             temporary.replace(folder / name)
-            atomic_json(STATE / "backup.json", {"ok": True, "at": int(time.time())})
+            if media:
+                self.media_marker(True)
+            atomic_json(STATE / "backup.json", {"ok": True, "at": int(time.time()), "media": media})
         except Exception:
-            atomic_json(STATE / "backup.json", {"ok": False, "at": int(time.time())})
+            atomic_json(STATE / "backup.json", {"ok": False, "at": int(time.time()), "media": media})
             raise OperationError("backup_failed") from None
         finally:
             resource.setrlimit(resource.RLIMIT_FSIZE, previous_limit)
             temporary.unlink(missing_ok=True)
+            media_temporary.unlink(missing_ok=True)
 
     def run(self):
         previous = private_json(STATE / "current.json")
