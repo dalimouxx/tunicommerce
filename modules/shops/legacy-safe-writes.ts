@@ -1,3 +1,4 @@
+import {syncReliabilityOnWrite} from '../reliability/service';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../storage/client';
@@ -55,6 +56,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
   await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
   await syncCatalog(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.catalogVersion);
   await syncActivity(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.activityVersion);
+  await syncReliabilityOnWrite(tx,{workspaceId:workspace.id},before,next);
   await enqueueBusinessWebhooks(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
   return {state:next,version:workspace.version+1,alreadyApplied:false};
  },{timeout:15000});
