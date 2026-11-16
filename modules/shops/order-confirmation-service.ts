@@ -1,4 +1,5 @@
 import {Prisma} from '@prisma/client';
+import {offloadHistory} from '../commerce/history';
 import {createHash} from 'node:crypto';
 import {prisma} from '../storage/client';
 import {HttpError,applicationOrigin} from '../auth/http';
@@ -44,7 +45,7 @@ export async function submitCustomerConfirmation(slug:string,token:string,input:
   let next:State;
   try{next=applyAction(state,'customerConfirmation',{token,answer:input.answer,...(input.note?{note:input.note}:{})});}
   catch(error){throw new HttpError(409,error instanceof Error?error.message:'Réponse impossible');}
-  const saved=await tx.shopCommerce.updateMany({where:{shopId:shop.id,version:current.commerce.version},data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}});
+  const saved=await tx.shopCommerce.updateMany({where:{shopId:shop.id,version:current.commerce.version},data:{data:(await offloadHistory(tx,{kind:'SHOP',id:shop.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}});
   if(saved.count!==1)throw new HttpError(409,'Modification concurrente, réessayez');
   return {answer:input.answer,alreadyApplied:false};
  },{timeout:15000});

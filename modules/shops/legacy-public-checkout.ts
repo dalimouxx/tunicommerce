@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {offloadHistory} from '../commerce/history';
 import {enqueueOrderMail} from '../messaging/order-mail-service';
 import {syncCatalog} from './catalog-index-service';
 import {syncActivity} from './activity-index-service';
@@ -68,7 +69,7 @@ export async function createLegacyPublicOrder(slug:string,input:LegacyPublicChec
   next.orders[0].publicReceiptId=receiptId;
   await tx.workspace.update({
    where:{id:row.id},
-   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:(await offloadHistory(tx,{kind:'WORKSPACE',id:row.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   await enqueueOrderMail(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.version+1);
   await syncCatalog(tx,{workspaceId:row.id,ownerId:row.ownerId},before,next,row.catalogVersion);

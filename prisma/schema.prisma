@@ -625,3 +625,30 @@ model CustomerDeliveryOutcome {
  @@index([phoneKey])
  @@index([contestStatus,contestedAt])
 }
+
+model CommerceJournalEntry {
+ id         String @id @default(uuid())
+ sourceKind String
+ sourceId   String
+ entryId    String
+ at         DateTime
+ label      String
+ createdAt  DateTime @default(now())
+ @@unique([sourceKind,sourceId,entryId])
+ @@index([sourceKind,sourceId,at(sort: Desc)])
+}
+
+model CommerceStockMovement {
+ id         String @id @default(uuid())
+ sourceKind String
+ sourceId   String
+ entryId    String
+ productId  String
+ label      String
+ quantity   Int
+ at         DateTime
+ orderId    String?
+ createdAt  DateTime @default(now())
+ @@unique([sourceKind,sourceId,entryId])
+ @@index([sourceKind,sourceId,at(sort: Desc)])
+}

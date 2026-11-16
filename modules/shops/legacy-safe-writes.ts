@@ -1,4 +1,5 @@
 import {syncReliabilityOnWrite} from '../reliability/service';
+import {offloadHistory} from '../commerce/history';
 import {Prisma} from '@prisma/client';
 import {z} from 'zod';
 import {prisma} from '../storage/client';
@@ -50,7 +51,7 @@ export async function mutateLegacyCommerce(ownerId:string,input:LegacyInput){
   next.requests=[...before.requests.slice(-999),input.requestId];
   const update=await tx.workspace.updateMany({
    where:{ownerId,version:workspace.version},
-   data:{data:next as unknown as Prisma.InputJsonValue,version:{increment:1}}
+   data:{data:(await offloadHistory(tx,{kind:'WORKSPACE',id:workspace.id},next)) as unknown as Prisma.InputJsonValue,version:{increment:1}}
   });
   if(update.count!==1)throw new HttpError(409,'Modification concurrente : réessayez');
   await enqueueOrderMail(tx,{workspaceId:workspace.id,ownerId},before,next,workspace.version+1);
