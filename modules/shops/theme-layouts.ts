@@ -24,3 +24,12 @@ export function appearanceLayout(theme:unknown):ThemeLayout{
  if(typeof theme==='string'&&theme===theme.toLowerCase()&&Object.hasOwn(signatures,theme.toUpperCase()))return {...signatures[theme.toUpperCase()]};
  return {...base};
 }
+
+const heroLabels:Record<ThemeLayout['hero'],string>={split:'Mise en page classique',bento:'Accueil en mosaïque de cases',fullbleed:'Couverture plein cadre, titre géant',arch:'Visuel en arche',dunes:'Accueil sur dunes animées',marquee:'Bandeau défilant et bande de produits'};
+const cardLabels:Record<ThemeLayout['cards'],string>={standard:'Cartes produits sobres',lift:'Couleurs et typographie propres',glass:'Cartes en verre dépoli',editorial:'Cartes éditoriales sans bordure',flash:'Cartes « flash » avec badge d’offre',tile:'Cartes arrondies, 1er produit en grand'};
+const motifLabels:Record<Exclude<ThemeLayout['motif'],'none'>,string>={zellige:'Motif zellige animé',dunes:'Dunes qui ondulent',aurora:'Halos de lumière en mouvement',grain:'Grain photo',stripes:'Rayures animées'};
+/** Plain-language summary shown before choosing a theme, so merchants know what will change. */
+export function themeHighlights(layout:ThemeLayout):string[]{
+ const cards=layout.hero==='arch'&&layout.cards==='tile'?'Cartes à liseré doré':cardLabels[layout.cards];
+ return [heroLabels[layout.hero],cards,...(layout.motif==='none'?[]:[motifLabels[layout.motif]])];
+}

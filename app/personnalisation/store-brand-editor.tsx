@@ -6,12 +6,16 @@ import styles from './brand-editor.module.css';
 import {accents,defaultPresentation,themes,type AppearanceInput,type StoreTheme} from '../../modules/appearance/validation';
 import {appearanceThemeDetails,appearanceAccentText} from '../../modules/appearance/theme-catalog';
 import StorefrontMotionToggle from '../../components/storefront-motion-toggle';
+import ThemeMotif from '../../components/theme-motif';
+import {themeClass} from '../../components/storefront-themes';
+import {appearanceLayout,isNewLayoutTheme,themeHighlights} from '../../modules/shops/theme-layouts';
 
 const themeNames=appearanceThemeDetails;
 const paletteLabels:Record<string,string>={
  '#21815F':'Vert émeraude','#244A77':'Bleu nuit','#893F49':'Rouge brique',
  '#633D81':'Violet','#A0511D':'Terracotta','#293442':'Gris ardoise',
- '#C9FF4A':'Vert néon','#B52E45':'Cerise','#1749C5':'Bleu électrique','#5E35B6':'Violet Groove'
+ '#C9FF4A':'Vert néon','#B52E45':'Cerise','#1749C5':'Bleu électrique','#5E35B6':'Violet Groove',
+ '#1F4FA0':'Bleu de Nabeul','#9A4A1C':'Ocre Sahara','#0A66D9':'Bleu Bento','#D7261E':'Rouge Souk','#E8A6FF':'Lilas Aurora','#141414':'Noir Magazine'
 };
 const empty:AppearanceInput={
  ...defaultPresentation,logoUrl:'',bannerUrl:'',description:''
@@ -122,7 +126,7 @@ export default function StoreBrandEditor(){
     <div className={styles.layout}>
      <form className={styles.settings} onSubmit={save}>
       <section className={styles.panel}>
-       <div className={styles.sectionHead}><span className={styles.sectionIcon}><LayoutTemplate size={18}/></span><div><h2>1. Choisir un thème</h2><p>Huit thèmes, dont Pulse, Sorbet, Chrome et Groove animés. Vos anciens styles restent disponibles.</p></div></div>
+       <div className={styles.sectionHead}><span className={styles.sectionIcon}><LayoutTemplate size={18}/></span><div><h2>1. Choisir un thème</h2><p>{themes.length} thèmes animés, dont six avec leur propre mise en page (Médina, Sahara, Bento, Souk Flash, Aurora, Magazine). L’aperçu à droite change dès que vous cliquez sur un thème, avant tout enregistrement.</p></div></div>
        <div className={styles.themes}>
         {themes.map(theme=><button type="button" key={theme} onClick={()=>{setForm(old=>({...old,theme,accent:themeNames[theme].accent||old.accent}));setError('');setSuccess('');}} aria-pressed={form.theme===theme}
           className={styles.themeChoice+' '+(form.theme===theme?styles.selected:'')}>
@@ -131,8 +135,10 @@ export default function StoreBrandEditor(){
           </span>
           <span className={styles.themeName}>{themeNames[theme].name}{themeNames[theme].animated&&<small>Animé</small>}{form.theme===theme&&<Check size={15}/>}</span>
           <span className={styles.themeDescription}>{themeNames[theme].description}</span>
+          <span className={styles.themeHighlights}>{themeHighlights(appearanceLayout(theme)).join(' · ')}</span>
          </button>)}
        </div>
+       {isNewLayoutTheme(form.theme)&&<a className={styles.demoLink} href={'/themes/'+form.theme.toUpperCase()} target="_blank" rel="noopener">Voir la démo complète de {themeNames[form.theme].name} ↗</a>}
       </section>
       <section className={styles.panel}>
        <div className={styles.sectionHead}><span className={styles.sectionIcon}><Palette size={18}/></span><div><h2>2. Palette de couleurs</h2><p>Couleurs sélectionnées pour conserver des boutons lisibles.</p></div></div>
@@ -188,15 +194,16 @@ export default function StoreBrandEditor(){
        </button>
       </div>
       <div className={styles.previewShell+(mobile?' '+styles.previewMobile:'')} style={style}>
-       <div className={styles.mock+' '+themeStyle} data-theme={form.theme} data-motion-root>
+       <div className={[styles.mock,themeStyle,themeClass(form.theme)].filter(Boolean).join(' ')} data-theme={form.theme} data-hero={appearanceLayout(form.theme).hero} data-cards={appearanceLayout(form.theme).cards} data-new-theme={isNewLayoutTheme(form.theme)||undefined} data-motion-root>
+        <ThemeMotif motif={appearanceLayout(form.theme).motif}/>
         {themeNames[form.theme].animated&&<div className={styles.previewMotion}><StorefrontMotionToggle/></div>}
         <div className={styles.mockAnnouncement}>{form.eyebrow||'BOUTIQUE EN TUNISIE'}</div>
         <div className={styles.mockNav}><span className={styles.mockBrand}>
          {form.logoUrl?<img src={form.logoUrl} alt="Aperçu du logo" referrerPolicy="no-referrer"/>:<Store size={18}/>}
          {data?.shopName||'Ma boutique'}</span><span>Panier · 0</span></div>
         {form.bannerUrl&&<div className={styles.mockBanner}><img src={form.bannerUrl} alt="Aperçu de la bannière" referrerPolicy="no-referrer"/></div>}
-        <div className={styles.mockHero}><span>COLLECTIONS EN LIGNE</span><h2>{data?.shopName||'Votre nouvelle boutique'}</h2><p>{form.description||form.tagline||'Votre sélection de produits, livrée en Tunisie.'}</p></div>
-        <div className={styles.mockProducts}>{sample.slice(0,3).map((product,i)=><div key={i} className={styles.mockProduct}>
+        <div className={styles.mockHero+' platform-hero'}><span>COLLECTIONS EN LIGNE</span><h2>{data?.shopName||'Votre nouvelle boutique'}</h2><p>{form.description||form.tagline||'Votre sélection de produits, livrée en Tunisie.'}</p></div>
+        <div className={styles.mockProducts}>{sample.slice(0,3).map((product,i)=><div key={i} className={styles.mockProduct+' product-tile'}>
          {product.imageUrl?<img src={product.imageUrl} alt="" referrerPolicy="no-referrer"/>:<div className={styles.mockArt}><ShoppingBag size={27}/></div>}
          <strong>{product.name}</strong><small>{new Intl.NumberFormat('fr-TN',{minimumFractionDigits:3}).format(product.price/1000)} TND</small>
          <div className={styles.mockButton}>Ajouter au panier <ArrowRight size={12}/></div>

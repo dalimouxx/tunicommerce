@@ -2,6 +2,8 @@
 export function domainRoute(path:string,slug:string,method:string,legacySlug?:string):{kind:'pass'|'rewrite'|'redirect'|'deny'|'media'|'legacyTracking'|'platformRedirect';path?:string}{
  if((method==='GET'||method==='HEAD')&&/^\/api\/media\/(?:products|assets)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path))return {kind:'media'};
  if(path.startsWith('/_next/static/')||path==='/favicon.svg')return method==='GET'||method==='HEAD'?{kind:'pass'}:{kind:'deny'};
+ const seo=path==='/robots.txt'?'robots':path==='/sitemap.xml'?'sitemap':null;
+ if(seo)return method==='GET'||method==='HEAD'?{kind:'rewrite',path:'/api/v1/public/seo/'+encodeURIComponent(slug)+'/'+seo}:{kind:'deny'};
  if(legacySlug)return legacyDomainRoute(path,slug,legacySlug,method);
  const base='/vitrines/'+encodeURIComponent(slug);
  const suffix=path===base?'':path.startsWith(base+'/')?path.slice(base.length):null;
@@ -11,7 +13,7 @@ export function domainRoute(path:string,slug:string,method:string,legacySlug?:st
  const api='/api/v1/public/vitrines/'+encodeURIComponent(slug);
  if((method==='GET'||method==='HEAD')&&path.startsWith(api+'/pages/')&&/^[a-z0-9]+(?:-[a-z0-9]+)*\/images\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(path.slice((api+'/pages/').length)))return {kind:'pass'};
  if((method==='GET'||method==='HEAD')&&path.startsWith(api+'/images/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(path.slice((api+'/images/').length)))return {kind:'pass'};
- if(method==='POST'&&(path===api+'/checkout'||path.startsWith(api+'/suivi/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/requests$/.test(path.slice((api+'/suivi/').length))))return {kind:'pass'};
+ if(method==='POST'&&(path===api+'/checkout'||path.startsWith(api+'/suivi/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/(?:requests|avis)$/.test(path.slice((api+'/suivi/').length))))return {kind:'pass'};
  return {kind:'deny'};
 }
 

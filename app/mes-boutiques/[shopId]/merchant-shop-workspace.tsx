@@ -6,6 +6,8 @@ import ShopInventory from './shop-inventory';
 import ShopWarehouses from './shop-warehouses';
 import ShopCoupons from './shop-coupons';
 import ShopQuantityOffers from './shop-quantity-offers';
+import ShopPromotions from './shop-promotions';
+import ShopReviews from './shop-reviews';
 import ShopCallCenterAlerts from './shop-callcenter-alerts';
 import ShopAgentAssignment from './shop-agent-assignment';
 import ShopConfirmationDesk from './shop-confirmation-desk';
@@ -60,11 +62,11 @@ export default function MerchantShopWorkspace({shopId}:{shopId:string}){
    <h3>{current.label}</h3>
    <p>{current.description} <a className={styles.workspaceDeepLink} href={merchantWorkspaceHash(active)}>Lien direct vers cet espace</a></p>
    {active==='orders'&&<ShopOrders shopId={shopId}/>}
-   {active==='catalog'&&<><ShopInventory shopId={shopId}/><ShopQuantityOffers shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/></>}
+   {active==='catalog'&&<><ShopInventory shopId={shopId}/><ShopQuantityOffers shopId={shopId}/><ShopPromotions shopId={shopId}/><ShopWarehouses shopId={shopId}/><ShopCoupons shopId={shopId}/></>}
    {active==='callcenter'&&<><ShopAgentAssignment shopId={shopId}/><ShopConfirmationDesk shopId={shopId}/><ShopCustomerRequests shopId={shopId}/></>}
    {active==='delivery'&&<><ShopCarrierConfig shopId={shopId}/><ShopFulfillment shopId={shopId}/><ShopCarrierHandoffs shopId={shopId}/></>}
    {active==='finance'&&<><ShopExpenses shopId={shopId}/><ShopCodSettlements shopId={shopId}/><ShopCarrierStatements shopId={shopId}/><ShopCodMatching shopId={shopId}/><ShopReturns shopId={shopId}/></>}
-   {active==='growth'&&<><ShopCustomers shopId={shopId}/><ShopInsights shopId={shopId}/><ShopStorefrontThemes shopId={shopId}/></>}
+   {active==='growth'&&<><ShopCustomers shopId={shopId}/><ShopInsights shopId={shopId}/><ShopReviews shopId={shopId}/><ShopStorefrontThemes shopId={shopId}/></>}
   </div>
  </section>;
 }

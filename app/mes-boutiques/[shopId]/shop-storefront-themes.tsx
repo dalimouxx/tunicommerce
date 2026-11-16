@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {useEffect,useState} from 'react';
+import {storefrontLayout,themeHighlights} from '../../../modules/shops/theme-layouts';
 import {storefrontPalette,storefrontSectors,storefrontThemesForSector,storefrontThemeCodes,animatedStorefrontTheme,type StorefrontThemeCode,type StorefrontSector} from '../../../modules/shops/storefront-themes';
 import ProductScene from '../../../components/product-scene';
 import styles from './storefront-theme-gallery.module.css';
@@ -41,7 +42,7 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
   <header className={styles.header}>
    <div><p className={styles.eyebrow}>PERSONNALISATION DE VOTRE VITRINE</p>
     <h2 id="storefront-theme-title">Les thèmes Tunicom Studio</h2>
-    <p>{storefrontThemeCodes.length} univers, dont quatre nouveaux thèmes animés. Mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
+    <p>{storefrontThemeCodes.length} univers animés, dont six avec leur propre mise en page (Médina, Sahara, Bento, Souk Flash, Aurora, Magazine). Les puces sous chaque thème indiquent ce qui change ; « Voir la démo » l’ouvre en grand, « Essayer avec mes produits » l’applique à votre boutique sans l’enregistrer. Mise en page responsive, collection produits et checkout tunisien. Choisissez un design sans modifier vos produits, stocks ni commandes.</p>
    </div>
    <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu'}
     className={styles.previewLink}>Voir mon aperçu privé</Link>
@@ -53,9 +54,9 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
   <p className={styles.matchCount} role="status">{storefrontThemesForSector(sector).length} thèmes recommandés pour ce secteur. Tous les thèmes restent disponibles.</p>
   <div className={styles.grid}>
    {storefrontThemesForSector(sector).map(code=>{
-    const t=storefrontPalette(code);
+    const t=storefrontPalette(code),layout=storefrontLayout(code);
     return <article key={code} className={styles.themeCard} data-active={active===code}>
-     <div className={styles.miniSite} data-theme={code} style={{
+     <div className={styles.miniSite} data-theme={code} data-hero={layout.hero} data-cards={layout.cards} style={{
       background:t.background,color:t.foreground,
       ['--preview-accent' as string]:t.accent,
       ['--preview-accent-text' as string]:t.accentText,
@@ -76,10 +77,12 @@ export default function ShopStorefrontThemes({shopId}:{shopId:string}){
      </div>
      <div className={styles.themeFooter}>
       <div><h3>{t.name} {active===code&&<span className={styles.activeTag}>Actif</span>} {animatedStorefrontTheme(code)&&<span className={styles.activeTag}>Animé</span>}</h3>
-       <p>{t.description}</p></div>
+       <p>{t.description}</p>
+       <ul className={styles.highlights} aria-label={'Ce que change le thème '+t.name}>{themeHighlights(layout).map(item=><li key={item}>{item}</li>)}</ul></div>
       <div className={styles.themeActions}>
+       <a href={'/themes/'+code} target="_blank" rel="noopener" className={styles.demoLink}>Voir la démo ↗</a>
        <Link href={'/mes-boutiques/'+encodeURIComponent(shopId)+'/apercu?theme='+code}
-        className={styles.tryTheme}>Essayer sans enregistrer</Link>
+        className={styles.tryTheme}>Essayer avec mes produits</Link>
        <button type="button" disabled={loading||busy||active===code}
         onClick={()=>void save(code)}>
         {active===code?'Thème sélectionné':busy?'Enregistrement…':'Choisir ce thème'}

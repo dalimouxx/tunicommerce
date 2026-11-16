@@ -36,3 +36,18 @@
  .root [data-reveal]{opacity:1!important;transform:none!important}
  .root [data-part="product-card"]:hover,.root [data-part="product-card"]:hover [data-part="product-media"] img,.root [data-part="product-card"]:hover img[data-part="product-media"],.root [data-part="cta"]:active{transform:none}
 }
+
+/* Dated promotions: struck-through regular price, percentage, end date; live countdown where marked. */
+.root [data-part="promo"]{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.root [data-part="promo-regular"]{opacity:.6;font-weight:500;font-size:.78em}
+.root [data-part="promo-badge"]{background:var(--store-accent);color:var(--store-accent-text,#fff);border-radius:999px;padding:2px 8px;font-size:.62em;font-weight:800;line-height:1.5}
+.root [data-part="promo-ends"]{flex-basis:100%;font-size:.6em;font-weight:600;opacity:.75}
+.root [data-part="promo-countdown"]{display:none}
+.root [data-countdown] [data-part="promo-countdown"]{display:block;flex-basis:100%;font-size:.5em;font-weight:800;color:var(--store-accent);font-variant-numeric:tabular-nums}
+
+/* Product page: decorative layer behind content; sticky media clears the sticky header on wide screens. */
+.root [data-part="product-detail"]{position:relative;isolation:isolate}
+.root [data-part="product-detail"]>[data-part="motif"]{pointer-events:none}
+.root [data-part="product-detail-copy"],.root [data-part="product-detail-media"]{z-index:1}
+.root [data-part="product-detail-copy"]{position:relative}
+@media (min-width: 760px){.root[data-page="product"] [data-part="product-detail-media"]{top:90px}}
