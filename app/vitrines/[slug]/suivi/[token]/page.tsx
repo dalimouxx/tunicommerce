@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import CustomerRequestForm from './customer-request-form';
 import ReviewForm from './review-form';
+import ContestForm from './contest-form';
 import {reviewedProducts} from '../../../../../modules/reviews/service';
 import {notFound} from 'next/navigation';
 import {prisma} from '../../../../../modules/storage/client';
@@ -23,6 +24,8 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
  const order=publicTrackingView(normalizeState(shop.commerce.data as unknown as State),token);
  if(!order)notFound();
  const reviewed=order.status==='DELIVERED'?await reviewedProducts(shop.id,token):new Set<string>();
+ const orderId=order.status==='RETURNED'?normalizeState(shop.commerce.data as unknown as State).orders.find(item=>item.publicReceiptId===token)?.id:undefined;
+ const refusal=orderId?await prisma.customerDeliveryOutcome.findUnique({where:{shopId_orderId:{shopId:shop.id,orderId}},select:{contestStatus:true}}):null;
  const toReview=order.status==='DELIVERED'?[...new Map(order.items.map(item=>[item.productId,item])).values()]:[];
  return <main className={styles.shell}><div className={styles.content}>
   <header className={styles.header}>
@@ -70,6 +73,12 @@ export default async function CustomerOrderTracking({params}:{params:Promise<{sl
    <div style={{display:'grid',gap:12}}>{toReview.map(item=>reviewed.has(item.productId)?
     <p key={item.productId}>✓ Avis publié pour {item.name}. Merci !</p>:
     <ReviewForm key={item.productId} slug={slug} token={token} productId={item.productId} productName={item.name+(item.variant?' · '+item.variant:'')}/>)}</div>
+  </section>}
+  {refusal&&<section className={styles.card} aria-labelledby="contest-title">
+   <h2 id="contest-title">Colis enregistré comme refusé</h2>
+   <p>Pour lutter contre les commandes non honorées, un refus à la livraison est compté, sous forme de compteur uniquement, dans l’historique partagé entre les boutiques Tunicom. Si ce refus est une erreur, vous pouvez le contester : il ne sera plus compté en attendant la décision de Tunicom.</p>
+   {refusal.contestStatus===null?<ContestForm slug={slug} token={token}/>:
+    <p role="status"><strong>{refusal.contestStatus==='PENDING'?'Contestation envoyée : en attente de décision. Ce refus n’est plus compté.':refusal.contestStatus==='ACCEPTED'?'Contestation acceptée : ce refus a été retiré de l’historique.':'Contestation examinée : le refus a été maintenu.'}</strong></p>}
   </section>}
   <CustomerRequestForm slug={slug} token={token} canCancel={order.canCancel} canReturn={order.canReturn}/>
  </div></main>;

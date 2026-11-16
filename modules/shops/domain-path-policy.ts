@@ -13,7 +13,7 @@ export function domainRoute(path:string,slug:string,method:string,legacySlug?:st
  const api='/api/v1/public/vitrines/'+encodeURIComponent(slug);
  if((method==='GET'||method==='HEAD')&&path.startsWith(api+'/pages/')&&/^[a-z0-9]+(?:-[a-z0-9]+)*\/images\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(path.slice((api+'/pages/').length)))return {kind:'pass'};
  if((method==='GET'||method==='HEAD')&&path.startsWith(api+'/images/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(path.slice((api+'/images/').length)))return {kind:'pass'};
- if(method==='POST'&&(path===api+'/checkout'||path.startsWith(api+'/confirmer/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(path.slice((api+'/confirmer/').length))||path.startsWith(api+'/suivi/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/(?:requests|avis)$/.test(path.slice((api+'/suivi/').length))))return {kind:'pass'};
+ if(method==='POST'&&(path===api+'/checkout'||path.startsWith(api+'/confirmer/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(path.slice((api+'/confirmer/').length))||path.startsWith(api+'/suivi/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/(?:requests|avis|contestation)$/.test(path.slice((api+'/suivi/').length))))return {kind:'pass'};
  return {kind:'deny'};
 }
 

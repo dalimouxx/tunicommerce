@@ -1,4 +1,5 @@
 'use client';
+import {reliabilityNotice} from '../../../../../modules/reliability/notice';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {governors} from '../../../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../../../modules/shops/public-tracking-link';
@@ -211,6 +212,7 @@ export default function ProductCodForm({slug,productId,productName,unitPrice,zon
     <button type="submit" className={styles.codSubmit} disabled={busy}>
      {busy?t.sending:<>{t.submit} <span>· {tnd(summary.total)}</span></>}
     </button>
+    <p style={{fontSize:11,lineHeight:1.5,opacity:.75,margin:'4px 0 0'}}>{reliabilityNotice(lang)}</p>
     <ul className={styles.codTrust}>
      <li><span aria-hidden="true">💵</span>{t.trustCod}</li>
      <li><span aria-hidden="true">🚚</span>{t.trustDelivery(deliveryDays)}</li>

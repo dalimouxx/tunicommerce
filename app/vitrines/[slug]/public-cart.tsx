@@ -1,4 +1,5 @@
 'use client';
+import {reliabilityNotice} from '../../../modules/reliability/notice';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../../../modules/shops/public-cart-recovery';
 import {governors} from '../../../modules/commerce/types';
@@ -122,6 +123,7 @@ export default function PublicCart({slug,products,shipping,zones,initialProductI
    <label>{t.address}<textarea required minLength={3} maxLength={160} value={address} onChange={e=>{setAddress(e.target.value);requestId.current=null;}} style={{display:'block',padding:10,width:'100%'}}/></label>
    <label>{t.couponOptional}<input maxLength={30} pattern="[A-Za-z0-9_-]*" value={coupon} onChange={e=>{setCoupon(e.target.value);requestId.current=null;}} placeholder={t.couponPlaceholder} style={{display:'block',padding:10,width:'100%'}}/></label>
    <button type="submit" disabled={busy||selected.length===0||selected.length>15||selected.reduce((n,p)=>n+p.quantity,0)>30} style={{padding:14,border:0,borderRadius:10,background:accent,color:accentText,fontWeight:700}}>{t.cartSubmit}</button>
+   <p style={{fontSize:11,lineHeight:1.5,opacity:.75,margin:0}}>{reliabilityNotice(lang)}</p>
   </form>
  </section>;
 }

@@ -1,6 +1,6 @@
 import {redirect} from 'next/navigation';
 import Link from 'next/link';
-import {MessageSquareWarning,ShieldCheck,Store,Users,Globe,Layers,Settings2,Receipt,Activity,ArrowLeftRight,CircleDollarSign,Banknote,Landmark} from 'lucide-react';
+import {Scale,MessageSquareWarning,ShieldCheck,Store,Users,Globe,Layers,Settings2,Receipt,Activity,ArrowLeftRight,CircleDollarSign,Banknote,Landmark} from 'lucide-react';
 import {getSuperAdminUser} from '../../modules/auth/session';
 import {prisma} from '../../modules/storage/client';
 import styles from './platform.module.css';
@@ -36,6 +36,7 @@ export default async function AdminLayout({children}:{children:React.ReactNode})
     <AppNavLink href="/admin/coordonnees-paiement" activeClassName={styles.active}><Landmark size={18}/> Coordonnées de paiement</AppNavLink>
     <AppNavLink href="/admin/plans" activeClassName={styles.active}><CircleDollarSign size={18}/> Offres et quotas</AppNavLink>
     <AppNavLink href="/admin/avis" activeClassName={styles.active}><MessageSquareWarning size={18}/> Avis signalés</AppNavLink>
+    <AppNavLink href="/admin/contestations" activeClassName={styles.active}><Scale size={18}/> Refus contestés</AppNavLink>
     <AppNavLink href="/admin/journal" activeClassName={styles.active}><Activity size={18}/> Journal d’activité</AppNavLink>
     <AppNavLink href="/admin/fiabilite" activeClassName={styles.active}><ShieldCheck size={18}/> Fiabilité et contrôles</AppNavLink>
     <AppNavLink href="/admin/lancement" activeClassName={styles.active}><ShieldCheck size={18}/> Préparation au lancement</AppNavLink>

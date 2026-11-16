@@ -36,8 +36,4 @@ export function reliabilityCounts(rows:readonly {outcome:string;contestStatus:st
  }
  return {delivered,refused};
 }
-export function reliabilityLabel(counts:{delivered:number;refused:number}){
- if(!counts.delivered&&!counts.refused)return null;
- const plural=(n:number,word:string)=>n+' '+word+(n>1?'s':'');
- return 'Historique Tunicom : '+plural(counts.delivered,'livrée')+' · '+plural(counts.refused,'refusée')+' (toutes boutiques)';
-}
+export {reliabilityLabel} from './notice';

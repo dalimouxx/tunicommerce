@@ -3,6 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {confirmationQueue,pageOperationalQueue} from '../../../modules/shops/operational-queues';
 import ShopManualMessages from './shop-manual-messages';
 import {confirmationBadge} from '../../../modules/shops/order-confirmation';
+import {reliabilityLabel} from '../../../modules/reliability/notice';
 import {contactChannels,contactOutcomes,contactHistory,contactLogNote,contactHistoryStats,type ContactChannel,type ContactOutcome} from '../../../modules/shops/contact-history';
 
 type Order={id:string;reference:string;status:string;customerSnapshot?:{name:string;phone:string;city:string};items:{name:string;quantity:number}[];callbackAt:string;events:{at:string;label:string}[];confirmation?:{expiresAt:string;answer?:'CONFIRMED'|'CHANGE'|'CANCELLED';note?:string}};
@@ -17,6 +18,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
  const [callbackDates,setCallbackDates]=useState<Record<string,string>>({});
  const [channels,setChannels]=useState<Record<string,ContactChannel>>({});
  const [outcomes,setOutcomes]=useState<Record<string,ContactOutcome>>({});
+ const [history,setHistory]=useState<Record<string,{delivered:number;refused:number}>>({});
  const pending=useRef<Record<string,{action:'transition';payload:{id:string;status:string;callbackAt?:string};requestId:string}>>({});
  const notesPending=useRef<Record<string,{action:'note';payload:{id:string;note:string};requestId:string}>>({});
  useEffect(()=>{
@@ -85,6 +87,14 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
   finally{setBusy('');}
  }
  const toProcess=confirmationQueue(orders);
+ const historyKey=toProcess.slice(0,200).map(order=>order.id).join(',');
+ useEffect(()=>{
+  if(!historyKey)return;
+  const controller=new AbortController();
+  fetch('/api/v1/shops/'+encodeURIComponent(shopId)+'/reliability?orders='+encodeURIComponent(historyKey),{signal:controller.signal,cache:'no-store'})
+   .then(response=>response.ok?response.json():null).then((data:{counts?:Record<string,{delivered:number;refused:number}>}|null)=>{if(data?.counts&&!controller.signal.aborted)setHistory(data.counts);}).catch(()=>{});
+  return ()=>controller.abort();
+ },[shopId,historyKey]);
  const displayQueue=pageOperationalQueue(toProcess,queuePage,30);
  const contactStats=contactHistoryStats(orders);
  const overdueCount=toProcess.filter(order=>order.priority==='OVERDUE').length;
@@ -105,7 +115,7 @@ export default function ShopConfirmationDesk({shopId}:{shopId:string}){
     <thead><tr><th>Commande</th><th>Client</th><th>Articles</th><th>Statut</th><th>Actions</th></tr></thead>
     <tbody>{displayQueue.items.map(order=><tr key={order.id} style={{borderTop:'1px solid #e0e6ee'}}>
      <td style={{padding:10}}>{order.reference}</td>
-     <td style={{padding:10}}>{order.customerSnapshot?order.customerSnapshot.name+' · '+order.customerSnapshot.phone:'Client non renseigné'}</td>
+     <td style={{padding:10}}>{order.customerSnapshot?order.customerSnapshot.name+' · '+order.customerSnapshot.phone:'Client non renseigné'}{history[order.id]&&reliabilityLabel(history[order.id])&&<small style={{display:'block',marginTop:4,fontWeight:700,color:history[order.id].refused>0?'#a3341d':'#1b7a4b'}}>{reliabilityLabel(history[order.id])}</small>}</td>
      <td style={{padding:10}}>{order.items.map(i=>i.name+' × '+i.quantity).join(', ')}</td>
      <td style={{padding:10}}>{confirmationBadge(order,new Date())&&<strong style={{display:'block',color:'#1b5e8a'}}>{confirmationBadge(order,new Date())}</strong>}{order.status}{order.priority==='OVERDUE'?' · Rappel dû':order.priority==='SCHEDULED'?' · Rappel prévu':''}{order.callbackAt&&order.status==='CALLBACK'&&Number.isFinite(Date.parse(order.callbackAt))?' · '+new Date(order.callbackAt).toLocaleString('fr-TN'):''}</td>
      <td style={{padding:10}}>
