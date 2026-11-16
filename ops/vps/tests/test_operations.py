@@ -206,6 +206,16 @@ class DeploymentTests(unittest.TestCase):
         self.assertFalse(any("stop" in args for args in self.commands))
         self.backup.assert_not_called()
 
+    def test_unreadable_migrator_is_rejected_before_any_service_stops(self):
+        with patch.object(self.deployment, "validate_migrator", side_effect=common.OperationError("command_failed")):
+            with self.assertRaises(common.OperationError):
+                self.deployment.run()
+        self.assertFalse(any("stop" in args for args in self.commands))
+        self.assertFalse(self.deployment.stopped)
+        self.assertFalse(self.deployment.migration_started)
+        self.backup.assert_not_called()
+        self.assertEqual(json.loads((self.state / "current.json").read_text())["sha"], OLD)
+
     def test_backup_failure_prevents_migration_and_restarts_previous_images(self):
         self.backup.side_effect = common.OperationError("backup_failed")
         with self.assertRaises(common.OperationError):
@@ -240,6 +250,13 @@ class DeploymentTests(unittest.TestCase):
 
 
 class CoordinationTests(unittest.TestCase):
+    def test_failure_diagnostics_allow_only_known_codes_and_never_raw_details(self):
+        response = {"phase": "image_check", "code": "command_failed", "recovery": TOKEN,
+                    "stderr": TOKEN, "message": "private database URL"}
+        self.assertEqual(ci.safe_failure(response), {"phase": "image_check", "code": "command_failed"})
+        self.assertEqual(ci.safe_failure({"phase": TOKEN, "code": "private_password"}), {})
+        self.assertEqual(ci.safe_failure([TOKEN]), {})
+
     def test_all_checks_must_pass_for_same_commit(self):
         def response(path):
             return {"workflow_runs": [{"head_sha": SHA, "head_branch": "main", "event": "push",

@@ -9,6 +9,8 @@ import {shopAccess} from '../../modules/shops/navigation';
 import {countMerchantShopSlots} from '../../modules/shops/plan-limits';
 import {effectiveLimit} from '../../modules/subscriptions/validation';
 import {quotaOverview,subscriptionOverview} from '../../modules/subscriptions/overview';
+import {storefrontAddresses} from '../../modules/shops/storefront-address-service';
+import {automaticStorefrontAddress} from '../../modules/shops/storefront-address';
 import styles from './shops.module.css';
 
 export const dynamic='force-dynamic';
@@ -49,6 +51,8 @@ export default async function MyShops(){
   effectiveLimit(ownerPlan?.maxShops??null,undefined)
  ):null;
  const subscription=ownerWorkspace?subscriptionOverview(ownerWorkspace.subscriptionStatus,ownerWorkspace.subscriptionEndsAt):null;
+ const addresses=await storefrontAddresses(memberships.map(({shop})=>({id:shop.id,slug:shop.slug,ownerId:shop.organization.ownerId,
+  fallback:shop.legacyWorkspace?.slug?'/boutiques/'+encodeURIComponent(shop.legacyWorkspace.slug):'/vitrines/'+encodeURIComponent(shop.slug)})));
  return <main className={styles.shell}>
   <div className={styles.content}>
    <header className={styles.header}>
@@ -68,7 +72,7 @@ export default async function MyShops(){
     <h2>Ma gestion commerciale</h2>
     <p>Votre espace historique de commandes, catalogue, clients, livraison et finances est accessible avec votre propre compte.</p>
     <div className={styles.actions}><Link href="/marchand" className={styles.primary}>Gérer ma boutique</Link>
-    {legacy.slug&&isOpen(legacy)&&<Link href={'/boutiques/'+encodeURIComponent(legacy.slug)} className={styles.secondary}>Voir ma vitrine</Link>}</div>
+    {legacy.slug&&isOpen(legacy)&&<Link href={automaticStorefrontAddress(legacy.slug,'/boutiques/'+encodeURIComponent(legacy.slug))} className={styles.secondary}>Voir ma vitrine</Link>}</div>
    </section>}
    {memberships.length===0&&!legacy&&<section className={styles.card}>
     <h2>Aucune boutique associée</h2>
@@ -89,7 +93,7 @@ export default async function MyShops(){
       {(access.manageOwnCommerce||(active&&role==='OWNER'&&shop.legacyWorkspaceId===null))&&<Link className={styles.primary} href={"/mes-boutiques/"+encodeURIComponent(shop.id)}>Tableau de bord boutique</Link>}
       {!access.manageOwnCommerce&&access.mayOpenTeam&&shop.legacyWorkspaceId===null&&<Link className={styles.primary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)}>Mon espace collaborateur</Link>}
       {access.mayOpenTeam&&<Link className={styles.secondary} href="/equipe">Gestion de l'équipe</Link>}
-      {publicPath&&<Link className={styles.secondary} href={publicPath}>Vitrine publique</Link>}
+      {publicPath&&<Link className={styles.secondary} href={addresses.get(shop.id)||publicPath}>Vitrine publique</Link>}
       {role==='OWNER'&&(access.manageOwnCommerce||!shop.legacyWorkspaceId&&shop.commerce)&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/accueil'}>Modifier l’accueil</Link>}
       {role==='OWNER'&&shop.organization.ownerId===actor.userId&&(access.manageOwnCommerce||!shop.legacyWorkspaceId&&shop.commerce)&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/pages'}>Pages de ma boutique</Link>}
       {role==='OWNER'&&!shop.legacyWorkspaceId&&shop.commerce&&<Link className={styles.secondary} href={'/mes-boutiques/'+encodeURIComponent(shop.id)+'/apercu'}>Aperçu privé</Link>}

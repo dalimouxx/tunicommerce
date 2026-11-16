@@ -24,7 +24,7 @@ async function api<T>(url:string,method='GET',body?:unknown):Promise<T>{
  return d as T;
 }
 
-export default function SetupWizard(){
+export default function SetupWizard({platformOrigin,automaticRoot}:{platformOrigin:string;automaticRoot:string|null}){
  const [data,setData]=useState<SetupData|null>(null);
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
@@ -102,7 +102,7 @@ export default function SetupWizard(){
   enabled?'Votre boutique est maintenant accessible aux clients.':'Votre boutique a été mise hors ligne.'
  );
  const progress=(data?.shop.phone?1:0)+(data?.shop.address?1:0)+(data?.availableCount?1:0);
- const publicUrl=data?.slug?'/boutiques/'+data.slug:null;
+ const publicUrl=data?.slug?(automaticRoot?'https://'+data.slug+'.'+automaticRoot:platformOrigin+'/boutiques/'+data.slug):null;
 
  return <div className={styles.shell}>
   <header className={styles.header}>
@@ -140,7 +140,7 @@ export default function SetupWizard(){
        <input aria-label="Identifiant boutique" required minLength={3} maxLength={60} pattern="[a-z0-9]+(-[a-z0-9]+)*" value={slug} onChange={e=>setSlug(e.target.value)} />
        <button className={styles.secondary} disabled={busy}>Modifier le lien</button>
       </form>
-      <small className={styles.url}>tunicommerce-test.onrender.com/boutiques/{slug}</small>
+      <small className={styles.url}>{automaticRoot?'https://'+(slug||'ma-boutique')+'.'+automaticRoot:platformOrigin+'/boutiques/'+(slug||'ma-boutique')}</small>
      </div>}
      {section==='product'&&<div className={styles.panel}>
       <h2>Votre premier produit</h2><p className={styles.help}>Ajoutez un produit réel avec un prix en dinars tunisiens et une quantité disponible. Vous pourrez le personnaliser davantage dans votre espace marchand.</p>

@@ -7,12 +7,13 @@ import {isOpen} from '../platform/public';
 /** Called only after public-host authorization; sessions never grant access to another asset. */
 export async function storefrontDomainMedia(slug:string,path:string){
  const shop=await prisma.shop.findUnique({where:{slug},select:{commerce:{select:{data:true}},legacyWorkspaceId:true,legacyWorkspace:{select:{data:true,ownerId:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true}},organization:{select:{ownerId:true}}}});
- if(!shop)return null;
- const workspace=shop.legacyWorkspace;
- if(shop.legacyWorkspaceId&&(!workspace||workspace.ownerId!==shop.organization.ownerId||!isOpen(workspace)))return null;
- const data=shop.legacyWorkspaceId?workspace?.data:shop.commerce?.data;if(!data)return null;
+ const historical=!shop?await prisma.workspace.findUnique({where:{slug},select:{data:true,ownerId:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true,shop:{select:{id:true}}}}):null;
+ if(!shop&&(!historical||historical.shop||!isOpen(historical)))return null;
+ const workspace=shop?.legacyWorkspace;
+ if(shop?.legacyWorkspaceId&&(!workspace||workspace.ownerId!==shop.organization.ownerId||!isOpen(workspace)))return null;
+ const data=historical?.data||(shop?.legacyWorkspaceId?workspace?.data:shop?.commerce?.data);if(!data)return null;
  const state=normalizeState(data as unknown as State);
- const id=path.slice(path.lastIndexOf('/')+1),ownerId=shop.organization.ownerId;
+ const id=path.slice(path.lastIndexOf('/')+1),ownerId=shop?.organization.ownerId||historical!.ownerId;
  const product=path.startsWith('/api/media/products/');
  const referenced=product?state.products.some(item=>item.active&&item.imageUrl===path):[state.shop.logoUrl,state.shop.bannerUrl].includes(path);
  if(!referenced)return null;

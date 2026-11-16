@@ -552,6 +552,7 @@ model ShopDomainClaim {
 
 model ShopDomainBinding {
  hostname String @id
+ primary Boolean @default(false)
  shopId String
  ownerId String
  shop Shop @relation(fields:[shopId],references:[id],onDelete:Cascade)

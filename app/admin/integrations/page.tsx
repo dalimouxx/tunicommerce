@@ -32,7 +32,7 @@ export default async function IntegrationReadinessPage(){
    </table></div>
   </section>
   <section className={styles.panel}><h2>Avant activation réelle</h2>
-   <p>Signer un contrat avec chaque prestataire, récupérer ses spécifications API et ses accès sandbox, configurer les secrets uniquement dans Render, vérifier les signatures webhook et les reprises sur erreur, puis réussir des tests d'envoi et de rapprochement de bout en bout.</p>
+   <p>Signer un contrat avec chaque prestataire, récupérer ses spécifications API et ses accès sandbox, configurer les secrets uniquement dans la configuration privée du serveur Tunicom, vérifier les signatures webhook et les reprises sur erreur, puis réussir des tests d'envoi et de rapprochement de bout en bout.</p>
    <p>Ne saisissez jamais d'identifiants de banque ou de clés API dans un champ public ou dans un ticket GitHub.</p>
   </section>
  </div>;

@@ -9,7 +9,7 @@ async function send<T>(path:string,body:unknown):Promise<T>{
  const data=await response.json().catch(()=>({error:'Réponse indisponible. Vérifie Mes boutiques avant de réessayer.'}));
  if(!response.ok)throw Error(data.error||'Création impossible. Réessaie dans quelques instants.');return data as T;
 }
-export default function CreateShopForm({organizations,defaultGroupName}:{organizations:Group[];defaultGroupName:string}){
+export default function CreateShopForm({organizations,defaultGroupName,automaticRoot}:{organizations:Group[];defaultGroupName:string;automaticRoot?:string}){
  const router=useRouter();const inFlight=useRef(false);
  const [groups,setGroups]=useState(organizations),[groupId,setGroupId]=useState(organizations[0]?.id||'new');
  const [groupName,setGroupName]=useState(defaultGroupName),[name,setName]=useState(''),[slug,setSlug]=useState('');
@@ -31,7 +31,7 @@ export default function CreateShopForm({organizations,defaultGroupName}:{organiz
  return <form className={styles.creationForm} onSubmit={event=>void submit(event)}>
   <fieldset disabled={busy||!!createdId}><label htmlFor="new-shop-name">Nom de la boutique<input id="new-shop-name" name="name" value={name} required minLength={2} maxLength={100} autoComplete="organization" placeholder="Ex. Studio Jasmin" onChange={event=>{setName(event.target.value);if(!customSlug)setSlug(suggestShopSlug(event.target.value));}}/></label>
    <label htmlFor="new-shop-slug">Lien de la vitrine<input id="new-shop-slug" name="slug" value={slug} required minLength={3} maxLength={60} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} aria-describedby="shop-link-help" onChange={event=>{setCustomSlug(true);setSlug(event.target.value.toLowerCase());}}/></label>
-   <p id="shop-link-help" className={styles.note}>Lettres minuscules sans accents, chiffres et tirets. Le lien sera <strong dir="ltr">/vitrines/{slug||'ta-boutique'}</strong>. Le serveur vérifiera sa disponibilité.</p>
+   <p id="shop-link-help" className={styles.note}>Lettres minuscules sans accents, chiffres et tirets. Ton adresse sera <strong dir="ltr">{automaticRoot?(slug||'ta-boutique')+'.'+automaticRoot:'/vitrines/'+(slug||'ta-boutique')}</strong>. Le serveur vérifiera sa disponibilité. Tu pourras ensuite connecter ton propre domaine.</p>
    <label htmlFor="new-shop-group">Groupe de boutiques<select id="new-shop-group" value={groupId} onChange={event=>setGroupId(event.target.value)}>{groups.map(group=><option value={group.id} key={group.id}>{group.name}</option>)}<option value="new" disabled={groups.length>=10}>Créer un nouveau groupe{groups.length>=10?' · limite atteinte':''}</option></select></label>
    {groupId==='new'&&<label htmlFor="new-group-name">Nom du groupe<input id="new-group-name" name="groupName" value={groupName} required minLength={2} maxLength={100} onChange={event=>setGroupName(event.target.value)}/></label>}
    <p className={styles.note}>Un groupe permet de ranger tes boutiques par activité. Il n'ajoute aucun droit sur les boutiques d'autres marchands.</p>

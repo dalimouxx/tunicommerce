@@ -152,6 +152,8 @@ Une PR ou un fork ne reçoit pas les secrets. Les déploiements sont sérialisé
 sans annuler une migration en cours. Les commits devenus obsolètes sont ignorés.
 
 Le VPS construit les deux images successivement, vérifie l'état initial,
+teste la lecture des scripts de migration sous l'utilisateur non privilégié
+dans un conteneur sans réseau et sans accès base, puis
 suspend seulement le web/worker Tunicom, sauvegarde PostgreSQL, migre, redémarre,
 attend la santé des conteneurs et vérifie HTTPS + accès base avant le message de
 succès. Cette première version comporte une courte maintenance pendant la
@@ -162,7 +164,10 @@ Après le début des migrations, aucune restauration destructive ni retour à un
 schéma antérieur n'est automatique. Consulter les marqueurs privés
 `/var/lib/tunicom-deploy/progress.json`, `current.json`, `backup.json` et les logs
 Tunicom dans la console root. GitHub et Telegram ne reçoivent ni logs bruts,
-ni secrets, ni commandes/clients. Un échec de connexion SSH peut être annoncé
+ni secrets, ni commandes/clients.
+Les marqueurs conservent la phase d'origine et le code d'échec. GitHub affiche
+seulement des codes prédéfinis, sans sortie brute du serveur.
+Un échec de connexion SSH peut être annoncé
 par GitHub même si le contrôleur déjà lancé continue sur le VPS : vérifier le
 marqueur avant toute intervention et ne pas supprimer le verrou manuellement.
 

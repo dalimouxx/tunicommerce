@@ -7,15 +7,18 @@ import {consumeAttempt} from '../auth/service';
 import {domainMutation,proofPrefix,reservedDomain,storefrontRoot,automaticStoreSlug,normalizeDomain} from './domains-validation';
 import {checkDomainProof,type TxtLookup} from './domains-dns';
 import type {z} from 'zod';
-import {domainProofHealth,DOMAIN_RECHECK_MS} from './domain-health';
+import {domainProofHealth,domainProofAllowsRouting,DOMAIN_RECHECK_MS} from './domain-health';
+import {automaticStorefrontHostname} from './storefront-address';
+import {domainNavigationTarget} from './domain-navigation';
 const token=()=>randomBytes(32).toString('hex');const expires=()=>new Date(Date.now()+7*86400000);
 export async function domainOverview(userId:string,shopId:string){
  const shop=await pageOwner(userId,shopId);
  const claims=await prisma.shopDomainClaim.findMany({where:{shopId},orderBy:{createdAt:'asc'},include:{binding:true}});
- const root=storefrontRoot();const candidate=root?normalizeDomain(shop.slug+'.'+root):null;const automaticHostname=candidate&&automaticStoreSlug(candidate)===shop.slug?candidate:null;
- return {automaticHostname,automaticUnavailableReason:root&&!automaticHostname?'Ce lien ne permet pas un sous-domaine automatique. Un domaine personnel peut être utilisé.':null,routingEnabled:process.env.STOREFRONT_DOMAIN_ROUTING==='enabled',claims:claims.map(claim=>{
+ const root=storefrontRoot(),automaticHostname=automaticStorefrontHostname(shop.slug),navigation=await domainNavigationTarget();
+ const primary=claims.find(claim=>claim.ownerId===userId&&claim.binding?.primary&&domainProofAllowsRouting(claim.binding,userId));
+ return {automaticHostname,primaryHostname:primary?.hostname||null,dnsTarget:navigation.hostname,dnsIpv4:navigation.ipv4,automaticUnavailableReason:root&&!automaticHostname?'Ce lien ne permet pas un sous-domaine automatique. Un domaine personnel peut être utilisé.':null,routingEnabled:process.env.STOREFRONT_DOMAIN_ROUTING==='enabled',claims:claims.map(claim=>{
   const requiresNewProof=claim.ownerId!==userId||!!claim.binding&&(claim.binding.ownerId!==userId||claim.binding.proofStatus==='OWNER_CHANGED');
-  return {id:claim.id,hostname:claim.hostname,recordName:proofPrefix+claim.hostname,recordValue:requiresNewProof?'':'tunicom='+claim.token,
+  return {id:claim.id,hostname:claim.hostname,primary:!!claim.binding?.primary&&!requiresNewProof,recordName:proofPrefix+claim.hostname,recordValue:requiresNewProof?'':'tunicom='+claim.token,
    expiresAt:claim.expiresAt.toISOString(),verifiedAt:claim.binding?.verifiedAt.toISOString()||null,requiresNewProof,
    health:requiresNewProof?'OWNER_CHANGED' as const:domainProofHealth(claim.binding,userId),
    lastCheckedAt:claim.binding?.lastCheckedAt?.toISOString()||null,nextCheckAt:claim.binding?.nextCheckAt.toISOString()||null};
@@ -40,6 +43,9 @@ export async function changeShopDomain(userId:string,shopId:string,input:z.infer
  }
  return prisma.$transaction(async tx=>{
   await tx.$queryRaw`SELECT id FROM "Shop" WHERE id=${shopId} FOR UPDATE`;await pageOwner(userId,shopId,tx);
+  if(input.action==='automatic'){
+   await tx.shopDomainBinding.updateMany({where:{shopId},data:{primary:false}});return {ok:true};
+  }
   if(input.action==='add'){
    if(reservedDomain(input.hostname))throw new HttpError(400,'Cette adresse est réservée à la plateforme.');
    const existing=await tx.shopDomainClaim.findUnique({where:{shopId_hostname:{shopId,hostname:input.hostname}}});if(existing)return {ok:true};
@@ -47,6 +53,11 @@ export async function changeShopDomain(userId:string,shopId:string,input:z.infer
    await tx.shopDomainClaim.create({data:{shopId,ownerId:userId,hostname:input.hostname,token:token(),expiresAt:expires()}});return {ok:true};
   }
   const claim=await tx.shopDomainClaim.findFirst({where:{id:input.id,shopId},include:{binding:true}});if(!claim)throw new HttpError(404,'Domaine introuvable');
+  if(input.action==='primary'){
+   if(claim.ownerId!==userId||!domainProofAllowsRouting(claim.binding,userId))throw new HttpError(409,'Vérifiez la propriété du domaine avant de le choisir comme adresse principale.');
+   await tx.shopDomainBinding.updateMany({where:{shopId,primary:true},data:{primary:false}});
+   await tx.shopDomainBinding.update({where:{hostname:claim.hostname},data:{primary:true}});return {ok:true};
+  }
   if(input.action==='remove'){await tx.shopDomainClaim.delete({where:{id:claim.id}});return {ok:true};}
   const ownerChanged=claim.ownerId!==userId||claim.binding&&(claim.binding.ownerId!==userId||claim.binding.proofStatus==='OWNER_CHANGED');
   if(claim.binding&&!ownerChanged)throw new HttpError(409,'Un domaine déjà vérifié ne nécessite pas de nouveau code.');

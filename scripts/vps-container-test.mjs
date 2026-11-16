@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {randomBytes,createHash} from 'node:crypto';
-import {mkdir,mkdtemp,writeFile,rm,unlink,chmod} from 'node:fs/promises';
-import {resolve,join,relative,isAbsolute} from 'node:path';
+import {mkdir,mkdtemp,writeFile,rm,unlink,chmod,lstat} from 'node:fs/promises';
+import {resolve,join,relative,isAbsolute,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {setTimeout as pause} from 'node:timers/promises';
 import {applicationRoutes} from './application-route-inventory.mjs';
@@ -34,6 +34,23 @@ async function originFor(service,port){const endpoint=(await compose(['port',ser
 async function sql(database,text){return (await compose(['exec','-T','db','psql','-X','-v','ON_ERROR_STOP=1','-U','tunicom_admin','-d',database,'-Atc',text])).trim();}
 try{
  await compose(['config','--quiet']);pass('Compose configuration');
+ // Reproduce root's umask 077 on the VPS. Bind-mounted deployment fixtures must
+ // remain readable by PostgreSQL/Caddy, so only build sources are restricted.
+ const tracked=(await run('git',['ls-files','-z'],{cwd:repo,maxBuffer:8*1024*1024})).stdout.split('\0').filter(Boolean);
+ const sourceDirectories=new Set();
+ for(const file of tracked){
+  if(file.startsWith('deploy/'))continue;
+  const absolute=resolve(repo,file),local=relative(repo,absolute);
+  if(!local||isAbsolute(local)||local.startsWith('..'))throw Error('Unsafe source fixture');
+  const info=await lstat(absolute);if(!info.isFile())continue;
+  await chmod(absolute,(info.mode&0o111)?0o700:0o600);
+  let folder=dirname(absolute);
+  while(folder!==resolve(repo)){sourceDirectories.add(folder);folder=dirname(folder);}
+ }
+ for(const folder of sourceDirectories)await chmod(folder,0o700);
+ assert.equal((await lstat(resolve(repo,'scripts/vps-migrate.mjs'))).mode&0o777,0o600);
+ assert.equal((await lstat(resolve(repo,'scripts'))).mode&0o777,0o700);
+ pass('Private VPS checkout permissions reproduced before image builds');
  await compose(['build','web','migrate']);pass('Production and migration images build without database credentials');
  await docker(['run','--rm','--network','none','--env','PLATFORM_DOMAIN='+env.PLATFORM_DOMAIN,'--env','ACME_EMAIL='+env.ACME_EMAIL,'--env','STOREFRONT_DOMAIN_ROUTING=disabled',
   '--mount','type=bind,source='+resolve(repo,'deploy/vps/Caddyfile')+',target=/etc/caddy/Caddyfile,readonly',
