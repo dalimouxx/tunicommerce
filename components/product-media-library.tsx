@@ -7,9 +7,9 @@ import {batchSummary,planPhotoBatch} from '../modules/product-media/batch';
 
 type Photo={id:string;url:string;size:number;width:number;height:number;createdAt:string};
 type Collection={photos:Photo[];limit:number};
-type Props={value?:string;selected?:readonly string[];onChoose?:(url:string)=>void;standalone?:boolean;onBusyChange?:(pending:boolean)=>void};
+type Props={value?:string;selected?:readonly string[];onChoose?:(url:string)=>void;onImported?:(urls:string[])=>void;standalone?:boolean;onBusyChange?:(pending:boolean)=>void};
 
-export default function ProductMediaLibrary({value,selected,onChoose,standalone=false,onBusyChange}:Props){
+export default function ProductMediaLibrary({value,selected,onChoose,onImported,standalone=false,onBusyChange}:Props){
  const isChosen=(url:string)=>selected?selected.includes(url):value===url;
  const [collection,setCollection]=useState<Collection>({photos:[],limit:30});
  const [pending,setPending]=useState(false);
@@ -51,17 +51,19 @@ export default function ProductMediaLibrary({value,selected,onChoose,standalone=
   const plan=planPhotoBatch(files.length,collection.photos.length,collection.limit);
   const accepted=files.slice(0,plan.accepted);
   setPending(true);setError('');setSuccess('');setProgress({done:0,total:accepted.length});
-  const failed:string[]=[];let imported=0,last:Photo|null=null,lastError='';
+  const failed:string[]=[],urls:string[]=[];let imported=0,last:Photo|null=null,lastError='';
   for(const file of accepted){
-   try{last=await sendOne(file);imported++;}catch(e){failed.push(file.name);lastError=e instanceof Error?e.message:'';}
+   try{last=await sendOne(file);urls.push(last.url);imported++;}catch(e){failed.push(file.name);lastError=e instanceof Error?e.message:'';}
    if(!mounted.current)return;
    setProgress({done:imported+failed.length,total:accepted.length});
   }
   try{await refresh();}catch{}
   if(!mounted.current)return;
-  if(files.length===1&&last){onChoose?.(last.url);setSuccess('Photo optimisée et enregistrée ('+Math.round(last.size/1024)+' Ko).');}
+  // A product editor receives every imported photo (add only); other screens keep choosing a single one.
+  if(onImported&&urls.length)onImported(urls);
+  if(files.length===1&&last){if(!onImported)onChoose?.(last.url);setSuccess('Photo optimisée et enregistrée ('+Math.round(last.size/1024)+' Ko).');}
   else if(files.length===1)setError(lastError||'Importation indisponible');
-  else{const text=batchSummary({imported,failed,skipped:plan.skipped},collection.limit);if(failed.length||!imported)setError(text);else setSuccess(text+(onChoose?' Cliquez sur une photo pour l’utiliser.':''));}
+  else{const text=batchSummary({imported,failed,skipped:plan.skipped},collection.limit);if(failed.length||!imported)setError(text);else setSuccess(text+(onChoose&&!onImported?' Cliquez sur une photo pour l’utiliser.':''));}
   setProgress(null);setPending(false);
  }
 

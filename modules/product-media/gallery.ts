@@ -38,3 +38,20 @@ export function payloadPhotoIds(payload:unknown){
  const urls=[imageUrl,...(Array.isArray(gallery)?gallery:[])].filter((url):url is string=>typeof url==='string');
  return [...new Set(urls.map(url=>productPhotoId(url)).filter((id):id is string=>!!id))];
 }
+/** Freshly imported photos go straight into the product, in import order, within the limit. */
+export function addImportedPhotos(list:readonly string[],urls:readonly string[]){
+ const next=[...list];let added=0,dropped=0;
+ for(const url of urls){
+  if(!url||next.includes(url))continue;
+  if(next.length>=PRODUCT_PHOTO_LIMIT){dropped++;continue;}
+  next.push(url);added++;
+ }
+ return {next,added,dropped};
+}
+export function importedPhotosMessage({added,dropped}:{added:number;dropped:number}){
+ const n=(count:number)=>count+' photo'+(count>1?'s':'');
+ const parts=[];
+ if(added)parts.push(n(added)+' ajoutée'+(added>1?'s':'')+' au produit.');
+ if(dropped)parts.push(n(dropped)+' non ajoutée'+(dropped>1?'s':'')+' : '+PRODUCT_PHOTO_LIMIT+' photos maximum par produit ('+(dropped>1?'elles restent':'elle reste')+' dans la médiathèque).');
+ return parts.join(' ');
+}

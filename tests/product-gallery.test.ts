@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PRODUCT_PHOTO_LIMIT,productGallery,productPhotoUrls,productLibraryPhotoIds,productUsesPhoto,arrangeGallery} from '../modules/product-media/gallery';
+import {PRODUCT_PHOTO_LIMIT,productGallery,productPhotoUrls,productLibraryPhotoIds,productUsesPhoto,arrangeGallery,addImportedPhotos,importedPhotosMessage} from '../modules/product-media/gallery';
 import {applyAction} from '../modules/commerce/service';
 import {initialState} from '../modules/commerce/seed';
 import {publicCatalog} from '../modules/platform/public';
@@ -52,4 +52,14 @@ test('Saving a product keeps its gallery; omitting it leaves the gallery untouch
 test('Structured data lists every product photo as absolute URLs',()=>{
  const data=productJsonLd({name:'Sac',description:'',imageUrl:photo(1),images:[photo(1),photo(2)],url:'https://shop.example/p',price:1000,available:true,storeName:'S',origin:'https://shop.example'}) as {image?:unknown};
  assert.deepEqual(data.image,['https://shop.example'+photo(1),'https://shop.example'+photo(2)]);
+});
+test('Imported photos join the product in import order, without duplicates, up to 8',()=>{
+ const start=[photo(1),photo(2)];
+ assert.deepEqual(addImportedPhotos(start,[photo(3),photo(2),photo(4)]),{next:[photo(1),photo(2),photo(3),photo(4)],added:2,dropped:0});
+ const seven=Array.from({length:7},(_,i)=>photo(i));
+ assert.deepEqual(addImportedPhotos(seven,[photo(20),photo(21),photo(22)]),{next:[...seven,photo(20)],added:1,dropped:2});
+ assert.equal(importedPhotosMessage({added:3,dropped:0}),'3 photos ajoutées au produit.');
+ assert.equal(importedPhotosMessage({added:1,dropped:2}),'1 photo ajoutée au produit. 2 photos non ajoutées : 8 photos maximum par produit (elles restent dans la médiathèque).');
+ assert.equal(importedPhotosMessage({added:0,dropped:1}),'1 photo non ajoutée : 8 photos maximum par produit (elle reste dans la médiathèque).');
+ assert.equal(importedPhotosMessage({added:0,dropped:0}),'');
 });
