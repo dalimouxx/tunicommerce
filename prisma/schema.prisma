@@ -169,9 +169,10 @@ model ShopMedia {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   slot        String
   mimeType    String
-  content     Bytes
+  content     Bytes?
   storageKey  String?
   contentSha256 String?
+  contentReleasedAt DateTime?
   size        Int
   width       Int
   height      Int
@@ -191,9 +192,10 @@ model ProductMedia {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   mimeType    String
-  content     Bytes
+  content     Bytes?
   storageKey  String?
   contentSha256 String?
+  contentReleasedAt DateTime?
   size        Int
   width       Int
   height      Int

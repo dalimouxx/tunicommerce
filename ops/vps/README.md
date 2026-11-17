@@ -137,9 +137,14 @@ que son domaine n'est pas défini.
 
 La sauvegarde quotidienne (03:20, fuseau du serveur, décalage aléatoire jusqu'à
 15 minutes) est **locale**, sans rétention automatique ni copie hors site. Les
-archives privées sont dans `/var/backups/tunicom`. Elle inclut les médias
-uniquement si ceux-ci restent en base. Le mode fichiers est refusé pour éviter
-une sauvegarde incomplète. Configurer ensuite une destination indépendante et
+archives privées sont dans `/var/backups/tunicom`. En mode `database`, les
+médias sont dans la base. En mode `filesystem-mirror` ou `filesystem-primary`,
+la sauvegarde archive d'abord le volume des médias (`*.media.tar`) puis la base.
+Chaque photo de l'archive est contrôlée par son SHA-256. Un lien ou un chemin
+qui sort du dossier rend l'archive invalide. Le témoin
+`/srv/tunicom-media/.backup-status.json` n'est marqué réussi qu'après
+validation des deux archives : c'est la condition pour libérer des photos de
+la base. Tout autre mode est refusé pour éviter une sauvegarde incomplète. Configurer ensuite une destination indépendante et
 une rétention ; les alertes et seuils de disque ne remplacent pas ces étapes.
 Le contrôle `pg_restore --list` valide le format de l'archive, **pas une
 restauration complète**. Tester périodiquement une restauration isolée.

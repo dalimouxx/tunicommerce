@@ -1,18 +1,21 @@
 import {prisma} from '../storage/client';
 import {mediaMetadataSelect,type MediaKind} from './content-store';
-import {mediaMirrorEnabled,writeMediaObject,readMediaObject,mediaDigest} from './file-store';
+import {mediaMirrorEnabled,mediaReleaseEnabled,writeMediaObject,readMediaObject,mediaDigest} from './file-store';
 import {z} from 'zod';
+import {mediaBackupFresh,readMediaBackupMarker} from './release';
 
 export const mirrorBatchInput=z.object({kind:z.enum(['product','brand']),action:z.enum(['copy','verify']),
  after:z.uuid().optional(),limit:z.number().int().min(1).max(25).default(25),workspaceId:z.uuid().optional()}).strict();
 export async function mediaMirrorStatus(){
- const rows=await prisma.$queryRaw<{kind:string;total:bigint;copied:bigint;bytes:bigint}[]>`
-  SELECT 'product' AS kind, count(*) AS total, count("storageKey") AS copied, coalesce(sum("size"),0)::bigint AS bytes FROM "ProductMedia"
-  UNION ALL SELECT 'brand', count(*), count("storageKey"), coalesce(sum("size"),0)::bigint FROM "ShopMedia"`;
- return {mode:mediaMirrorEnabled()?'filesystem-mirror':'database',rootConfigured:!!process.env.MEDIA_STORAGE_ROOT,
-  canonicalBytesRetained:true,media:rows.map(row=>({...row,total:row.total.toString(),copied:row.copied.toString(),bytes:row.bytes.toString()}))};
+ const rows=await prisma.$queryRaw<{kind:string;total:bigint;copied:bigint;released:bigint;bytes:bigint}[]>`
+  SELECT 'product' AS kind, count(*) AS total, count("storageKey") AS copied, count(*) FILTER (WHERE "content" IS NULL) AS released, coalesce(sum("size"),0)::bigint AS bytes FROM "ProductMedia"
+  UNION ALL SELECT 'brand', count(*), count("storageKey"), count(*) FILTER (WHERE "content" IS NULL), coalesce(sum("size"),0)::bigint FROM "ShopMedia"`;
+ const released=rows.some(row=>row.released>BigInt(0)),marker=await readMediaBackupMarker();
+ return {mode:mediaReleaseEnabled()?'filesystem-primary':mediaMirrorEnabled()?'filesystem-mirror':'database',rootConfigured:!!process.env.MEDIA_STORAGE_ROOT,
+  canonicalBytesRetained:!released,mediaBackupFresh:mediaBackupFresh(marker),
+  media:rows.map(row=>({...row,total:row.total.toString(),copied:row.copied.toString(),released:row.released.toString(),bytes:row.bytes.toString()}))};
 }
-/** Copy only: never removes PostgreSQL bytes or rewrites storefront URLs. */
+/** Copy only: never removes PostgreSQL bytes or rewrites storefront URLs (release.ts owns the guarded opt-in release). */
 export async function mediaMirrorBatch(raw:z.input<typeof mirrorBatchInput>){
  const input=mirrorBatchInput.parse(raw);
  if(!mediaMirrorEnabled())throw Error('Filesystem mirror is disabled');
@@ -35,6 +38,7 @@ async function copyOne(kind:MediaKind,item:{id:string;workspaceId:string}){
   const select={...mediaMetadataSelect,content:true},where={id:item.id,workspaceId:item.workspaceId};
   const row=kind==='product'?await tx.productMedia.findFirst({where,select}):await tx.shopMedia.findFirst({where,select});
   if(!row)return 'conflict';
+  if(!row.content)return 'ready';
   if(row.content.byteLength!==row.size)throw Error('Canonical media size mismatch');
   const data=await writeMediaObject(row.workspaceId,row.content);
   const match={...where,content:{equals:row.content},size:row.size};
@@ -46,6 +50,6 @@ async function verifyOne(kind:MediaKind,item:{id:string;workspaceId:string}){
  const select={...mediaMetadataSelect,content:true},where={id:item.id,workspaceId:item.workspaceId};
  const row=kind==='product'?await prisma.productMedia.findFirst({where,select}):await prisma.shopMedia.findFirst({where,select});
  if(!row)return 'conflict';if(!row.storageKey||!row.contentSha256)return 'missing';
- if(row.content.byteLength!==row.size||mediaDigest(row.content)!==row.contentSha256)throw Error('Canonical media mismatch');
+ if(row.content&&(row.content.byteLength!==row.size||mediaDigest(row.content)!==row.contentSha256))throw Error('Canonical media mismatch');
  await readMediaObject(row.workspaceId,row.storageKey,row.contentSha256,row.size);return 'ready';
 }

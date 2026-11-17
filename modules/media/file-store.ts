@@ -8,7 +8,9 @@ const sha=/^[0-9a-f]{64}$/;
 export const MEDIA_MAX_BYTES=2*1024*1024;
 const MAX_FILES=512,MAX_WORKSPACE_BYTES=64*1024*1024,MIN_FREE_BYTES=256*1024*1024;
 export const mediaDigest=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
-export function mediaMirrorEnabled(env:Record<string,string|undefined>=process.env){return env.MEDIA_STORAGE_MODE==='filesystem-mirror';}
+export function mediaMirrorEnabled(env:Record<string,string|undefined>=process.env){return env.MEDIA_STORAGE_MODE==='filesystem-mirror'||env.MEDIA_STORAGE_MODE==='filesystem-primary';}
+/** Only filesystem-primary may clear PostgreSQL bytes, and only through the guarded release command. */
+export function mediaReleaseEnabled(env:Record<string,string|undefined>=process.env){return env.MEDIA_STORAGE_MODE==='filesystem-primary';}
 export function mediaObjectKey(workspaceId:string,digest:string){
  if(!uuid.test(workspaceId)||!sha.test(digest))throw Error('Invalid media identity');
  return 'v1/'+workspaceId+'/'+digest;
