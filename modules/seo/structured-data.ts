@@ -6,10 +6,11 @@ export function jsonLdScript(data:unknown){
   .replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026')
   .replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 }
-type ProductInput={name:string;description:string;imageUrl:string;url:string;price:number;available:boolean;storeName:string;origin:string;priceValidUntil?:string};
+type ProductInput={name:string;description:string;imageUrl:string;images?:readonly string[];url:string;price:number;available:boolean;storeName:string;origin:string;priceValidUntil?:string};
 /** Product schema with a real offer only; ratings appear once verified reviews exist. */
 export function productJsonLd(input:ProductInput){
- const image=absoluteUrl(input.origin,input.imageUrl);
+ const images=[...new Set((input.images?.length?input.images:[input.imageUrl]).map(url=>absoluteUrl(input.origin,url)).filter(Boolean))];
+ const image=images.length>1?images:images[0];
  return {
   '@context':'https://schema.org','@type':'Product',name:input.name,
   ...(input.description?{description:input.description}:{}),

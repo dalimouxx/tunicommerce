@@ -18,6 +18,7 @@ import {STOREFRONT_LANG_COOKIE,formatStorefrontMoney,resolveStorefrontLang,store
 import styles from '../../storefront-premium.module.css';
 import PromoPrice from '../../../../../components/promo-price';
 import ProductReviews from '../../../../../components/product-reviews';
+import ProductGallery from '../../../../../components/product-gallery';
 import RatingStars from '../../../../../components/rating-stars';
 import {productReviews} from '../../../../../modules/reviews/service';
 import {reviewJsonLd} from '../../../../../modules/reviews/policy';
@@ -83,7 +84,7 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
  const layout=storefrontLayout(theme.code);
  const reviews=await productReviews(detail.shopId,product.id).catch(()=>({summary:{count:0,average:0},items:[]}));
  return <main className={[styles.page,motion.root,themeClass(theme.code),arabicFont.variable].filter(Boolean).join(' ')} data-motion-root data-theme={theme.code} data-hero={layout.hero} data-cards={layout.cards} data-motif={layout.motif} data-page="product" style={vars} lang={lang} dir={storefrontDir(lang)}>
-  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript({...productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}),...reviewJsonLd(reviews.summary,reviews.items)})}}/>
+  <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript({...productJsonLd({name:product.name,description:product.description,imageUrl:product.imageUrl,images:product.images,url:seo.url,price:product.price,available:product.available,storeName:store.name,origin:seo.origin,priceValidUntil:product.promotion?.endsAt}),...reviewJsonLd(reviews.summary,reviews.items)})}}/>
   <StorefrontPixels metaPixelId={marketing.metaPixelId} tiktokPixelId={marketing.tiktokPixelId}/>
   <StorefrontReveal/>
   <div className={styles.announcement} data-part="announcement">{t.announcementProduct}</div>
@@ -103,7 +104,10 @@ export default async function PublicProductPage({params,searchParams}:Context&{s
    <article className={styles.detailLayout} data-part="product-detail">
     <ThemeMotif motif={layout.motif}/>
     <div className={styles.detailMedia} data-part="product-detail-media">
-     {product.imageUrl?<img src={product.imageUrl} alt={t.photoOf(product.name)}
+     {product.images.length>1?<ProductGallery images={product.images} label={t.galleryLabel}
+      alts={product.images.map((_,index)=>t.photoNumber(product.name,index+1,product.images.length))}
+      thumbLabels={product.images.map((_,index)=>t.showPhoto(index+1))}/>:
+      product.imageUrl?<img src={product.imageUrl} alt={t.photoOf(product.name)}
       loading="eager" decoding="async" referrerPolicy="no-referrer"/>:
       <div className={styles.productPlaceholder} aria-hidden="true">✧</div>}
     </div>

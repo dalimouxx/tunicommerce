@@ -1,4 +1,5 @@
 import {imageUrl,productImageUrl} from '../platform/media';
+import {productGallery} from '../product-media/gallery';
 import {z} from 'zod';
 import {storefrontThemeCodes} from '../shops/storefront-themes';
 import {quoteDelivery} from '../delivery/pricing';
@@ -25,7 +26,7 @@ const schemas={
  customerConfirmation:customerConfirmationPayload,
  createOrder:z.object({name:str,phone:z.string().regex(/^(\+216)?[2459][0-9]{7}$/, 'Numéro tunisien invalide'),city:z.enum(governors as [string,...string[]]),address:str,source:z.enum(['Boutique','Facebook','Instagram','WhatsApp','TikTok','Manuel']),items:z.array(z.object({productId:str,quantity:qty})).min(1).max(100),coupon:z.string().trim().max(50).optional(),notes:z.string().max(2000).optional()}),
  transition:z.object({id:str,status:z.string(),carrier:z.string().max(160).optional(),carrierId:z.string().optional(),tracking:z.string().max(160).optional(),callbackAt:z.string().optional(),restock:z.boolean().optional()}),
- product:z.object({description:z.string().max(4000).optional(),imageUrl:productImageUrl,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
+ product:z.object({description:z.string().max(4000).optional(),imageUrl:productImageUrl,gallery:productGallery,id:z.string().optional(),name:str,sku:str,category:str,variant:z.string().max(100),price:amount,cost:amount,stock:amount,threshold:amount,color:z.string().regex(/^#[a-fA-F0-9]{6}$/)}),
  stock:z.object({id:str,quantity:z.number().int().min(-100000).max(100000),reason:str}),
  expense:z.object({label:str,category:str,amount:amount.refine(n=>n>0),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/)}),
  settlement:z.object({id:str,amount:amount.refine(n=>n>0),reference:str}),

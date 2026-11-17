@@ -21,7 +21,7 @@ export function isolatedStorefrontPreview(state:State){
   marketing:storefrontMarketing(state),
   products:catalog.products.map(product=>({
    id:product.id,name:product.name,category:product.category,variant:product.variant,
-   price:product.price,description:product.description,imageUrl:publicProductImageUrl(product.imageUrl),
+   price:product.price,description:product.description,imageUrl:publicProductImageUrl(product.imageUrl),images:product.images,
    available:product.available,offers:product.offers,promotion:product.promotion
   }))
  };

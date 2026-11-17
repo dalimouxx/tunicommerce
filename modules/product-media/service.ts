@@ -4,6 +4,7 @@ import {normalizeState} from '../commerce/normalize';
 import {hasPublicMediaReference} from '../media/public-reference';
 import type {State} from '../commerce/types';
 import {LIBRARY_LIMIT,productPhotoUrl} from './validation';
+import {productUsesPhoto} from './gallery';
 import {loadWorkspaceQuotas} from '../subscriptions/quotas';
 import {homeContent,homePhotoIds} from '../shops/home-content';
 import {readHomeHistory} from '../shops/home-history';
@@ -59,7 +60,9 @@ export async function removeProductPhoto(ownerId:string,id:string){
  return prisma.$transaction(async tx=>{
   const row=await tx.workspace.findUnique({where:{ownerId},select:{id:true}});
   if(!row)throw new HttpError(404,'Boutique introuvable');
-  // Lock, then reread current JSON. A concurrent product save must not race deletion.
+  // Same lock order as every commerce writer: owner advisory lock, then the Workspace row.
+  // Independent shops save under this advisory lock, so their product photos cannot race deletion.
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${ownerId}))`;
   await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id=${row.id} FOR UPDATE`;
   const [photo,current]=await Promise.all([
    tx.productMedia.findFirst({where:{id,workspaceId:row.id},select:{id:true}}),
@@ -68,8 +71,11 @@ export async function removeProductPhoto(ownerId:string,id:string){
   if(!photo)throw new HttpError(404,'Photo introuvable');
   const state=normalizeState(current.data as unknown as State);
   const url=productPhotoUrl(id);
-  if(state.products.some(p=>p.imageUrl===url))
+  if(state.products.some(p=>productUsesPhoto(p,url)))
    throw new HttpError(409,'Cette image est utilisée par un produit. Changez sa photo avant de la supprimer.');
+  const shops=await tx.shopCommerce.findMany({where:{shop:{organization:{ownerId}}},select:{data:true}});
+  if(shops.some(shop=>normalizeState(shop.data as unknown as State).products.some(p=>productUsesPhoto(p,url))))
+   throw new HttpError(409,'Cette image est utilisée par un produit d’une de vos boutiques. Changez sa photo avant de la supprimer.');
   const homes=await tx.shopHome.findMany({where:{shop:{organization:{ownerId}}},select:{draft:true,published:true,history:true}});
   if(homes.some(home=>[home.draft,home.published,...readHomeHistory(home.history).map(entry=>entry.content)].some(value=>{const parsed=homeContent.safeParse(value);return parsed.success&&homePhotoIds(parsed.data).includes(id);})))
    throw new HttpError(409,'Cette photo est conservée par un accueil ou son historique. Elle sera supprimable quand elle ne figurera plus dans le brouillon, la publication ni les 20 dernières étapes.');

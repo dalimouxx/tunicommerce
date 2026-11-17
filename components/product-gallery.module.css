@@ -1,0 +1,14 @@
+/* Fills the theme's media frame: photos on top, thumbnails underneath. */
+.gallery{place-self:stretch;display:grid;grid-template-rows:minmax(0,1fr) auto;width:100%;height:100%;min-height:0;min-width:0}
+.track{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;min-height:0}
+.track::-webkit-scrollbar{display:none}
+.track:focus-visible{outline:3px solid var(--store-accent);outline-offset:-3px}
+.slide{flex:0 0 100%;min-width:0;height:100%;scroll-snap-align:center;scroll-snap-stop:always;display:grid;place-items:center}
+.slide img{width:100%;height:100%;object-fit:contain;padding:24px;user-select:none}
+.thumbs{display:flex;gap:8px;justify-content:center;padding:4px 12px 14px;overflow-x:auto;scrollbar-width:thin}
+.thumbs .thumb{flex:0 0 auto;width:56px;height:56px;padding:0;border:2px solid transparent;border-radius:12px;overflow:hidden;background:var(--store-surface);cursor:pointer;opacity:.68;transition:opacity .2s,border-color .2s}
+.thumbs .thumb:hover{opacity:.9}
+.thumbs .thumb[aria-current="true"]{opacity:1;border-color:var(--store-accent)}
+.thumbs .thumb:focus-visible{outline:3px solid var(--store-accent);outline-offset:2px}
+.thumbs .thumb img{display:block;width:100%;height:100%;object-fit:cover;padding:0}
+@media (max-width:720px){.thumbs .thumb{width:46px;height:46px;border-radius:9px}.slide img{padding:14px}}

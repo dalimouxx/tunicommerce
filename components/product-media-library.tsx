@@ -6,9 +6,10 @@ import styles from './product-media-library.module.css';
 
 type Photo={id:string;url:string;size:number;width:number;height:number;createdAt:string};
 type Collection={photos:Photo[];limit:number};
-type Props={value?:string;onChoose?:(url:string)=>void;standalone?:boolean;onBusyChange?:(pending:boolean)=>void};
+type Props={value?:string;selected?:readonly string[];onChoose?:(url:string)=>void;standalone?:boolean;onBusyChange?:(pending:boolean)=>void};
 
-export default function ProductMediaLibrary({value,onChoose,standalone=false,onBusyChange}:Props){
+export default function ProductMediaLibrary({value,selected,onChoose,standalone=false,onBusyChange}:Props){
+ const isChosen=(url:string)=>selected?selected.includes(url):value===url;
  const [collection,setCollection]=useState<Collection>({photos:[],limit:30});
  const [pending,setPending]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -91,10 +92,10 @@ export default function ProductMediaLibrary({value,onChoose,standalone=false,onB
     {collection.photos.map(photo=><div key={photo.id} className={styles.cell}>
      <button type="button" title={onChoose?'Utiliser cette photo':'Photo du catalogue'}
       disabled={pending||!onChoose}
-      className={styles.thumbnail+' '+(value===photo.url?styles.chosen:'')}
+      className={styles.thumbnail+' '+(isChosen(photo.url)?styles.chosen:'')} aria-pressed={selected?isChosen(photo.url):undefined}
       onClick={()=>onChoose?.(photo.url)}>
       <img src={photo.url} alt={'Photo du catalogue '+photo.createdAt.slice(0,10)} loading="lazy"/>
-      {value===photo.url&&<span className={styles.check}><Check size={15}/></span>}
+      {isChosen(photo.url)&&<span className={styles.check}><Check size={15}/></span>}
      </button>
      <div className={styles.meta}>
       <small>{Math.round(photo.size/1024)} Ko</small>
@@ -103,7 +104,7 @@ export default function ProductMediaLibrary({value,onChoose,standalone=false,onB
      </div>
     </div>)}
    </div>:<div className={styles.empty}><ImageOff size={25}/><p>Aucune photo importée. Ajoutez la première image de votre catalogue.</p></div>}
-  {onChoose&&value&&<button type="button" className={styles.clear} onClick={()=>onChoose('')}>Retirer cette photo de la sélection</button>}
+  {onChoose&&value&&!selected&&<button type="button" className={styles.clear} onClick={()=>onChoose('')}>Retirer cette photo de la sélection</button>}
  </div>;
 }
 

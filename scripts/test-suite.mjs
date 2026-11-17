@@ -7,7 +7,7 @@ const integration=new Set([
  'legacy-domains-api.test.ts',
  'activity-index-api.test.ts',
  'domain-revalidation.test.ts',
- 'media-cleanup.test.ts',
+ 'media-cleanup.test.ts','product-gallery-api.test.ts',
  'media-mirror-api.test.ts',
  'subscription-reminders-api.test.ts',
  'webhooks-api.test.ts',
