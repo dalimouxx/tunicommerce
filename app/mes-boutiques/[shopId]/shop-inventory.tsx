@@ -1,9 +1,10 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
 import {replenishmentQueue,pageOperationalQueue} from '../../../modules/shops/operational-queues';
+import ProductPhotosEditor from '../../../components/product-photos-editor';
 import {productEditPayload,merchantInventoryCsv,type CatalogEdit} from '../../../modules/shops/catalog-operations';
 
-type Product={id:string;sku:string;name:string;category:string;variant:string;price:number;cost:number;stock:number;threshold:number;color:string;active:boolean};
+type Product={id:string;sku:string;name:string;category:string;variant:string;price:number;cost:number;stock:number;threshold:number;color:string;active:boolean;imageUrl?:string;gallery?:string[]};
 const toTnd=(millimes:number)=>(millimes/1000).toFixed(3);
 const toMillimes=(value:string)=>Math.round(Number(value)*1000);
 
@@ -22,6 +23,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
  const [openingStock,setOpeningStock]=useState('0');
  const [stockAdjust,setStockAdjust]=useState<Record<string,string>>({});
  const [editing,setEditing]=useState('');
+ const [photos,setPhotos]=useState<string[]>([]);
  const [edit,setEdit]=useState<CatalogEdit>({name:'',sku:'',category:'',variant:'',price:'0',cost:'0',threshold:'0'});
  const lowStock=replenishmentQueue(products);
  const needle=search.trim().toLocaleLowerCase('fr');
@@ -64,6 +66,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
  }
  function openEdit(product:Product){
   setEditing(product.id);
+  setPhotos([...new Set([product.imageUrl||'',...(product.gallery||[])].filter(Boolean))]);
   setEdit({name:product.name,sku:product.sku,category:product.category,variant:product.variant,
    price:toTnd(product.price),cost:toTnd(product.cost),threshold:String(product.threshold)});
  }
@@ -72,7 +75,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
   const product=products.find(p=>p.id===editing);
   if(!product)return;
   try{
-   const payload=productEditPayload(product,edit);
+   const payload={...productEditPayload(product,edit),imageUrl:photos[0]||'',gallery:photos.slice(1)};
    if(await mutate('product',payload))setEditing('');
   }catch(error){setNotice(error instanceof Error?error.message:'Champs invalides');}
  }
@@ -109,6 +112,7 @@ export default function ShopInventory({shopId}:{shopId:string}){
     <label>Prix (TND)<input type="number" required min="0" max="1000000" step="0.001" value={edit.price} onChange={event=>setEdit(v=>({...v,price:event.target.value}))} style={{display:'block',padding:9,width:125}}/></label>
     <label>Coût (TND)<input type="number" required min="0" max="1000000" step="0.001" value={edit.cost} onChange={event=>setEdit(v=>({...v,cost:event.target.value}))} style={{display:'block',padding:9,width:125}}/></label>
     <label>Seuil d’alerte<input type="number" required min="0" max="1000000" step="1" value={edit.threshold} onChange={event=>setEdit(v=>({...v,threshold:event.target.value}))} style={{display:'block',padding:9,width:112}}/></label>
+    <div style={{width:'100%'}}><ProductPhotosEditor value={photos} onChange={setPhotos}/></div>
     <button disabled={busy} type="submit">Enregistrer les modifications</button>
     <button disabled={busy} type="button" onClick={()=>setEditing('')}>Annuler</button>
     <p style={{width:'100%',fontSize:13,color:'#53687a'}}>Le stock actuel reste inchangé : utilisez les ajustements de stock pour les mouvements physiques.</p>

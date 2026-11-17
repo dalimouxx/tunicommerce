@@ -10,7 +10,7 @@ export function publicProductDetail(state:State,productId:string){
   store:{name:catalog.name,description:catalog.description,theme:catalog.theme,logoUrl:catalog.logoUrl,
   shipping:catalog.shipping,zones:catalog.zones,marketing:catalog.marketing},
   product:{id:product.id,name:product.name,category:product.category,variant:product.variant,
-   price:product.price,description:product.description,available:product.available,imageUrl:product.imageUrl,
+   price:product.price,description:product.description,available:product.available,imageUrl:product.imageUrl,images:product.images,
    offers:product.offers,promotion:product.promotion},
   similar
  };

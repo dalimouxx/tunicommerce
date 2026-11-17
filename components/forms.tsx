@@ -1,18 +1,18 @@
 'use client';
 import {useState,useEffect,useRef} from 'react';
 import {quoteCart} from '../modules/delivery/pricing';
-import ProductMediaLibrary from './product-media-library';
+import ProductPhotosEditor from './product-photos-editor';
 import {Plus,Trash2,X} from 'lucide-react';
 import {governors,money,type State,type Product,type Order} from '../modules/commerce/types';
 export function Modal({title,children,close}:{title:string;children:React.ReactNode;close:()=>void}){const dialog=useRef<HTMLElement>(null);useEffect(()=>{const previous=document.activeElement as HTMLElement|null;dialog.current?.querySelector<HTMLElement>('button,input,select,textarea')?.focus();return()=>previous?.focus();},[]);return <div className="modal-backdrop" onClick={close}><section ref={dialog} onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close();}if(e.key==='Tab'){const elements=Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')||[]);const first=elements[0],last=elements[elements.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}}} className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={e=>e.stopPropagation()}><header><h2>{title}</h2><button className="icon-button" onClick={close} aria-label="Fermer"><X size={20}/></button></header>{children}</section></div>}
 export function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="field"><span>{label}</span>{children}</label>}
 export function OrderForm({state,submit,busy}:{state:State;submit:(p:unknown)=>void;busy:boolean}){const [items,setItems]=useState([{productId:state.products[0]?.id||'',quantity:1}]);const [city,setCity]=useState('Tunis');const [coupon,setCoupon]=useState('');const quote=quoteCart(state,items,city,coupon);return <form onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);submit({...Object.fromEntries(f),items});}}><div className="form-grid"><Field label="Nom du client"><input name="name" required placeholder="Prénom et nom"/></Field><Field label="Téléphone"><input name="phone" required pattern="(\+216)?[2459][0-9]{7}" placeholder="22 123 456 (sans espaces)"/></Field><Field label="Gouvernorat"><select name="city" value={city} onChange={e=>setCity(e.target.value)}>{governors.map(g=><option key={g}>{g}</option>)}</select></Field><Field label="Source"><select name="source">{['Manuel','Boutique','Facebook','Instagram','WhatsApp','TikTok'].map(g=><option key={g}>{g}</option>)}</select></Field></div><Field label="Adresse de livraison"><input name="address" required placeholder="Rue, numéro, ville…"/></Field><div className="form-section">Produits</div>{items.map((item,i)=><div className="item-row" key={i}><select aria-label="Produit" value={item.productId} onChange={e=>setItems(items.map((v,j)=>j===i?{...v,productId:e.target.value}:v))}>{state.products.map(p=><option key={p.id} value={p.id}>{p.name} · {p.variant} · {money(p.price)} DT</option>)}</select><input aria-label="Quantité" type="number" min="1" max="10000" value={item.quantity} onChange={e=>setItems(items.map((v,j)=>j===i?{...v,quantity:+e.target.value}:v))}/><button type="button" className="icon-button" disabled={items.length===1} onClick={()=>setItems(items.filter((_,j)=>i!==j))}><Trash2 size={16}/></button></div>)}<button type="button" className="text-button" onClick={()=>setItems([...items,{productId:state.products[0]?.id||'',quantity:1}])}><Plus size={15}/> Ajouter un produit</button><Field label="Code de réduction"><input name="coupon" placeholder="Optionnel" value={coupon} onChange={e=>setCoupon(e.target.value)}/></Field><Field label="Note interne"><textarea name="notes" placeholder="Instructions particulières…"/></Field><div className="form-total"><span>Total estimé · Livraison {money(quote.shipping)} DT · {quote.zoneName}</span><strong>{money(quote.total)} DT</strong></div>{!quote.couponValid&&<p className="negative small">Coupon inconnu ou épuisé.</p>}<p className="muted small">Le prix, le coupon et le stock sont vérifiés côté serveur.</p><button className="primary full" disabled={busy||!state.products.length}>{busy?'Enregistrement…':'Créer la commande'}</button></form>}
 export function ProductForm({product,submit,busy}:{product?:Product;submit:(p:unknown)=>void;busy:boolean}){
- const [photo,setPhoto]=useState(product?.imageUrl||'');
+ const [photos,setPhotos]=useState<string[]>(()=>[...new Set([product?.imageUrl||'',...(product?.gallery||[])].filter(Boolean))]);
  return <form onSubmit={e=>{
   e.preventDefault();
   const f=Object.fromEntries(new FormData(e.currentTarget));
-  submit({...f,id:product?.id,price:Math.round(+f.price*1000),
+  submit({...f,id:product?.id,imageUrl:photos[0]||'',gallery:photos.slice(1),price:Math.round(+f.price*1000),
    cost:Math.round(+f.cost*1000),stock:+f.stock,threshold:+f.threshold});
  }}>
   <div className="form-grid">
@@ -27,15 +27,7 @@ export function ProductForm({product,submit,busy}:{product?:Product;submit:(p:un
    <Field label="Seuil d’alerte"><input name="threshold" type="number" min="0" defaultValue={product?.threshold||10}/></Field>
    <Field label="Couleur du visuel de secours"><input name="color" type="color" defaultValue={product?.color||'#a8bfb0'}/></Field>
   </div>
-  <Field label="Photo principale : choisir dans la médiathèque ou conserver une URL HTTPS">
-   <input name="imageUrl" type="text" maxLength={2000} value={photo}
-    onChange={e=>setPhoto(e.target.value)} placeholder="Photo importée ou https://..."/>
-  </Field>
-  {photo&&<div style={{display:'flex',alignItems:'center',gap:12,marginBottom:15}}>
-   <img src={photo} alt="Prévisualisation du produit" style={{width:78,height:78,objectFit:'contain',borderRadius:9,background:'#eff5ef'}}/>
-   <span style={{fontSize:11,color:'#68816d'}}>Cette photo sera utilisée dans votre boutique publique après enregistrement du produit.</span>
-  </div>}
-  <ProductMediaLibrary value={photo} onChoose={setPhoto}/>
+  <ProductPhotosEditor value={photos} onChange={setPhotos}/>
   <button className="primary full" disabled={busy}>{busy?'Enregistrement…':'Enregistrer le produit'}</button>
  </form>;
 }

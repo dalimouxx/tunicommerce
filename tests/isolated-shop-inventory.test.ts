@@ -2,16 +2,19 @@ import {pageOperationalQueue} from '../modules/shops/operational-queues';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState} from '../modules/commerce/seed';
-import {disallowLegacyProductMedia,inventoryMutation} from '../modules/shops/inventory';
+import {inventoryMutation} from '../modules/shops/inventory';
+import {payloadPhotoIds} from '../modules/product-media/gallery';
 import {assertMerchantAggregateQuotas} from '../modules/shops/aggregate-quotas';
 
 test('inventory operations are limited to product and stock and a UUID request',()=>{
  assert.equal(inventoryMutation.safeParse({action:'reset',payload:{},requestId:'bad'}).success,false);
  assert.equal(inventoryMutation.safeParse({action:'stock',payload:{},requestId:'123e4567-e89b-42d3-a456-426614174000'}).success,true);
 });
-test('legacy media references cannot cross the shop boundary',()=>{
- assert.throws(()=>disallowLegacyProductMedia('product',{imageUrl:'/api/media/products/123e4567-e89b-42d3-a456-426614174000'}));
- assert.doesNotThrow(()=>disallowLegacyProductMedia('product',{imageUrl:'https://example.org/item.png'}));
+test('library photos named by a product payload are collected for the owner check',()=>{
+ const photo='/api/media/products/123e4567-e89b-42d3-a456-426614174000';
+ assert.deepEqual(payloadPhotoIds({imageUrl:photo,gallery:[photo,'https://example.org/item.png',42]}),['123e4567-e89b-42d3-a456-426614174000']);
+ assert.deepEqual(payloadPhotoIds({imageUrl:'https://example.org/item.png'}),[]);
+ assert.deepEqual(payloadPhotoIds(null),[]);
 });
 test('product limits use plan and optional workspace override rather than a fixed pilot limit',()=>{
  const before=initialState(false);

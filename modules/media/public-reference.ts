@@ -4,7 +4,8 @@ import {prisma} from '../storage/client';
 export async function hasPublicMediaReference(workspaceId:string,ownerId:string,path:string,kind:'product'|'brand'){
  const referenced=(data:Prisma.Sql)=>kind==='product'?Prisma.sql`EXISTS (
   SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(${data}->'products')='array' THEN ${data}->'products' ELSE '[]'::jsonb END) p
-  WHERE p->>'imageUrl'=${path} AND p->'active'='true'::jsonb)`:
+  WHERE p->'active'='true'::jsonb AND (p->>'imageUrl'=${path}
+   OR jsonb_typeof(p->'gallery')='array' AND p->'gallery' @> jsonb_build_array(${path}::text)))`:
   Prisma.sql`(${data}->'shop'->>'logoUrl'=${path} OR ${data}->'shop'->>'bannerUrl'=${path})`;
  const rows=await prisma.$queryRaw<{allowed:boolean}[]>(Prisma.sql`SELECT EXISTS (
   SELECT 1 FROM "Workspace" w WHERE w."id"=${workspaceId} AND w."ownerId"=${ownerId}

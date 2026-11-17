@@ -3,6 +3,7 @@ import {normalizeState} from '../commerce/normalize';
 import type {State} from '../commerce/types';
 import {readMediaContent,mediaReadSelect} from '../media/content-store';
 import {isOpen} from '../platform/public';
+import {productUsesPhoto} from '../product-media/gallery';
 
 /** Called only after public-host authorization; sessions never grant access to another asset. */
 export async function storefrontDomainMedia(slug:string,path:string){
@@ -15,7 +16,7 @@ export async function storefrontDomainMedia(slug:string,path:string){
  const state=normalizeState(data as unknown as State);
  const id=path.slice(path.lastIndexOf('/')+1),ownerId=shop?.organization.ownerId||historical!.ownerId;
  const product=path.startsWith('/api/media/products/');
- const referenced=product?state.products.some(item=>item.active&&item.imageUrl===path):[state.shop.logoUrl,state.shop.bannerUrl].includes(path);
+ const referenced=product?state.products.some(item=>item.active&&productUsesPhoto(item,path)):[state.shop.logoUrl,state.shop.bannerUrl].includes(path);
  if(!referenced)return null;
  const where={id,workspace:{ownerId}};
  const select=mediaReadSelect();

@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {payloadPhotoIds} from '../product-media/gallery';
 import {prisma} from '../storage/client';
 import {HttpError} from '../auth/http';
 import {writeIsolatedCommerce} from './aggregate-quotas';
@@ -13,15 +14,11 @@ export const inventoryMutation=z.object({
  payload:z.unknown(),
  requestId:z.string().uuid()
 }).strict();
-export function disallowLegacyProductMedia(action:'product'|'stock',payload:unknown){
- if(action!=='product')return;
- if(payload&&typeof payload==='object'&&!Array.isArray(payload)){
-  const url=(payload as Record<string,unknown>).imageUrl;
-  if(typeof url==='string'&&url.startsWith('/api/media/products/'))
-   throw new HttpError(409,'Les photos de la bibliothèque historique ne sont pas liées à cette boutique.');
- }
-}
+/** Library photos are the shop owner's: each one named by the product must exist in the owner's library. */
 export async function performShopInventoryAction(userId:string,shopId:string,input:z.infer<typeof inventoryMutation>){
- disallowLegacyProductMedia(input.action,input.payload);
- return writeIsolatedCommerce(userId,shopId,input,()=>{});
+ const ids=input.action==='product'?payloadPhotoIds(input.payload):[];
+ return writeIsolatedCommerce(userId,shopId,input,()=>{},undefined,ids.length?async(tx,{ownerWorkspaceId})=>{
+  const owned=await tx.productMedia.count({where:{id:{in:ids},workspaceId:ownerWorkspaceId}});
+  if(owned!==ids.length)throw new HttpError(403,'Cette photo appartient à une autre boutique ou a été supprimée');
+ }:undefined);
 }

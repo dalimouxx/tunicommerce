@@ -49,7 +49,8 @@ type Mutation={action:string;payload?:unknown;requestId:string};
 export async function writeIsolatedCommerce(
  userId:string,shopId:string,input:Mutation,
  check:(before:State,after:State)=>void,
- permission?:ShopPermission
+ permission?:ShopPermission,
+ verify?:(tx:Prisma.TransactionClient,context:{ownerWorkspaceId:string})=>Promise<void>
 ){
  if(!permission)await requireIsolatedOwner(userId,shopId);
  // Employees use the organization's billing owner; no private billing access is granted to them.
@@ -80,6 +81,8 @@ export async function writeIsolatedCommerce(
    throw new HttpError(400,error instanceof Error?error.message:'Opération invalide');
   }
   check(before,next);
+  // Runs under the owner lock, so a referenced library photo cannot be deleted meanwhile.
+  if(verify)await verify(tx,{ownerWorkspaceId:ownerWorkspace.id});
   if(isCommerceGrowth(before,next)){
    const account=await tx.workspace.findUnique({
     where:{ownerId:billingOwnerId},
