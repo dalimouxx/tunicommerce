@@ -7,7 +7,7 @@ const integration=new Set([
  'legacy-domains-api.test.ts',
  'activity-index-api.test.ts',
  'domain-revalidation.test.ts',
- 'media-cleanup.test.ts','product-gallery-api.test.ts',
+ 'media-cleanup.test.ts',
  'media-mirror-api.test.ts',
  'subscription-reminders-api.test.ts',
  'webhooks-api.test.ts',
@@ -25,7 +25,7 @@ const integration=new Set([
  'media-api.test.ts','onboarding-api.test.ts','payment-reception-api.test.ts',
  'portal-http-isolation.test.ts','portals.test.ts','postgres.test.ts',
  'priority1-http-tenant-boundary.test.ts','priority1-legacy-public-race.test.ts',
- 'priority1-postgres-isolation.test.ts','product-media-api.test.ts',
+ 'priority1-postgres-isolation.test.ts','product-media-api.test.ts','product-gallery-api.test.ts',
  'saas-billing-api.test.ts','saas-plan-api.test.ts','team-api.test.ts','tenancy-api.test.ts'
 ]);
 // This exercise needs a seeded backup and an explicit phase; its own workflow runs it.
