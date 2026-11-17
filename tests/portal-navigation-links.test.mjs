@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 test('Global admin and merchant navigation require explicit independent portal login',()=>{
  const admin=readFileSync('app/admin/layout.tsx','utf8');
- const merchant=readFileSync('components/commerce-app.tsx','utf8');
+ const merchant=['components/commerce-app.tsx','components/merchant/shell.tsx','components/merchant/simple-pages.tsx'].map(file=>readFileSync(file,'utf8')).join('\n');
  const shops=readFileSync('app/mes-boutiques/page.tsx','utf8');
  assert.ok(admin.includes('href="/connexion/boutique"'));
  assert.equal(merchant.includes('href="/connexion/admin"'),false);
