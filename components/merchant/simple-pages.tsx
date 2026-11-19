@@ -1,4 +1,4 @@
-import {Activity, LogOut, ShieldCheck} from 'lucide-react';
+import {Activity, ArrowRight, LogOut, ShieldCheck, Zap} from 'lucide-react';
 import type {State} from '../../modules/commerce/types';
 import {SimpleForm} from '../forms';
 import type {Act} from './shared';
@@ -17,6 +17,39 @@ export function CouponsPage({state}: {state: State}) {
     </tr>)}
    </tbody>
   </table>
+ </div>;
+}
+
+const integrations = [
+ ['WhatsApp Business', 'W', 'Confirmation et suivi des commandes', '#e1f4e9'],
+ ['Meta Ads', '∞', 'Analyse des campagnes Facebook et Instagram', '#e6effb'],
+ ['TikTok Ads', '♪', 'Attribution des ventes à vos campagnes', '#efedf5'],
+ ['Transporteurs', '↗', 'Expéditions, suivi et rapprochement COD', '#fbecdf'],
+ ['Commerce Copilot', '✧', 'Un assistant fondé sur vos données réelles', '#e9e8f8'],
+ ['SMS Tunisie', 'S', 'Notifications et relance des clients', '#e9eff2'],
+];
+
+export function IntegrationsPage() {
+ return <>
+  <div className="info-strip">Aucune donnée n’est envoyée à un service externe sans connexion. Les connexions ci-dessous ne sont pas encore disponibles.</div>
+  <div className="integration-grid">
+   {integrations.map(([name, icon, description, color]) => <div className="card integration-card" key={name}>
+    <span className="integration-icon" style={{background: color}}>{icon}</span>
+    <h3>{name}</h3>
+    <p>{description}</p>
+    <span className="badge neutral">Non connecté · À venir</span>
+   </div>)}
+  </div>
+ </>;
+}
+
+export function AutomationsPage() {
+ return <div className="card empty large-empty">
+  <span className="empty-icon"><Zap size={30}/></span>
+  <h2>Moins de tâches répétitives.<br/>Plus de temps pour votre commerce.</h2>
+  <p>Les scénarios automatiques seront disponibles après connexion des services de messagerie et des transporteurs.</p>
+  <div className="automation-preview"><span>Commande confirmée</span><ArrowRight size={18}/><span>Message WhatsApp</span></div>
+  <span className="badge neutral">Module à venir</span>
  </div>;
 }
 
