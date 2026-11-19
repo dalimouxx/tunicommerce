@@ -1,8 +1,9 @@
 'use client';
-import {useEffect,useState,type CSSProperties,type FormEvent,type ReactNode} from 'react';
+import {useEffect,useState,type CSSProperties,type FormEvent} from 'react';
 import Link from 'next/link';
 import {ArrowLeft,ArrowRight,Check,CheckCircle2,ExternalLink,Image as ImageIcon,LayoutTemplate,Palette,Save,ShieldCheck,ShoppingBag,Smartphone,Store} from 'lucide-react';
 import styles from './brand-editor.module.css';
+import type {ReactNode} from 'react';
 import {accents,defaultPresentation,themes,type AppearanceInput,type StoreTheme} from '../../modules/appearance/validation';
 import {appearanceThemeDetails,appearanceAccentText} from '../../modules/appearance/theme-catalog';
 import StorefrontMotionToggle from '../../components/storefront-motion-toggle';
