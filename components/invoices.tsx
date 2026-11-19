@@ -1,5 +1,6 @@
 'use client';
 import {useState} from 'react';
+import {createPortal} from 'react-dom';
 import {Plus, Printer, FileCheck, Receipt} from 'lucide-react';
 import {type State, type Invoice, money} from '../modules/commerce/types';
 import {Modal, Field} from './forms';
@@ -59,7 +60,8 @@ export function InvoicesPage({state, act, busy}: Props) {
     <button className="primary full" disabled={busy}>Créer le brouillon</button>
    </form>
   </Modal>}
-  {invoice && <Modal title={invoice.number} close={() => setSelected(undefined)}>
+  {/* Rendered at the document root: printing hides the workspace page, so the invoice must live outside it. */}
+  {invoice && createPortal(<Modal title={invoice.number} close={() => setSelected(undefined)}>
    <div className="invoice-actions">
     {invoice.status === 'DRAFT' && <>
      <button className="primary" disabled={busy} onClick={() => act('issueInvoice', {id: invoice.id})}><FileCheck size={15}/>Émettre et figer</button>
@@ -68,7 +70,7 @@ export function InvoicesPage({state, act, busy}: Props) {
     <button className="button" onClick={() => window.print()}><Printer size={15}/>Imprimer / PDF</button>
    </div>
    <InvoiceDocument invoice={invoice} state={state}/>
-  </Modal>}
+  </Modal>, document.body)}
  </>;
 }
 

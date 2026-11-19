@@ -1,6 +1,6 @@
 import {
- Activity, Boxes, ChartNoAxesCombined, ChevronRight, Headphones, LayoutDashboard, Package, Plug, Receipt,
- RotateCcw, Settings, ShoppingBag, Store, Ticket, Truck, Users, Wallet, Zap,
+ Activity, Boxes, ChartNoAxesCombined, ChevronRight, Headphones, LayoutDashboard, Package, Receipt,
+ RotateCcw, Settings, ShoppingBag, Store, Ticket, Truck, Users, Wallet,
 } from 'lucide-react';
 import {labels, money, type Order, type State, type Status} from '../../modules/commerce/types';
 import type {metrics} from '../../modules/commerce/service';
@@ -8,7 +8,8 @@ import type {metrics} from '../../modules/commerce/service';
 export type Metrics = ReturnType<typeof metrics>;
 export type Act = (action: string, payload: unknown) => Promise<boolean>;
 
-/** Sidebar sections of the merchant workspace; `group` starts a new heading. */
+/** Sidebar sections of the merchant workspace; `group` starts a new heading.
+ * Automations and integrations come back here once real providers are connected (bloc C). */
 export const nav = [
  {label: 'Vue d’ensemble', icon: LayoutDashboard, group: 'PILOTAGE'},
  {label: 'Commandes', icon: ShoppingBag},
@@ -23,10 +24,8 @@ export const nav = [
  {label: 'Factures', icon: Receipt},
  {label: 'Analyses', icon: ChartNoAxesCombined},
  {label: 'Coupons', icon: Ticket},
- {label: 'Automatisations', icon: Zap},
  {label: 'Ma boutique', icon: Store, group: 'ESPACE BOUTIQUE'},
  {label: 'Paniers', icon: ShoppingBag},
- {label: 'Intégrations', icon: Plug},
  {label: 'Activité', icon: Activity},
  {label: 'Paramètres', icon: Settings},
 ];
