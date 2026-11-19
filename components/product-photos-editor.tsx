@@ -2,7 +2,7 @@
 import {useState} from 'react';
 import {ArrowLeft,ArrowRight,Star,X} from 'lucide-react';
 import ProductMediaLibrary from './product-media-library';
-import {PRODUCT_PHOTO_LIMIT,arrangeGallery,type GalleryStep} from '../modules/product-media/gallery';
+import {PRODUCT_PHOTO_LIMIT,addImportedPhotos,arrangeGallery,importedPhotosMessage,type GalleryStep} from '../modules/product-media/gallery';
 import styles from './product-photos-editor.module.css';
 
 /** Ordered product photos: the first is the main photo used by cards, cart and sharing. */
@@ -16,6 +16,7 @@ export default function ProductPhotosEditor({value,onChange}:{value:readonly str
   if(value.length>=PRODUCT_PHOTO_LIMIT){setMessage(PRODUCT_PHOTO_LIMIT+' photos maximum : retirez-en une avant d’en ajouter une autre.');return;}
   apply({type:'add',url});
  };
+ const imported=(urls:string[])=>{const result=addImportedPhotos(value,urls);onChange(result.next);setMessage(result.dropped?importedPhotosMessage(result):'');};
  const addLink=()=>{
   const url=link.trim();
   try{if(new URL(url).protocol!=='https:')throw Error();}catch{setMessage('Le lien doit commencer par https://');return;}
@@ -43,7 +44,7 @@ export default function ProductPhotosEditor({value,onChange}:{value:readonly str
    <button type="button" onClick={addLink} disabled={!link.trim()}>Ajouter</button>
   </div>
   {message&&<p className={styles.message} role="status">{message}</p>}
-  <p className={styles.hint}>Touchez une photo de la médiathèque pour l’ajouter, touchez-la à nouveau pour la retirer.</p>
-  <ProductMediaLibrary value={value[0]} selected={value} onChoose={choose}/>
+  <p className={styles.hint}>Les photos importées ici sont ajoutées au produit. Touchez une photo de la médiathèque pour l’ajouter, touchez-la à nouveau pour la retirer.</p>
+  <ProductMediaLibrary value={value[0]} selected={value} onChoose={choose} onImported={imported}/>
  </div>;
 }

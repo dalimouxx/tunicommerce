@@ -6,7 +6,8 @@
 - Dans la fiche produit (boutique historique) et dans « Modifier le produit » (boutiques indépendantes) :
   - touchez une photo de la médiathèque pour l'ajouter, puis touchez-la à nouveau pour la retirer ;
   - les boutons ←/→ changent l'ordre, ★ met une photo en principale et ✕ la retire ;
-  - on peut aussi ajouter un lien `https://`.
+  - on peut aussi ajouter un lien `https://` ;
+  - les photos importées depuis l'éditeur, une ou plusieurs à la fois, sont ajoutées directement au produit, dans l'ordre d'import. Au-delà de 8, elles restent dans la médiathèque et un message l'indique.
 - Les boutiques indépendantes peuvent maintenant utiliser les photos de la médiathèque du propriétaire. Avant, seules les adresses HTTPS étaient acceptées.
 
 ## En boutique
@@ -43,5 +44,4 @@
 
 ## Limites
 
-- Après un import de plusieurs photos (PR #165), chaque photo s'ajoute au produit d'un toucher. L'import ne les ajoute pas d'office.
 - Pas de zoom plein écran sur la page produit.
