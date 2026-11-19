@@ -3,6 +3,7 @@ import {useMemo,useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import {Plus,Search,Store,ArrowUpRight,ShieldCheck,Link2,Settings2,AlertTriangle,CheckCircle2} from 'lucide-react';
 import styles from '../app/admin/platform.module.css';
+import {storefrontAvailability,storefrontClosedLabels} from '../modules/platform/availability';
 
 export type ManagedShop={
  id:string;name:string;owner:string;email:string;ownerRole:string;
@@ -161,7 +162,9 @@ export default function AdminPanel({
       <button type="submit" className={styles.primary} disabled={busy}>{busy?'Enregistrement…':'Enregistrer les paramètres'}</button>
      </form>
      <div className={styles.editExtra}>
-      {current.slug&&<Link href={'/boutiques/'+current.slug} className={styles.action} target="_blank">Ouvrir la boutique publique <ArrowUpRight size={14}/></Link>}
+      {current.slug&&(availability=>availability.open
+       ?<Link href={'/boutiques/'+current.slug} className={styles.action} target="_blank">Ouvrir la boutique publique <ArrowUpRight size={14}/></Link>
+       :<p className={styles.inlineWarning}>{storefrontClosedLabels[availability.reason!]}</p>)(storefrontAvailability(current))}
       {!current.hasLinkedShop&&<div className={styles.inlineWarning}>
        <p>Cette boutique utilise l'ancien modèle : l'organisation et les membres ne sont pas encore reliés.</p>
        <button type="button" disabled={linking||busy} className={styles.secondary} onClick={()=>void linkLegacy()}>
