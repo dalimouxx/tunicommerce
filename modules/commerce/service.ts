@@ -1,5 +1,6 @@
 import {imageUrl,productImageUrl} from '../platform/media';
 import {productGallery} from '../product-media/gallery';
+import {logMessagePayload,messagingSettings,ruleLabel} from '../messaging/customer-messages';
 import {z} from 'zod';
 import {storefrontThemeCodes} from '../shops/storefront-themes';
 import {quoteDelivery} from '../delivery/pricing';
@@ -20,6 +21,8 @@ import {transitions,labels,governors,type State,type Status} from './types';
 const str=z.string().trim().min(1).max(160);const amount=z.number().int().min(0).max(1000000000);const qty=z.number().int().min(1).max(10000);
 const schemas={
  marketing:marketingSettings,
+ messaging:messagingSettings,
+ logMessage:logMessagePayload,
  quantityOffers:quantityOffersPayload,
  productPromotion:productPromotionPayload,
  issueConfirmationLink:issueConfirmationPayload,
@@ -239,6 +242,8 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  }
  if(action==='productPromotion'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');if(p.promotion){product.promotion=assertValidPromotion(product.price,p.promotion,new Date(now));log('Promotion '+product.name+' · '+(product.promotion.price/1000).toFixed(3)+' TND jusqu’au '+product.promotion.endsAt.slice(0,10));}else{delete product.promotion;log('Promotion arrêtée · '+product.name);}return s;}
  if(action==='quantityOffers'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');product.quantityOffers=assertValidOffers(product.price,p.offers);log('Offres de quantité modifiées · '+product.name);}
+ if(action==='messaging'){s.shop={...s.shop,messaging:p};log('Messages clients WhatsApp modifiés');}
+ if(action==='logMessage'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:'Message WhatsApp préparé : '+ruleLabel(p.rule)});}
  if(action==='marketing'){s.shop={...s.shop,marketing:p};log('Pixels publicitaires et WhatsApp modifiés');}
  if(action==='note'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:p.note});log('Note ajoutée à '+o.reference);}
  return s;

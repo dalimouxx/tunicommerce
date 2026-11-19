@@ -1,0 +1,25 @@
+.rules{display:grid;gap:14px}
+.rule{padding:20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.rule[data-enabled=false]{opacity:.62}
+.ruleHead{grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.ruleHead h3{margin:0 0 4px;font-size:15px}
+.ruleHead p{margin:0;color:#789181;font-size:12px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#2c4736;white-space:nowrap;cursor:pointer}
+.switch input{width:18px;height:18px;accent-color:#21815f}
+.editor textarea{width:100%;min-height:128px;resize:vertical;padding:11px 12px;border:1px solid #dfe8e2;border-radius:9px;font:inherit;font-size:13px;line-height:1.55;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{border:1px solid #d7e4da;background:#f4f8f5;color:#2f6a4b;border-radius:999px;padding:4px 9px;font-size:11px;cursor:pointer}
+.chips button:hover{background:#e7f2ea}
+.reset{margin-top:8px;font-size:11px;color:#8a6a4a;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+.preview{background:#e9f6ec;border-radius:12px;padding:12px;font-size:12.5px;line-height:1.55;color:#1d3b2a;white-space:pre-wrap;word-break:break-word;align-self:start}
+.preview small{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:#5b8a6c;margin-bottom:6px}
+.bubble{background:#fff;border-radius:10px 10px 10px 2px;padding:10px 12px;box-shadow:0 1px 1px #0000000f}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.customer{border:1px solid #dfeee3;border-radius:12px;padding:14px;margin:14px 0;background:#f8fcf9}
+.customer h3{margin:0 0 8px;font-size:13px}
+.customer select,.customer textarea{width:100%;font:inherit;font-size:12.5px;border:1px solid #dfe8e2;border-radius:8px;padding:8px 10px;background:#fff}
+.customer textarea{min-height:96px;margin-top:8px;resize:vertical;line-height:1.5}
+.send{display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:#1f9d55;color:#fff;border-radius:9px;padding:10px 14px;font-weight:800;font-size:12.5px;text-decoration:none}
+.send:hover{background:#1a8a4a}
+.muted{color:#809889;font-size:11.5px;margin:8px 0 0}
+@media(max-width:860px){.rule{grid-template-columns:1fr}}

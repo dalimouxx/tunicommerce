@@ -101,6 +101,8 @@ const subtitles: Record<string, string> = {
  'Commandes': 'De la première commande à la dernière livraison.',
  'Call Center': 'Chaque appel compte. Transformez vos commandes en ventes.',
  'Finances & COD': 'Gardez une vue claire sur votre argent et vos marges.',
+ 'Automatisations': 'Le bon message au bon moment, envoyé depuis votre WhatsApp.',
+ 'Intégrations': 'Les outils connectés à votre boutique.',
 };
 const actionLabels: Record<string, string> = {
  'Produits': 'Ajouter un produit',

@@ -2,13 +2,14 @@ import {ArrowRight, Clock, Phone, Plus, Truck, Wallet, X} from 'lucide-react';
 import {labels, money, transitions, type Order, type State, type Status} from '../../modules/commerce/types';
 import {CustomerInsights} from '../customer-insights';
 import {CustomerRequests} from '../customer-requests';
+import {CustomerMessage} from './customer-message';
 import {ProductArt} from '../product-art';
 import {Badge, orderCustomer, type Act} from './shared';
 
 /** Side panel with one order: customer, items, totals, next steps, history and internal notes. */
-export function OrderDrawer({state, order, act, busy, close, openModal, askTransition}: {
+export function OrderDrawer({state, order, act, busy, close, openModal, askTransition, openMessages}: {
  state: State; order: Order; act: Act; busy: boolean; close: () => void;
- openModal: (modal: string) => void; askTransition: (status: Status) => void;
+ openModal: (modal: string) => void; askTransition: (status: Status) => void; openMessages: () => void;
 }) {
  const customer = orderCustomer(state, order);
  const product = (id: string) => state.products.find(p => p.id === id);
@@ -37,6 +38,7 @@ export function OrderDrawer({state, order, act, busy, close, openModal, askTrans
      </div>
     </div>
     <CustomerInsights state={state} order={order}/>
+    <CustomerMessage state={state} order={order} act={act} openSettings={openMessages}/>
     <CustomerRequests order={order} act={act} busy={busy}/>
     <h3 className="detail-title">Articles</h3>
     {order.items.map((item, index) => <div className="order-item" key={index}>
