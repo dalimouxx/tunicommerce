@@ -1,4 +1,4 @@
-import {Activity, ArrowRight, LogOut, ShieldCheck, Zap} from 'lucide-react';
+import {Activity, LogOut, ShieldCheck} from 'lucide-react';
 import type {State} from '../../modules/commerce/types';
 import {SimpleForm} from '../forms';
 import type {Act} from './shared';
@@ -20,37 +20,30 @@ export function CouponsPage({state}: {state: State}) {
  </div>;
 }
 
-const integrations = [
- ['WhatsApp Business', 'W', 'Confirmation et suivi des commandes', '#e1f4e9'],
- ['Meta Ads', '∞', 'Analyse des campagnes Facebook et Instagram', '#e6effb'],
- ['TikTok Ads', '♪', 'Attribution des ventes à vos campagnes', '#efedf5'],
- ['Transporteurs', '↗', 'Expéditions, suivi et rapprochement COD', '#fbecdf'],
- ['Commerce Copilot', '✧', 'Un assistant fondé sur vos données réelles', '#e9e8f8'],
- ['SMS Tunisie', 'S', 'Notifications et relance des clients', '#e9eff2'],
+type Integration = {name: string; icon: string; description: string; color: string; status: string; active?: boolean; action?: {label: string; page: string}};
+const integrations: Integration[] = [
+ {name: 'WhatsApp Business', icon: 'W', description: 'Messages de confirmation, d’expédition et de livraison, prêts à envoyer depuis chaque commande.', color: '#e1f4e9',
+  status: 'Actif · envoi en un clic', active: true, action: {label: 'Configurer les messages', page: 'Automatisations'}},
+ {name: 'Meta Ads', icon: '∞', description: 'Analyse des campagnes Facebook et Instagram', color: '#e6effb', status: 'Non connecté · À venir'},
+ {name: 'TikTok Ads', icon: '♪', description: 'Attribution des ventes à vos campagnes', color: '#efedf5', status: 'Non connecté · À venir'},
+ {name: 'Transporteurs', icon: '↗', description: 'Expéditions, suivi et rapprochement COD', color: '#fbecdf', status: 'Non connecté · À venir'},
+ {name: 'Commerce Copilot', icon: '✧', description: 'Un assistant fondé sur vos données réelles', color: '#e9e8f8', status: 'Non connecté · À venir'},
+ {name: 'SMS Tunisie', icon: 'S', description: 'Notifications et relance des clients', color: '#e9eff2', status: 'Non connecté · À venir'},
 ];
 
-export function IntegrationsPage() {
+export function IntegrationsPage({go}: {go: (page: string) => void}) {
  return <>
-  <div className="info-strip">Aucune donnée n’est envoyée à un service externe sans connexion. Les connexions ci-dessous ne sont pas encore disponibles.</div>
+  <div className="info-strip">Aucune donnée n’est envoyée à un service externe sans votre action. WhatsApp fonctionne déjà avec votre propre numéro ; les autres connexions arrivent progressivement.</div>
   <div className="integration-grid">
-   {integrations.map(([name, icon, description, color]) => <div className="card integration-card" key={name}>
-    <span className="integration-icon" style={{background: color}}>{icon}</span>
-    <h3>{name}</h3>
-    <p>{description}</p>
-    <span className="badge neutral">Non connecté · À venir</span>
+   {integrations.map(item => <div className="card integration-card" key={item.name}>
+    <span className="integration-icon" style={{background: item.color}}>{item.icon}</span>
+    <h3>{item.name}</h3>
+    <p>{item.description}</p>
+    <span className={'badge ' + (item.active ? 'delivered' : 'neutral')}>{item.status}</span>
+    {item.action && <p><button className="button small-button" onClick={() => go(item.action!.page)}>{item.action.label}</button></p>}
    </div>)}
   </div>
  </>;
-}
-
-export function AutomationsPage() {
- return <div className="card empty large-empty">
-  <span className="empty-icon"><Zap size={30}/></span>
-  <h2>Moins de tâches répétitives.<br/>Plus de temps pour votre commerce.</h2>
-  <p>Les scénarios automatiques seront disponibles après connexion des services de messagerie et des transporteurs.</p>
-  <div className="automation-preview"><span>Commande confirmée</span><ArrowRight size={18}/><span>Message WhatsApp</span></div>
-  <span className="badge neutral">Module à venir</span>
- </div>;
 }
 
 export function ActivityPage({state}: {state: State}) {

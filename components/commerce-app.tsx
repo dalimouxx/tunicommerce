@@ -15,7 +15,8 @@ import {ContextBar, NotificationPanel, PageHeading, Sidebar, Topbar} from './mer
 import {OrdersPage, ordersForPage} from './merchant/orders-page';
 import {CustomersPage, InventoryPage, ProductsPage} from './merchant/catalog-pages';
 import {AnalyticsPage, FinancesPage} from './merchant/report-pages';
-import {ActivityPage, AutomationsPage, CouponsPage, IntegrationsPage, SettingsPage} from './merchant/simple-pages';
+import {ActivityPage, CouponsPage, IntegrationsPage, SettingsPage} from './merchant/simple-pages';
+import {AutomationsPage} from './merchant/automations-page';
 import {OrderDrawer} from './merchant/order-drawer';
 import {HelpGuide, LanguageNotice, ResetForm, TransitionForm, modalTitles} from './merchant/dialogs';
 
@@ -201,8 +202,8 @@ export default function App({shopSlug}: {shopSlug?: string | null}) {
     {page === 'Paniers' && <CartsPage state={state}/>}
     {page === 'Retours' && <ReturnsPage state={state} act={act} busy={busy} selectOrder={setSelected}/>}
     {page === 'Factures' && <InvoicesPage {...{state, act, busy}}/>}
-    {page === 'Intégrations' && <IntegrationsPage/>}
-    {page === 'Automatisations' && <AutomationsPage/>}
+    {page === 'Intégrations' && <IntegrationsPage go={go}/>}
+    {page === 'Automatisations' && <AutomationsPage state={state} act={act} busy={busy}/>}
     {page === 'Activité' && <ActivityPage state={state}/>}
     {page === 'Paramètres' && <SettingsPage state={state} act={act} busy={busy}
      onLogoutError={() => setMessage('Déconnexion impossible. Réessayez.')} askReset={() => setModal('reset')}/>}
@@ -213,7 +214,8 @@ export default function App({shopSlug}: {shopSlug?: string | null}) {
    </main>
   </div>
   {selectedOrder && <OrderDrawer state={state} order={selectedOrder} act={act} busy={busy} close={() => setSelected(null)}
-   openModal={setModal} askTransition={status => { setConfirmStatus(status); setModal('transition'); }}/>}
+   openModal={setModal} askTransition={status => { setConfirmStatus(status); setModal('transition'); }}
+   openMessages={() => { setSelected(null); go('Automatisations'); }}/>}
   {modal && <Modal title={(modal === 'product' ? (editProduct ? 'Modifier le produit' : 'Ajouter un produit') : modalTitles[modal]) || modal} close={() => setModal('')}>
    {modal === 'shipmentCost' && selectedOrder && <ShipmentCostForm order={selectedOrder} submit={p => act('shipmentCost', p)} busy={busy}/>}
    {modal === 'order' && <OrderForm state={state} submit={p => act('createOrder', p)} busy={busy}/>}
