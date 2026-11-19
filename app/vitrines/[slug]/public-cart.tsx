@@ -4,7 +4,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {cartStorageKey,restoreCartQuantities,serializeCartQuantities} from '../../../modules/shops/public-cart-recovery';
 import {governors} from '../../../modules/commerce/types';
 import {privateTrackingPath} from '../../../modules/shops/public-tracking-link';
-import {trackStorefront} from './storefront-pixels';
+import {trackStorefront} from '../../../components/storefront-pixels';
 import {offerLineTotal} from '../../../modules/shops/product-cod-form';
 import {formatStorefrontMoney,governorateLabel,storefrontDictionary,type StorefrontLang} from '../../../modules/shops/storefront-i18n';
 

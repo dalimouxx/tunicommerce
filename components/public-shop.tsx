@@ -8,10 +8,13 @@ import {badgeQuantityOffer} from '../modules/shops/quantity-offers';
 import ShopHomeSections from './shop-home-sections';
 import homeStyles from './shop-home.module.css';
 import PromoPrice from './promo-price';
+import StorefrontPixels, {trackStorefront} from './storefront-pixels';
 
 type Props = {
  slug: string; catalog: PublicCatalog; home?: HomeContent | null; language?: 'fr' | 'ar';
  homeShopSlug?: string; pages?: {slug: string; title: string}[];
+ /** Advertising pixel identifiers (validated server-side); empty strings load nothing. */
+ pixels?: {metaPixelId: string; tiktokPixelId: string};
 };
 type Product = PublicCatalog['products'][number];
 type Cart = Record<string, number>;
@@ -25,7 +28,7 @@ const STORAGE_UNAVAILABLE = 'La sauvegarde sur cet appareil est indisponible.';
 const variantKey = (p: Product) => p.name + '|' + p.category;
 
 /** Public catalog of a historical shop with a cash-on-delivery checkout. */
-export default function PublicShop({slug, catalog, home = null, language = 'fr', homeShopSlug, pages = []}: Props) {
+export default function PublicShop({slug, catalog, home = null, language = 'fr', homeShopSlug, pages = [], pixels}: Props) {
  const [variants, setVariants] = useState<Record<string, string>>({});
  const storageKey = 'tunicommerce-cart:' + slug;
  const [cart, setCart] = useState<Cart>({});
@@ -80,6 +83,7 @@ export default function PublicShop({slug, catalog, home = null, language = 'fr',
   if (!pending.current) {
    const orderItems = items.map(p => ({productId: p.id, quantity: cart[p.id]}));
    const signature = JSON.stringify(orderItems);
+   trackStorefront({name: 'InitiateCheckout', items: items.map(p => ({id: p.id, price: p.price, quantity: cart[p.id]})), value: subtotal});
    if (!attempt.current || attempt.current.signature !== signature) attempt.current = {id: crypto.randomUUID(), signature};
    pending.current = {requestId: attempt.current.id, customer: Object.fromEntries(new FormData(e.currentTarget)), items: orderItems};
    try { localStorage.setItem(storageKey, JSON.stringify({cart, attempt: attempt.current})); } catch {}
@@ -92,6 +96,8 @@ export default function PublicShop({slug, catalog, home = null, language = 'fr',
     if (r.status === 400) { pending.current = null; attempt.current = null; }
     throw Error(data.error || 'Commande impossible');
    }
+   // Purchase carries the order request id, so a resend or reload never counts the sale twice.
+   trackStorefront({name: 'Purchase', items: pending.current!.items.map(i => ({id: i.productId, price: catalog.products.find(p => p.id === i.productId)?.price || 0, quantity: i.quantity})), value: data.total, eventId: pending.current!.requestId});
    setReceipt(data);
    const orders = (data.trackingUrl ? [data, ...history.filter(h => h.trackingUrl !== data.trackingUrl)] : history).slice(0, MAX_HISTORY);
    setHistory(orders);
@@ -112,6 +118,7 @@ export default function PublicShop({slug, catalog, home = null, language = 'fr',
  const homeSections = <div className={homeStyles.legacy}><ShopHomeSections content={home!} lang={language} shopSlug={homeShopSlug}/></div>;
  const locked = busy || !!pending.current;
  return <main className="platform">
+  {pixels && <StorefrontPixels metaPixelId={pixels.metaPixelId} tiktokPixelId={pixels.tiktokPixelId}/>}
   <header data-part="header">
    <a href="/boutiques">← Toutes les boutiques</a>
    <span>Paiement à la livraison</span>
@@ -149,7 +156,7 @@ export default function PublicShop({slug, catalog, home = null, language = 'fr',
      {tiles.map((p, index) => <ProductTile key={p.id} product={p} index={index} catalog={catalog} language={language}
       inCart={cart[p.id] || 0} disabled={!ready || busy || !!pending.current || !!receipt}
       chooseVariant={id => setVariants({...variants, [variantKey(p)]: id})}
-      add={() => setCart({...cart, [p.id]: (cart[p.id] || 0) + 1})}/>)}
+      add={() => { setCart({...cart, [p.id]: (cart[p.id] || 0) + 1}); trackStorefront({name: 'AddToCart', item: {id: p.id, price: p.price, quantity: 1}}); }}/>)}
     </div>
     {!catalog.products.length && <p>Le catalogue sera bientôt disponible.</p>}
    </section>

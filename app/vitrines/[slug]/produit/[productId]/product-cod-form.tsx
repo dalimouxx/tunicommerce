@@ -8,7 +8,7 @@ import {
  normalizeTunisianPhone,productOrderSummary,type PublicDeliveryZone,type PublicOffer
 } from '../../../../../modules/shops/product-cod-form';
 import {whatsappLink} from '../../../../../modules/shops/storefront-marketing';
-import {trackStorefront} from '../../storefront-pixels';
+import {trackStorefront} from '../../../../../components/storefront-pixels';
 import {formatStorefrontMoney,governorateLabel,storefrontDictionary,type StorefrontDictionary,type StorefrontLang} from '../../../../../modules/shops/storefront-i18n';
 import styles from '../../storefront-premium.module.css';
 

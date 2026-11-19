@@ -2,13 +2,14 @@
 import {useEffect} from 'react';
 
 /**
- * Loads the merchant's Meta and TikTok pixels on the public storefront only.
+ * Loads the merchant's Meta and TikTok pixels on public storefronts only (vitrines and historical shops).
  * Identifiers are validated server-side (digits / A-Z0-9), so they are safe in script URLs.
  * No buyer name, phone or address is ever sent to the pixels.
  */
 type Item={id:string;price:number;quantity:number};
 export type StorefrontEvent=
  |{name:'ViewContent';item:Item}
+ |{name:'AddToCart';item:Item}
  |{name:'InitiateCheckout';items:Item[];value:number}
  |{name:'Purchase';items:Item[];value:number;eventId:string};
 
