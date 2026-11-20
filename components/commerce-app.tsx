@@ -17,6 +17,7 @@ import {CustomersPage, InventoryPage, ProductsPage} from './merchant/catalog-pag
 import {AnalyticsPage, FinancesPage} from './merchant/report-pages';
 import {ActivityPage, CouponsPage, IntegrationsPage, SettingsPage} from './merchant/simple-pages';
 import {AutomationsPage} from './merchant/automations-page';
+import {CopilotPage} from './merchant/copilot-page';
 import {OrderDrawer} from './merchant/order-drawer';
 import {HelpGuide, LanguageNotice, ResetForm, TransitionForm, modalTitles} from './merchant/dialogs';
 
@@ -196,6 +197,7 @@ export default function App({shopSlug}: {shopSlug?: string | null}) {
     {page === 'Clients' && <CustomersPage state={state} search={search}/>}
     {page === 'Finances & COD' && <FinancesPage state={state} m={m} periodOrders={periodOrders} onSelect={setSelected} addExpense={() => setModal('expense')}/>}
     {page === 'Analyses' && <AnalyticsPage state={state} m={m} periodOrders={periodOrders} topProducts={topProducts}/>}
+    {page === 'Commerce Copilot' && <CopilotPage state={state} go={go}/>}
     {page === 'Coupons' && <CouponsPage state={state}/>}
     {page === 'Ma boutique' && <Storefront {...{state, act, busy, connected}}/>}
     {page === 'Transporteurs & zones' && <DeliverySettings {...{state, act, busy}}/>}

@@ -39,7 +39,8 @@ export function IntegrationsPage({state, act, busy, go}: {state: State; act: Act
    status: marketing.tiktokPixelId ? 'Actif · pixel ' + marketing.tiktokPixelId : 'À configurer · identifiant du pixel', active: !!marketing.tiktokPixelId,
    action: {label: marketing.tiktokPixelId ? 'Modifier' : 'Ajouter mon pixel', run: () => setPixel('tiktok')}},
   {name: 'Transporteurs', icon: '↗', description: 'Expéditions, suivi et rapprochement COD', color: '#fbecdf', status: 'Non connecté · À venir'},
-  {name: 'Commerce Copilot', icon: '✧', description: 'Un assistant fondé sur vos données réelles', color: '#e9e8f8', status: 'Non connecté · À venir'},
+  {name: 'Commerce Copilot', icon: '✧', description: 'Des conseils calculés sur vos vrais chiffres : confirmations en retard, stock, COD, taux de refus, tendance des ventes.', color: '#e9e8f8',
+   status: 'Actif · sans IA, sur vos données', active: true, action: {label: 'Voir les conseils', run: () => go('Commerce Copilot')}},
   {name: 'SMS Tunisie', icon: 'S', description: 'Notifications et relance des clients', color: '#e9eff2', status: 'Non connecté · À venir'},
  ];
  return <>
