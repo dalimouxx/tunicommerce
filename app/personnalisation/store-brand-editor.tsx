@@ -1,8 +1,10 @@
 'use client';
+import {storefrontClosedLabels} from '../../modules/platform/availability';
 import {useEffect,useState,type CSSProperties,type FormEvent} from 'react';
 import Link from 'next/link';
 import {ArrowLeft,ArrowRight,Check,CheckCircle2,ExternalLink,Image as ImageIcon,LayoutTemplate,Palette,Save,ShieldCheck,ShoppingBag,Smartphone,Store} from 'lucide-react';
 import styles from './brand-editor.module.css';
+import type {ReactNode} from 'react';
 import {accents,defaultPresentation,themes,type AppearanceInput,type StoreTheme} from '../../modules/appearance/validation';
 import {appearanceThemeDetails,appearanceAccentText} from '../../modules/appearance/theme-catalog';
 import StorefrontMotionToggle from '../../components/storefront-motion-toggle';
@@ -21,13 +23,14 @@ const empty:AppearanceInput={
  ...defaultPresentation,logoUrl:'',bannerUrl:'',description:''
 };
 type ShopBrand={
- appearance:AppearanceInput,shopName:string,slug:string|null,published:boolean,
+ appearance:AppearanceInput,shopName:string,slug:string|null,published:boolean,availability?:{open:boolean;reason:null|'unpublished'|'subscription'},
  logoUrl:string,bannerUrl:string,description:string
 };
 type Sample={name:string,price:number,imageUrl:string};
 type ShopBrandWithSamples=ShopBrand&{sampleProducts:Sample[]};
 
-export default function StoreBrandEditor(){
+/** `storefrontLinks`: the shop's home and pages shortcuts, shown under the studio header. */
+export default function StoreBrandEditor({storefrontLinks}:{storefrontLinks?:ReactNode}={}){
  const [data,setData]=useState<ShopBrandWithSamples|null>(null);
  const [form,setForm]=useState<AppearanceInput>(empty);
  const [loading,setLoading]=useState(true);
@@ -115,12 +118,14 @@ export default function StoreBrandEditor(){
    <Link href="/marchand" className={styles.back}><ArrowLeft size={15}/> Tableau de bord</Link>
   </header>
   <main className={styles.main}>
+   {storefrontLinks}
    <div className={styles.intro}>
     <div><p className={styles.eyebrow}>CRÉATEUR DE BOUTIQUE PREMIUM</p>
      <h1>Imaginez votre vitrine</h1>
      <p>Choisissez une identité visuelle qui vous ressemble. Vos produits, commandes et données clients restent inchangés.</p>
     </div>
-    {data?.slug&&data.published&&<Link href={'/boutiques/'+data.slug} target="_blank" className={styles.viewLive}>Voir la boutique <ExternalLink size={16}/></Link>}
+    {data?.slug&&data.availability?.open&&<Link href={'/boutiques/'+data.slug} target="_blank" className={styles.viewLive}>Voir la boutique <ExternalLink size={16}/></Link>}
+    {data?.slug&&data.availability&&!data.availability.open&&data.availability.reason&&<p className={styles.viewLive} role="note" style={{whiteSpace:'normal',flexWrap:'wrap'}}>{storefrontClosedLabels[data.availability.reason]} <Link href={data.availability.reason==='unpublished'?'/demarrage':'/mon-abonnement'}>{data.availability.reason==='unpublished'?'Publier':'Voir mon abonnement'}</Link></p>}
    </div>
    {loading?<div className={styles.panel}>Chargement de votre studio de personnalisation…</div>:
     <div className={styles.layout}>

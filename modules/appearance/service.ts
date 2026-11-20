@@ -3,12 +3,13 @@ import {prisma} from '../storage/client';
 import {normalizeState} from '../commerce/normalize';
 import type {State} from '../commerce/types';
 import {HttpError} from '../auth/http';
+import {storefrontAvailability} from '../platform/availability';
 import {verifyAppearanceMediaOwnership} from '../media/service';
 import {readPresentation,type AppearanceInput} from './validation';
 
 export async function getStoreAppearance(ownerId:string){
  const workspace=await prisma.workspace.findUnique({
-  where:{ownerId},select:{slug:true,published:true,data:true}
+  where:{ownerId},select:{slug:true,published:true,subscriptionStatus:true,subscriptionEndsAt:true,data:true}
  });
  if(!workspace)throw new HttpError(404,'Boutique introuvable');
  const state=normalizeState(workspace.data as unknown as State);
@@ -22,7 +23,9 @@ export async function getStoreAppearance(ownerId:string){
    name:p.name,price:p.price,imageUrl:p.imageUrl||''
   })),
   slug:workspace.slug,
-  published:workspace.published
+  published:workspace.published,
+  // The public link is offered only when visitors can really open the shop.
+  availability:storefrontAvailability(workspace)
  };
 }
 
