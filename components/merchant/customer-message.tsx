@@ -1,8 +1,8 @@
 'use client';
 import {useEffect, useState} from 'react';
-import {MessageCircle} from 'lucide-react';
+import {MessageCircle, Smartphone} from 'lucide-react';
 import type {Order, State} from '../../modules/commerce/types';
-import {messageRules, orderPhone, readMessaging, renderMessage, ruleForStatus, whatsappMessageUrl, type MessageRuleKey} from '../../modules/messaging/customer-messages';
+import {messageRules, orderPhone, readMessaging, renderMessage, ruleForStatus, smsMessageUrl, whatsappMessageUrl, type MessageRuleKey} from '../../modules/messaging/customer-messages';
 import type {Act} from './shared';
 import styles from './messages.module.css';
 
@@ -17,6 +17,7 @@ export function CustomerMessage({state, order, act, openSettings}: {state: State
  useEffect(() => { setKey(suggested); }, [suggested, order.id]);
  useEffect(() => { setText(template ? renderMessage(template, state, order, window.location.origin) : ''); }, [template, order, state]);
  const url = whatsappMessageUrl(orderPhone(state, order), text);
+ const sms = smsMessageUrl(orderPhone(state, order), text);
  return <section className={styles.customer} aria-label="Message au client">
   <h3>Message au client</h3>
   {!enabled.length
@@ -28,9 +29,12 @@ export function CustomerMessage({state, order, act, openSettings}: {state: State
     </select>
     {key && <textarea aria-label="Texte du message" maxLength={1000} value={text} onChange={e => setText(e.target.value)}/>}
     {key && (url
-     ? <a className={styles.send} href={url} target="_blank" rel="noopener noreferrer" onClick={() => void act('logMessage', {id: order.id, rule: key, channel: 'WHATSAPP'})}><MessageCircle size={16}/>Envoyer sur WhatsApp</a>
-     : <p className={styles.muted}>Le numéro du client n’est pas un mobile tunisien valide : WhatsApp ne peut pas l’ouvrir.</p>)}
-    <p className={styles.muted}>Le message s’ouvre dans votre WhatsApp ; rien n’est envoyé sans votre validation. <button className="text-button" onClick={openSettings}>Modifier les messages</button></p>
+     ? <div className={styles.sendRow}>
+      <a className={styles.send} href={url} target="_blank" rel="noopener noreferrer" onClick={() => void act('logMessage', {id: order.id, rule: key, channel: 'WHATSAPP'})}><MessageCircle size={16}/>Envoyer sur WhatsApp</a>
+      <a className={styles.sms} href={sms} onClick={() => void act('logMessage', {id: order.id, rule: key, channel: 'SMS'})}><Smartphone size={16}/>Envoyer par SMS</a>
+     </div>
+     : <p className={styles.muted}>Le numéro du client n’est pas un mobile tunisien valide : WhatsApp et SMS ne peuvent pas l’ouvrir.</p>)}
+    <p className={styles.muted}>Le message s’ouvre dans votre WhatsApp, ou dans l’application SMS de votre téléphone ; rien n’est envoyé sans votre validation. <button className="text-button" onClick={openSettings}>Modifier les messages</button></p>
    </>}
  </section>;
 }

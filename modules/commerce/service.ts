@@ -243,7 +243,7 @@ export function applyAction(input:State,action:string,payload:unknown):State{
  if(action==='productPromotion'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');if(p.promotion){product.promotion=assertValidPromotion(product.price,p.promotion,new Date(now));log('Promotion '+product.name+' · '+(product.promotion.price/1000).toFixed(3)+' TND jusqu’au '+product.promotion.endsAt.slice(0,10));}else{delete product.promotion;log('Promotion arrêtée · '+product.name);}return s;}
  if(action==='quantityOffers'){const product=s.products.find(x=>x.id===p.productId);if(!product)throw Error('Produit introuvable');product.quantityOffers=assertValidOffers(product.price,p.offers);log('Offres de quantité modifiées · '+product.name);}
  if(action==='messaging'){s.shop={...s.shop,messaging:p};log('Messages clients WhatsApp modifiés');}
- if(action==='logMessage'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:'Message WhatsApp préparé : '+ruleLabel(p.rule)});}
+ if(action==='logMessage'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:'Message '+(p.channel==='SMS'?'SMS':'WhatsApp')+' préparé : '+ruleLabel(p.rule)});}
  if(action==='marketing'){s.shop={...s.shop,marketing:p};log('Pixels publicitaires et WhatsApp modifiés');}
  if(action==='note'){const o=s.orders.find(o=>o.id===p.id);if(!o)throw Error('Commande introuvable');o.events.push({at:now,label:p.note});log('Note ajoutée à '+o.reference);}
  return s;
