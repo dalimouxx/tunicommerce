@@ -4,6 +4,7 @@ import {useEffect,useState,type CSSProperties,type FormEvent} from 'react';
 import Link from 'next/link';
 import {ArrowLeft,ArrowRight,Check,CheckCircle2,ExternalLink,Image as ImageIcon,LayoutTemplate,Palette,Save,ShieldCheck,ShoppingBag,Smartphone,Store} from 'lucide-react';
 import styles from './brand-editor.module.css';
+import type {ReactNode} from 'react';
 import {accents,defaultPresentation,themes,type AppearanceInput,type StoreTheme} from '../../modules/appearance/validation';
 import {appearanceThemeDetails,appearanceAccentText} from '../../modules/appearance/theme-catalog';
 import StorefrontMotionToggle from '../../components/storefront-motion-toggle';
@@ -28,7 +29,8 @@ type ShopBrand={
 type Sample={name:string,price:number,imageUrl:string};
 type ShopBrandWithSamples=ShopBrand&{sampleProducts:Sample[]};
 
-export default function StoreBrandEditor(){
+/** `storefrontLinks`: the shop's home and pages shortcuts, shown under the studio header. */
+export default function StoreBrandEditor({storefrontLinks}:{storefrontLinks?:ReactNode}={}){
  const [data,setData]=useState<ShopBrandWithSamples|null>(null);
  const [form,setForm]=useState<AppearanceInput>(empty);
  const [loading,setLoading]=useState(true);
@@ -116,6 +118,7 @@ export default function StoreBrandEditor(){
    <Link href="/marchand" className={styles.back}><ArrowLeft size={15}/> Tableau de bord</Link>
   </header>
   <main className={styles.main}>
+   {storefrontLinks}
    <div className={styles.intro}>
     <div><p className={styles.eyebrow}>CRÉATEUR DE BOUTIQUE PREMIUM</p>
      <h1>Imaginez votre vitrine</h1>
