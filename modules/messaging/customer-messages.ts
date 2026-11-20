@@ -31,7 +31,7 @@ export type MessagingSettings = z.infer<typeof messagingSettings>;
 export const logMessagePayload = z.object({
  id: z.string().min(1).max(160),
  rule: z.enum(messageRules.map(r => r.key) as [MessageRuleKey, ...MessageRuleKey[]]),
- channel: z.enum(['WHATSAPP']),
+ channel: z.enum(['WHATSAPP', 'SMS']),
 }).strict();
 
 /** Saved settings, completed with the defaults for any rule never configured. */
@@ -79,6 +79,13 @@ export function whatsappMessageUrl(phone: string, text: string) {
  const number = normalizeTunisianPhone(phone);
  if (!/^[2459][0-9]{7}$/.test(number)) return '';
  return 'https://wa.me/216' + number + '?text=' + encodeURIComponent(text);
+}
+
+/** Opens the phone's messaging app with the text (works on phones; nothing is sent by the platform). */
+export function smsMessageUrl(phone: string, text: string) {
+ const number = normalizeTunisianPhone(phone);
+ if (!/^[2459][0-9]{7}$/.test(number)) return '';
+ return 'sms:+216' + number + '?body=' + encodeURIComponent(text);
 }
 
 export const ruleLabel = (key: MessageRuleKey) => messageRules.find(r => r.key === key)!.label;

@@ -5,6 +5,7 @@ import type {State} from '../../modules/commerce/types';
 import {pixelIds, pixelSettingsPayload, storefrontMarketing} from '../../modules/shops/storefront-marketing';
 import {Modal, Field, SimpleForm} from '../forms';
 import type {Act} from './shared';
+import {CarrierManifestDialog} from './carrier-manifest-dialog';
 
 export function CouponsPage({state}: {state: State}) {
  return <div className="card">
@@ -23,11 +24,12 @@ export function CouponsPage({state}: {state: State}) {
  </div>;
 }
 
-type Integration = {name: string; icon: string; description: string; color: string; status: string; active?: boolean; action?: {label: string; run: () => void}};
+type Integration = {name: string; icon: string; description: string; color: string; status: string; active?: boolean; action?: {label: string; run: () => void}; second?: {label: string; run: () => void}};
 
 /** Integrations that work today are shown as active with their settings; the others say what they still need. */
 export function IntegrationsPage({state, act, busy, go}: {state: State; act: Act; busy: boolean; go: (page: string) => void}) {
  const [pixel, setPixel] = useState<'meta' | 'tiktok' | null>(null);
+ const [manifest, setManifest] = useState(false);
  const marketing = storefrontMarketing(state);
  const integrations: Integration[] = [
   {name: 'WhatsApp Business', icon: 'W', description: 'Messages de confirmation, d’expédition et de livraison, prêts à envoyer depuis chaque commande.', color: '#e1f4e9',
@@ -38,10 +40,13 @@ export function IntegrationsPage({state, act, busy, go}: {state: State; act: Act
   {name: 'Pixel TikTok', icon: '♪', description: 'Attribue à vos campagnes TikTok les ajouts au panier et les commandes de votre boutique.', color: '#efedf5',
    status: marketing.tiktokPixelId ? 'Actif · pixel ' + marketing.tiktokPixelId : 'À configurer · identifiant du pixel', active: !!marketing.tiktokPixelId,
    action: {label: marketing.tiktokPixelId ? 'Modifier' : 'Ajouter mon pixel', run: () => setPixel('tiktok')}},
-  {name: 'Transporteurs', icon: '↗', description: 'Expéditions, suivi et rapprochement COD', color: '#fbecdf', status: 'Non connecté · À venir'},
+  {name: 'Transporteurs', icon: '↗', description: 'Vos transporteurs et leurs tarifs, le bordereau des colis à remettre (avec le COD à encaisser) et le rapprochement des versements.', color: '#fbecdf',
+   status: state.carriers.some(c => c.active) ? 'Actif · ' + state.carriers.filter(c => c.active).length + ' transporteur(s), gestion manuelle' : 'À configurer · ajoutez vos transporteurs', active: state.carriers.some(c => c.active),
+   action: {label: 'Préparer le bordereau', run: () => setManifest(true)}, second: {label: 'Gérer les transporteurs', run: () => go('Transporteurs & zones')}},
   {name: 'Commerce Copilot', icon: '✧', description: 'Des conseils calculés sur vos vrais chiffres : confirmations en retard, stock, COD, taux de refus, tendance des ventes.', color: '#e9e8f8',
    status: 'Actif · sans IA, sur vos données', active: true, action: {label: 'Voir les conseils', run: () => go('Commerce Copilot')}},
-  {name: 'SMS Tunisie', icon: 'S', description: 'Notifications et relance des clients', color: '#e9eff2', status: 'Non connecté · À venir'},
+  {name: 'SMS Tunisie', icon: 'S', description: 'Les mêmes messages que WhatsApp, envoyés par SMS depuis votre téléphone : utile pour les clients sans WhatsApp.', color: '#e9eff2',
+   status: 'Actif · envoi depuis votre téléphone', active: true, action: {label: 'Configurer les messages', run: () => go('Automatisations')}},
  ];
  return <>
   <div className="info-strip">Aucune donnée n’est envoyée à un service externe sans votre action. Les pixels ne reçoivent jamais le nom, le téléphone ni l’adresse de vos clients : seulement les produits et les montants.</div>
@@ -51,9 +56,13 @@ export function IntegrationsPage({state, act, busy, go}: {state: State; act: Act
     <h3>{item.name}</h3>
     <p>{item.description}</p>
     <span className={'badge ' + (item.active ? 'delivered' : 'neutral')}>{item.status}</span>
-    {item.action && <p><button className="button small-button" onClick={item.action.run}>{item.action.label}</button></p>}
+    {item.action && <p style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+     <button className="button small-button" onClick={item.action.run}>{item.action.label}</button>
+     {item.second && <button className="text-button" onClick={item.second.run}>{item.second.label}</button>}
+    </p>}
    </div>)}
   </div>
+  {manifest && <CarrierManifestDialog state={state} close={() => setManifest(false)}/>}
   {pixel && <Modal title={pixel === 'meta' ? 'Pixel Meta (Facebook et Instagram)' : 'Pixel TikTok'} close={() => setPixel(null)}>
    <PixelForm kind={pixel} state={state} busy={busy} submit={ids => act('marketing', pixelSettingsPayload(state, ids)).then(ok => { if (ok) setPixel(null); })}/>
   </Modal>}

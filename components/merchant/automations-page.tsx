@@ -16,7 +16,7 @@ export function AutomationsPage({state, act, busy}: {state: State; act: Act; bus
  const update = (key: MessageRuleKey, change: Partial<MessagingSettings['rules'][MessageRuleKey]>) => setRules({...rules, [key]: {...rules[key], ...change}});
  const changed = JSON.stringify(rules) !== JSON.stringify(readMessaging(state).rules);
  return <>
-  <div className="info-strip"><MessageCircle size={17}/>À chaque changement de statut, la fiche de la commande propose le bon message, déjà rempli. Il s’ouvre dans votre WhatsApp : vous vérifiez et envoyez. L’envoi entièrement automatique, sans clic, nécessitera un compte WhatsApp Business API.</div>
+  <div className="info-strip"><MessageCircle size={17}/>À chaque changement de statut, la fiche de la commande propose le bon message, déjà rempli. Il s’ouvre dans votre WhatsApp ou par SMS depuis votre téléphone : vous vérifiez et envoyez. L’envoi entièrement automatique, sans clic, nécessitera un compte WhatsApp Business API ou SMS.</div>
   <div className={styles.rules}>
    {messageRules.map(rule => {
     const current = rules[rule.key];
