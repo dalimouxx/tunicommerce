@@ -7,7 +7,7 @@ import type {CSSProperties} from 'react';
 import type {Metadata} from 'next';
 import PublicCart from './public-cart';
 import CatalogBrowser from './catalog-browser';
-import StorefrontPixels from './storefront-pixels';
+import StorefrontPixels from '../../../components/storefront-pixels';
 import {whatsappLink} from '../../../modules/shops/storefront-marketing';
 import LanguageSwitch from './language-switch';
 import {arabicFont} from './arabic-font';

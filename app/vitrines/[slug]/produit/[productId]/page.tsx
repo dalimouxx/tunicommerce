@@ -10,7 +10,7 @@ import type {State} from '../../../../../modules/commerce/types';
 import {publicProductDetail} from '../../../../../modules/shops/public-product-detail';
 import {fastestDeliveryDays} from '../../../../../modules/shops/product-cod-form';
 import ProductCodForm from './product-cod-form';
-import StorefrontPixels from '../../storefront-pixels';
+import StorefrontPixels from '../../../../../components/storefront-pixels';
 import {productWhatsappMessage,whatsappLink} from '../../../../../modules/shops/storefront-marketing';
 import LanguageSwitch from '../../language-switch';
 import {arabicFont} from '../../arabic-font';

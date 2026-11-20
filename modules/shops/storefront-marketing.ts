@@ -51,3 +51,12 @@ export function orderWhatsappMessage(reference:string,totalMillimes?:number){
  const total=typeof totalMillimes==='number'?' ('+(totalMillimes/1000).toFixed(3)+' TND)':'';
  return 'Bonjour, je confirme ma commande '+reference+total+'.';
 }
+
+/** The only marketing fields sent to the public page's browser code. */
+export function pixelIds(marketing:StorefrontMarketing){
+ return {metaPixelId:marketing.metaPixelId,tiktokPixelId:marketing.tiktokPixelId};
+}
+/** `marketing` payload that changes the pixels and keeps the rest of the settings as saved. */
+export function pixelSettingsPayload(state:State,ids:{metaPixelId:string;tiktokPixelId:string}){
+ return {...storefrontMarketing(state),...ids};
+}

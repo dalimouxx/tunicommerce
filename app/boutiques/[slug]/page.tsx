@@ -6,6 +6,7 @@ import {readPresentation} from '../../../modules/appearance/validation';
 import type {State} from '../../../modules/commerce/types';
 import StorefrontTheme from '../../../components/storefront-theme';
 import PublicShop from '../../../components/public-shop';
+import {pixelIds,storefrontMarketing} from '../../../modules/shops/storefront-marketing';
 import {publishedWorkspacePageLinks} from '../../../modules/shops/page-service';
 import {publishedWorkspaceHome} from '../../../modules/shops/home-service';
 import type {Metadata} from 'next';
@@ -36,7 +37,7 @@ export default async function Page({params,searchParams}:{params:Promise<{slug:s
  const catalog=publicCatalog(state),seo=await storefrontSeo(row.shop?.id,'/boutiques/'+encodeURIComponent(slug),'/');
  return <StorefrontTheme appearance={readPresentation(state)} announcement={home?.[language].announcement}>
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLdScript(storeJsonLd({name:catalog.name,description:catalog.description,url:seo.url,logoUrl:catalog.logoUrl,origin:seo.origin}))}}/>
-  <PublicShop slug={slug} catalog={catalog} home={home} language={language} homeShopSlug={row.shop?.slug} pages={pages}/>
+  <PublicShop slug={slug} catalog={catalog} home={home} language={language} homeShopSlug={row.shop?.slug} pages={pages} pixels={pixelIds(storefrontMarketing(state))}/>
  </StorefrontTheme>;
 }
 

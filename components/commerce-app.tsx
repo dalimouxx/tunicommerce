@@ -202,7 +202,7 @@ export default function App({shopSlug}: {shopSlug?: string | null}) {
     {page === 'Paniers' && <CartsPage state={state}/>}
     {page === 'Retours' && <ReturnsPage state={state} act={act} busy={busy} selectOrder={setSelected}/>}
     {page === 'Factures' && <InvoicesPage {...{state, act, busy}}/>}
-    {page === 'Intégrations' && <IntegrationsPage go={go}/>}
+    {page === 'Intégrations' && <IntegrationsPage state={state} act={act} busy={busy} go={go}/>}
     {page === 'Automatisations' && <AutomationsPage state={state} act={act} busy={busy}/>}
     {page === 'Activité' && <ActivityPage state={state}/>}
     {page === 'Paramètres' && <SettingsPage state={state} act={act} busy={busy}
