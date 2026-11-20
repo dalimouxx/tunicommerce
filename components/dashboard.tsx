@@ -1,11 +1,12 @@
 import {
- Phone, Package, Truck, CheckCircle2, ChevronRight, ArrowRight, ArrowUpRight, Wallet, ShoppingBag, ChartNoAxesCombined, Clock, Sparkles,
+ Phone, Package, Truck, CheckCircle2, ChevronRight, ArrowRight, ArrowUpRight, Wallet, ShoppingBag, ChartNoAxesCombined, Clock,
 } from 'lucide-react';
 import type {ReactNode} from 'react';
 import {money, type State, type Order, type Product} from '../modules/commerce/types';
 import {metrics} from '../modules/commerce/service';
 import {ProductArt} from './product-art';
 import {Stat} from './stat';
+import {CopilotTeaser} from './merchant/copilot-page';
 
 const dt = (d: string) => new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short'});
 
@@ -62,10 +63,7 @@ export function Dashboard({state, periodOrders, m, chart, max, points, low, go, 
      <div><strong>Suivez vos versements COD</strong><small>{money(m.pending)} TND restent à rapprocher.</small></div>
      <ArrowUpRight size={17}/>
     </button>
-    <div className="copilot-teaser">
-     <Sparkles size={18}/>
-     <div><strong>Votre prochain allié : Commerce Copilot</strong><small>Assistant IA · À connecter</small></div>
-    </div>
+    <CopilotTeaser state={state} go={go}/>
    </div>
   </section>
  </>;

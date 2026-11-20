@@ -102,6 +102,7 @@ const subtitles: Record<string, string> = {
  'Call Center': 'Chaque appel compte. Transformez vos commandes en ventes.',
  'Finances & COD': 'Gardez une vue claire sur votre argent et vos marges.',
  'Automatisations': 'Le bon message au bon moment, envoyé depuis votre WhatsApp.',
+ 'Commerce Copilot': 'Ce qui mérite votre attention aujourd’hui, calculé sur vos vrais chiffres.',
  'Intégrations': 'Les outils connectés à votre boutique.',
 };
 const actionLabels: Record<string, string> = {

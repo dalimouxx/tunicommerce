@@ -1,6 +1,6 @@
 import {
  Activity, Boxes, ChartNoAxesCombined, ChevronRight, Headphones, LayoutDashboard, Package, Plug, Receipt,
- RotateCcw, Settings, ShoppingBag, Store, Ticket, Truck, Users, Wallet, Zap,
+ RotateCcw, Settings, ShoppingBag, Sparkles, Store, Ticket, Truck, Users, Wallet, Zap,
 } from 'lucide-react';
 import {labels, money, type Order, type State, type Status} from '../../modules/commerce/types';
 import type {metrics} from '../../modules/commerce/service';
@@ -22,6 +22,7 @@ export const nav = [
  {label: 'Finances & COD', icon: Wallet, group: 'CROISSANCE'},
  {label: 'Factures', icon: Receipt},
  {label: 'Analyses', icon: ChartNoAxesCombined},
+ {label: 'Commerce Copilot', icon: Sparkles},
  {label: 'Coupons', icon: Ticket},
  {label: 'Automatisations', icon: Zap},
  {label: 'Ma boutique', icon: Store, group: 'ESPACE BOUTIQUE'},
